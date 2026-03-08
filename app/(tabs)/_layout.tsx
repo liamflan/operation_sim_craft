@@ -59,7 +59,10 @@ export default function TabLayout() {
             />
           </View>
           
-          <TouchableOpacity className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 transition-colors mt-auto">
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/settings')}
+            className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 transition-colors mt-auto"
+          >
             <View className="w-10 h-10 bg-avocado rounded-full items-center justify-center mr-3 shadow-sm border border-black/5">
               <Text className="text-white font-bold text-sm leading-none">LF</Text>
             </View>
@@ -109,6 +112,13 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="star.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          href: null, // Hide from mobile bottom tab bar explicitly
         }}
       />
     </Tabs>

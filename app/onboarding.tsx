@@ -126,13 +126,16 @@ export default function OnboardingScreen() {
 
           {/* Mock Settings / Profile (Desktop Only) */}
           <View className="hidden md:flex pb-10 mt-auto">
-            <TouchableOpacity className="flex-row items-center p-4 -ml-4 rounded-2xl hover:bg-black/5 transition-colors group">
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/settings')}
+              className="flex-row items-center p-4 -ml-4 rounded-2xl hover:bg-black/5 transition-colors group"
+            >
               <View className="w-12 h-12 bg-avocado rounded-full items-center justify-center mr-4 shadow-sm border border-black/5 group-hover:scale-105 transition-transform">
                 <Text className="text-white font-bold text-sm leading-none">LF</Text>
               </View>
               <View>
                 <Text className="text-charcoal font-bold text-lg leading-tight mb-1">Liam F.</Text>
-                <Text className="text-gray-500 text-sm font-medium">Settings & Preferences</Text>
+                <Text className="text-gray-500 text-sm font-medium">Settings</Text>
               </View>
             </TouchableOpacity>
           </View>
