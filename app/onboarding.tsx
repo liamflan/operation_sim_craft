@@ -124,20 +124,17 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          {/* Mock Settings / Profile (Desktop Only) */}
+          {/* Mock Settings / Profile (Desktop Only) - Disabled during onboarding */}
           <View className="hidden md:flex pb-10 mt-auto">
-            <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/settings')}
-              className="flex-row items-center p-4 -ml-4 rounded-2xl hover:bg-black/5 transition-colors group"
-            >
-              <View className="w-12 h-12 bg-avocado rounded-full items-center justify-center mr-4 shadow-sm border border-black/5 group-hover:scale-105 transition-transform">
+            <View className="flex-row items-center p-4 -ml-4 rounded-2xl group opacity-80 cursor-not-allowed">
+              <View className="w-12 h-12 bg-avocado rounded-full items-center justify-center mr-4 shadow-sm border border-black/5">
                 <Text className="text-white font-bold text-sm leading-none">LF</Text>
               </View>
               <View>
                 <Text className="text-charcoal font-bold text-lg leading-tight mb-1">Liam F.</Text>
-                <Text className="text-gray-500 text-sm font-medium">Settings</Text>
+                <Text className="text-gray-400 text-sm font-medium">Settings</Text>
               </View>
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
