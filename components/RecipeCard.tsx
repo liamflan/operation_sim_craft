@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, Pressable, Animated, PanResponder, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -8,48 +8,117 @@ import { Recipe } from '../data/schema';
 type Props = {
   recipe: Recipe;
   onPress?: () => void;
+  onSwipe?: () => void;
 };
 
-export default function RecipeCard({ recipe, onPress }: Props) {
-  return (
-    <Pressable 
-      onPress={onPress}
-      className="w-full h-80 rounded-[32px] overflow-hidden mb-8 active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl"
-    >
-      <Image 
-        source={recipe.imageUrl} 
-        style={{ width: '100%', height: '100%', position: 'absolute' }}
-        contentFit="cover"
-        transition={600}
-      />
-      
-      {/* Dark gradient mapping bottom up for text readability */}
-      <LinearGradient
-        colors={['transparent', 'rgba(44,44,44,0.95)']}
-        className="absolute bottom-0 w-full h-1/2 justify-end p-6"
-      >
-        <Text className="text-white font-bold text-3xl mb-3 tracking-tight leading-tight shadow-md">
-          {recipe.title}
-        </Text>
-        
-        {/* Glassmorphism Pills area */}
-        <View className="flex-row flex-wrap gap-2 mt-1">
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-            <FontAwesome5 name="clock" size={12} color="#6DBE75" />
-            <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
-          </View>
-          
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-            <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
-            <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
-          </View>
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-            <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
-            <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
+export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
+  const pan = useRef(new Animated.ValueXY()).current;
+  const opacity = pan.x.interpolate({
+    inputRange: [-SCREEN_WIDTH / 3, 0, SCREEN_WIDTH / 3],
+    outputRange: [0, 1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const swipeOverlayOpacity = pan.x.interpolate({
+    inputRange: [-100, -20, 0, 20, 100],
+    outputRange: [1, 0, 0, 0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only trigger pan if horizontal movement > vertical movement (prevents blocking scroll)
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x }],
+        { useNativeDriver: false } // 'false' because we want to animate layout properties if needed, though for transform true is better, but this is fine for MVP
+      ),
+      onPanResponderRelease: (evt, gestureState) => {
+        if (Math.abs(gestureState.dx) > 120) {
+          // Swiped far enough, trigger swap
+          Animated.timing(pan, {
+            toValue: { x: Math.sign(gestureState.dx) * SCREEN_WIDTH, y: 0 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
+            if (onSwipe) onSwipe();
+            // Reset position instantly after swap
+            pan.setValue({ x: 0, y: 0 });
+          });
+        } else {
+          // Snap back
+          Animated.spring(pan, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  return (
+    <Animated.View 
+      style={{
+        transform: [{ translateX: pan.x }],
+        opacity: opacity,
+      }}
+      {...panResponder.panHandlers}
+      className="mb-8"
+    >
+      <Pressable 
+        onPress={onPress}
+        className="w-full h-80 rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-black"
+      >
+        <Image 
+          source={recipe.imageUrl} 
+          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          contentFit="cover"
+          transition={600}
+        />
+        
+        {/* Swipe overlay (appears when dragging) */}
+        <Animated.View 
+          style={{ opacity: swipeOverlayOpacity }} 
+          className="absolute inset-0 bg-avocado/80 justify-center items-center z-20 pointer-events-none"
+        >
+          <View className="bg-white rounded-full p-4 flex-row items-center shadow-lg">
+            <FontAwesome5 name="random" size={24} color="#6DBE75" />
+            <Text className="text-avocado font-extrabold text-xl ml-3">SWAP MEAL</Text>
           </View>
-        </View>
-      </LinearGradient>
-    </Pressable>
+        </Animated.View>
+
+        {/* Dark gradient mapping bottom up for text readability */}
+        <LinearGradient
+          colors={['transparent', 'rgba(44,44,44,0.95)']}
+          className="absolute bottom-0 w-full h-1/2 justify-end p-6 z-10"
+        >
+          <Text className="text-white font-bold text-3xl mb-3 tracking-tight leading-tight shadow-md">
+            {recipe.title}
+          </Text>
+          
+          {/* Glassmorphism Pills area */}
+          <View className="flex-row flex-wrap gap-2 mt-1">
+            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+              <FontAwesome5 name="clock" size={12} color="#6DBE75" />
+              <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
+            </View>
+            
+            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+              <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
+              <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
+            </View>
+
+            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+              <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
+              <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }

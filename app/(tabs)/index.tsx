@@ -25,14 +25,36 @@ export default function DashboardScreen() {
   const [isScraping, setIsScraping] = useState(false);
   const [recentScrapes, setRecentScrapes] = useState<{url: string, title: string, macros: string}[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [swappedMeals, setSwappedMeals] = useState<Record<string, string>>({}); // Tracks meal swaps for today
 
   const todayPlan = weeklyPlan[currentDayIndex];
   
-  // Calculate today's macros
-  const todayMacros = calculateDailyMacros(todayPlan, MOCK_RECIPES);
-  
-  // Helper to find recipe
+  // Helper to fetch the actual active meal ID (accounting for user swaps)
+  const getActiveMealId = (type: 'breakfast' | 'lunch' | 'dinner') => {
+    return swappedMeals[type] || todayPlan[type];
+  };
+
+  // Helper to find recipe object
   const getRecipe = (id?: string) => MOCK_RECIPES.find(r => r.id === id);
+
+  // Re-calculate macros based on ACTIVE meals (including swaps)
+  const activePlan = {
+    ...todayPlan,
+    breakfast: getActiveMealId('breakfast'),
+    lunch: getActiveMealId('lunch'),
+    dinner: getActiveMealId('dinner'),
+  };
+  const todayMacros = calculateDailyMacros(activePlan, MOCK_RECIPES);
+
+  const handleSwap = (type: 'breakfast' | 'lunch' | 'dinner') => {
+    const currentId = getActiveMealId(type);
+    // In a real app, query the engine for a matched alternative.
+    // For MVP: grab a random recipe that isn't the current one.
+    const alternatives = MOCK_RECIPES.filter(r => r.id !== currentId);
+    const newRecipe = alternatives[Math.floor(Math.random() * Math.min(alternatives.length, 5))]; // Pick from first 5
+    
+    setSwappedMeals(prev => ({ ...prev, [type]: newRecipe.id }));
+  };
 
   // Mock Handle Scrape
   const handleScrape = () => {
@@ -159,18 +181,27 @@ export default function DashboardScreen() {
 
         <View className="mb-20">
           <Text className="text-gray-400 text-sm mb-3 uppercase tracking-wider font-bold ml-2">Breakfast</Text>
-          {getRecipe(todayPlan.breakfast) && (
-            <RecipeCard recipe={getRecipe(todayPlan.breakfast)!} />
+          {getRecipe(getActiveMealId('breakfast')) && (
+            <RecipeCard 
+              recipe={getRecipe(getActiveMealId('breakfast'))!} 
+              onSwipe={() => handleSwap('breakfast')}
+            />
           )}
 
           <Text className="text-gray-400 text-sm mb-3 mt-4 uppercase tracking-wider font-bold ml-2">Lunch</Text>
-          {getRecipe(todayPlan.lunch) && (
-            <RecipeCard recipe={getRecipe(todayPlan.lunch)!} />
+          {getRecipe(getActiveMealId('lunch')) && (
+            <RecipeCard 
+               recipe={getRecipe(getActiveMealId('lunch'))!} 
+               onSwipe={() => handleSwap('lunch')}
+            />
           )}
 
           <Text className="text-gray-400 text-sm mb-3 mt-4 uppercase tracking-wider font-bold ml-2">Dinner</Text>
-          {getRecipe(todayPlan.dinner) && (
-            <RecipeCard recipe={getRecipe(todayPlan.dinner)!} />
+          {getRecipe(getActiveMealId('dinner')) && (
+            <RecipeCard 
+               recipe={getRecipe(getActiveMealId('dinner'))!} 
+               onSwipe={() => handleSwap('dinner')}
+            />
           )}
         </View>
 
