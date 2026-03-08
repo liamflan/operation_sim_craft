@@ -34,7 +34,7 @@ export default function TabLayout() {
         {/* Persistent Left Sidebar */}
         <View className="w-64 bg-white border-r border-black/5 pt-12 px-6 pb-8 h-full sticky top-0" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
           <View className="mb-12">
-            <Text className="text-charcoal text-2xl font-extrabold tracking-tight">Antigravity</Text>
+            <Text className="text-charcoal text-2xl font-extrabold tracking-tight">Provision</Text>
             <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Engine MVP</Text>
           </View>
 

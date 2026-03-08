@@ -90,33 +90,91 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-cream">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-6 pb-32 mx-auto w-full md:max-w-4xl min-h-[90vh] justify-center">
-          {/* Progress Bar */}
-          <View className="flex-row gap-2 mt-4 mb-8 md:mb-12 max-w-sm mx-auto w-full">
-            {[1, 2, 3].map((i) => (
-              <View key={i} className={`flex-1 h-2 rounded-full ${i <= step ? 'bg-avocado' : 'bg-charcoal/10'}`} />
-            ))}
+      {/* Desktop Split Layout */}
+      <View className="flex-1 md:flex-row">
+        
+        {/* Left Sidebar (Desktop Only) / Top Header (Mobile) */}
+        <View className="md:w-1/3 md:min-w-[340px] md:border-r md:border-black/5 bg-white pt-6 md:pt-12 px-6 flex-col justify-between">
+          <View>
+            <Text className="text-charcoal text-3xl font-extrabold tracking-tight">Provision</Text>
+            <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Engine Setup</Text>
+            
+            {/* Progress Indicators (Moved to sidebar on desktop, hidden on mobile here) */}
+            <View className="hidden md:flex mt-12">
+              <View className="flex-row items-center mb-6">
+                <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${step >= 1 ? 'bg-avocado' : 'bg-gray-200'}`}>
+                  <Text className={`font-bold ${step >= 1 ? 'text-white' : 'text-gray-400'}`}>1</Text>
+                </View>
+                <Text className={`font-bold text-lg ${step >= 1 ? 'text-charcoal' : 'text-gray-400'}`}>Taste Profile</Text>
+              </View>
+              
+              <View className="flex-row items-center mb-6">
+                <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${step >= 2 ? 'bg-avocado' : 'bg-gray-200'}`}>
+                  <Text className={`font-bold ${step >= 2 ? 'text-white' : 'text-gray-400'}`}>2</Text>
+                </View>
+                <Text className={`font-bold text-lg ${step >= 2 ? 'text-charcoal' : 'text-gray-400'}`}>Dietary Baseline</Text>
+              </View>
+              
+              <View className="flex-row items-center">
+                <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${step >= 3 ? 'bg-avocado' : 'bg-gray-200'}`}>
+                  <Text className={`font-bold ${step >= 3 ? 'text-white' : 'text-gray-400'}`}>3</Text>
+                </View>
+                <Text className={`font-bold text-lg ${step >= 3 ? 'text-charcoal' : 'text-gray-400'}`}>Engine Calculation</Text>
+              </View>
+            </View>
           </View>
 
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
+          {/* Mock Settings / Profile (Desktop Only) */}
+          <View className="hidden md:flex pb-8 mt-auto">
+            <TouchableOpacity className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 transition-colors">
+              <View className="w-10 h-10 bg-avocado rounded-full items-center justify-center mr-3 shadow-sm border border-black/5">
+                <Text className="text-white font-bold text-sm leading-none">LF</Text>
+              </View>
+              <View>
+                <Text className="text-charcoal font-bold leading-tight">Liam F.</Text>
+                <Text className="text-gray-500 text-xs">Settings</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
 
-      {/* Persistent Bottom Action */}
-      <View className="p-4 border-t border-black/5 bg-cream absolute bottom-0 w-full">
-        <View className="mx-auto w-full md:max-w-md">
-          <TouchableOpacity 
-            onPress={handleNext}
-            className="bg-charcoal rounded-full p-4 md:p-5 items-center justify-center active:bg-charcoal/80 shadow-md"
+        {/* Right Content Area (Forms/Selection) */}
+        <View className="flex-1 relative bg-cream">
+          <ScrollView 
+            className="flex-1" 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }} // padding bottom for fixed footer
           >
-            <Text className="text-cream font-extrabold text-lg md:text-xl tracking-wide">
-              {step === 3 ? "Launch Dashboard" : "Continue"}
-            </Text>
-          </TouchableOpacity>
+            <View className="flex-1 px-4 md:px-12 mx-auto w-full max-w-4xl justify-center py-12">
+              
+              {/* Progress Bar (Mobile Only) */}
+              <View className="flex-row gap-2 mb-8 max-w-sm mx-auto w-full md:hidden">
+                {[1, 2, 3].map((i) => (
+                  <View key={i} className={`flex-1 h-2 rounded-full ${i <= step ? 'bg-avocado' : 'bg-charcoal/10'}`} />
+                ))}
+              </View>
+
+              {step === 1 && renderStep1()}
+              {step === 2 && renderStep2()}
+              {step === 3 && renderStep3()}
+            </View>
+          </ScrollView>
+
+          {/* Persistent Bottom Action (Locks to bottom of right pane on desktop) */}
+          <View className="p-4 border-t border-black/5 bg-cream/90 md:bg-white/80 md:backdrop-blur-md absolute bottom-0 w-full left-0 z-50">
+            <View className="mx-auto w-full max-w-md md:max-w-none md:flex-row md:justify-end md:px-8">
+              <TouchableOpacity 
+                onPress={handleNext}
+                className="bg-charcoal rounded-full p-4 md:px-12 items-center justify-center active:bg-charcoal/80 shadow-md transition-transform hover:scale-[1.02]"
+              >
+                <Text className="text-cream font-extrabold text-lg md:text-xl tracking-wide">
+                  {step === 3 ? "Launch Dashboard" : "Continue"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+
       </View>
     </SafeAreaView>
   );
