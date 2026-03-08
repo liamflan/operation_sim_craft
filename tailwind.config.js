@@ -5,10 +5,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Helvetica', 'Arial', 'sans-serif'],
-        medium: ['Helvetica', 'Arial', 'sans-serif'],
-        bold: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        extrabold: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        sans: ['Outfit_400Regular', 'sans-serif'],
+        medium: ['Outfit_500Medium', 'sans-serif'],
+        bold: ['Outfit_700Bold', 'sans-serif'],
+        extrabold: ['Outfit_800ExtraBold', 'sans-serif'],
       }
     },
   },
