@@ -57,38 +57,38 @@ export default function ShoppingListScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1A1A]">
+    <SafeAreaView className="flex-1 bg-cream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-4xl min-h-[90vh]">
           {/* Header Section */}
           <View className="mb-8 md:mb-12 mt-4 md:mt-8">
-            <Text className="text-white text-4xl md:text-5xl font-extrabold tracking-tight">The Fuel List</Text>
-            <Text className="text-gray-400 text-lg md:text-xl font-medium mt-2">Generic ingredients for the week.</Text>
+            <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight">The Fuel List</Text>
+            <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2">Generic ingredients for the week.</Text>
           </View>
 
           <View className="md:grid md:grid-cols-2 md:gap-8 gap-y-8">
             {Object.entries(list).map(([category, items]) => (
               <View key={category} className="mb-8 md:mb-0 h-fit">
-                <Text className="text-white text-xl md:text-2xl font-bold mb-4 border-b border-white/10 pb-3 flex-row items-center">
+                <Text className="text-charcoal text-xl md:text-2xl font-bold mb-4 border-b border-black/10 pb-3 flex-row items-center">
                   {category}
                 </Text>
                 
-                <View className="bg-white/5 rounded-2xl p-2 border border-white/5 shadow-sm">
+                <View className="bg-white/60 rounded-2xl p-2 border border-white shadow-sm">
                   {items.map((item, idx) => (
                     <TouchableOpacity 
                       key={idx} 
                       onPress={() => toggleItem(category, idx)}
-                      className={`flex-row justify-between items-center p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors ${item.checked ? 'opacity-40' : ''}`}
+                      className={`flex-row justify-between items-center p-4 border-b border-black/5 last:border-0 hover:bg-white/80 transition-colors ${item.checked ? 'opacity-40' : ''}`}
                     >
                       <View className="flex-row items-center flex-1 pr-4">
-                        <View className={`w-6 h-6 rounded-full border-2 mr-4 items-center justify-center flex-shrink-0 ${item.checked ? 'border-[#4ade80] bg-[#4ade80]' : 'border-gray-500'}`}>
-                          {item.checked && <FontAwesome5 name="check" size={10} color="#1A1A1A" />}
+                        <View className={`w-6 h-6 rounded-full border-2 mr-4 items-center justify-center flex-shrink-0 ${item.checked ? 'border-avocado bg-avocado' : 'border-gray-400'}`}>
+                          {item.checked && <FontAwesome5 name="check" size={10} color="white" />}
                         </View>
-                        <Text className={`text-white text-lg font-medium flex-wrap ${item.checked ? 'line-through' : ''}`}>
+                        <Text className={`text-charcoal text-lg font-medium flex-wrap ${item.checked ? 'line-through' : ''}`}>
                           {item.name}
                         </Text>
                       </View>
-                      <Text className="text-gray-400 font-bold whitespace-nowrap">
+                      <Text className="text-gray-500 font-bold whitespace-nowrap">
                         {item.amount} <Text className="text-sm font-normal">{item.unit}</Text>
                       </Text>
                     </TouchableOpacity>

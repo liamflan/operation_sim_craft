@@ -25,7 +25,7 @@ export default function RecipeCard({ recipe, onPress }: Props) {
       
       {/* Dark gradient mapping bottom up for text readability */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.9)']}
+        colors={['transparent', 'rgba(44,44,44,0.95)']}
         className="absolute bottom-0 w-full h-1/2 justify-end p-6"
       >
         <Text className="text-white font-bold text-3xl mb-3 tracking-tight leading-tight shadow-md">
@@ -34,18 +34,18 @@ export default function RecipeCard({ recipe, onPress }: Props) {
         
         {/* Glassmorphism Pills area */}
         <View className="flex-row flex-wrap gap-2 mt-1">
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md">
-            <FontAwesome5 name="clock" size={12} color="#4ade80" />
+          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+            <FontAwesome5 name="clock" size={12} color="#6DBE75" />
             <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
           </View>
           
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md">
-            <FontAwesome5 name="fire" size={12} color="#fb923c" />
+          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+            <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
             <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
           </View>
 
-          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md">
-            <FontAwesome5 name="dumbbell" size={12} color="#60a5fa" />
+          <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+            <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
             <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
           </View>
         </View>

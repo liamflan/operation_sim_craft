@@ -43,7 +43,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1A1A]">
+    <SafeAreaView className="flex-1 bg-cream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-6xl md:flex-row md:pt-12">
           
@@ -52,47 +52,47 @@ export default function DashboardScreen() {
             {/* Header Section */}
             <View className="flex-row justify-between items-start mb-8 md:mb-12 mt-4 md:mt-0">
               <View>
-                <Text className="text-gray-400 text-lg font-medium">Welcome back,</Text>
-                <Text className="text-white text-4xl md:text-5xl font-extrabold tracking-tight mt-1">{mockUser.name}</Text>
+                <Text className="text-gray-500 text-lg font-medium">Welcome back,</Text>
+                <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight mt-1">{mockUser.name}</Text>
               </View>
             </View>
 
             {/* Recipe Upload Feature */}
-            <View className="bg-white/5 rounded-3xl p-6 mb-8 border border-white/10 backdrop-blur-md">
-              <Text className="text-white text-xl font-bold mb-2 tracking-tight">Train the Engine</Text>
-              <Text className="text-gray-400 text-sm mb-4 leading-relaxed">Paste a recipe URL to refine your taste profile and automatically add it to your database.</Text>
-              <View className="flex-row h-12">
+            <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
+              <Text className="text-charcoal text-xl font-bold mb-2 tracking-tight">Train the Engine</Text>
+              <Text className="text-gray-600 text-sm mb-4 leading-relaxed">Paste a recipe URL to refine your taste profile and automatically add it to your database.</Text>
+              <View className="flex-row h-12 shadow-sm rounded-xl">
                 <TextInput 
                   value={recipeLink}
                   onChangeText={setRecipeLink}
                   placeholder="https://tasty.co/..."
-                  placeholderTextColor="#6b7280"
-                  className="flex-1 bg-[#1A1A1A]/80 border border-white/10 rounded-xl px-4 text-white mr-3 font-medium shadow-inner"
+                  placeholderTextColor="#9ca3af"
+                  className="flex-1 bg-white border border-gray-100 rounded-xl px-4 text-charcoal mr-3 font-medium"
                 />
                 <TouchableOpacity 
                   onPress={handleScrape}
-                  className="bg-[#4ade80] justify-center items-center px-6 rounded-xl active:opacity-80 hover:bg-[#22c55e] transition-colors shadow-md"
+                  className="bg-avocado justify-center items-center px-6 rounded-xl active:opacity-80 hover:bg-[#5dae65] transition-colors"
                 >
                   {isScraping ? (
-                    <FontAwesome5 name="cog" size={16} color="#1A1A1A" />
+                    <FontAwesome5 name="cog" size={16} color="white" />
                   ) : (
-                    <FontAwesome5 name="plus" size={16} color="#1A1A1A" />
+                    <FontAwesome5 name="plus" size={16} color="white" />
                   )}
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Macro Summary Ring (Mocked) */}
-            <View className="bg-white/5 rounded-3xl p-6 mb-8 border border-white/10 backdrop-blur-md">
-              <Text className="text-white text-xl font-bold mb-6">Today's Fuel</Text>
+            <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
+              <Text className="text-charcoal text-xl font-bold mb-6">Today's Fuel</Text>
               <View className="flex-row justify-between md:flex-col md:gap-6">
                 <View>
-                  <Text className="text-gray-400 text-sm mb-1">Calories</Text>
-                  <Text className="text-[#fb923c] text-3xl font-extrabold">{todayMacros.calories} <Text className="text-base font-medium text-gray-500">/ {mockUser.targetMacros.calories}</Text></Text>
+                  <Text className="text-gray-500 text-sm mb-1 font-medium">Calories</Text>
+                  <Text className="text-tomato text-3xl font-extrabold">{todayMacros.calories} <Text className="text-base font-medium text-gray-400">/ {mockUser.targetMacros.calories}</Text></Text>
                 </View>
                 <View>
-                  <Text className="text-gray-400 text-sm mb-1">Protein</Text>
-                  <Text className="text-[#60a5fa] text-3xl font-extrabold">{todayMacros.protein}g <Text className="text-base font-medium text-gray-500">/ {mockUser.targetMacros.protein}g</Text></Text>
+                  <Text className="text-gray-500 text-sm mb-1 font-medium">Protein</Text>
+                  <Text className="text-blueberry text-3xl font-extrabold">{todayMacros.protein}g <Text className="text-base font-medium text-gray-400">/ {mockUser.targetMacros.protein}g</Text></Text>
                 </View>
               </View>
             </View>
@@ -100,7 +100,7 @@ export default function DashboardScreen() {
 
           {/* Right Column (Desktop) / Bottom Section (Mobile) */}
           <View className="md:w-2/3">
-            <Text className="text-white text-3xl font-bold mb-8 tracking-tight capitalize">
+            <Text className="text-charcoal text-3xl font-extrabold mb-8 tracking-tight capitalize">
               {todayPlan.date}, <Text className="text-gray-400 font-medium">March 9</Text>
             </Text>
 
