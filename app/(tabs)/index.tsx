@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import RecipeCard from '../../components/RecipeCard';
 import { generateWeeklyPlan, calculateDailyMacros } from '../../data/engine';
@@ -21,6 +21,8 @@ export default function DashboardScreen() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [recipeLink, setRecipeLink] = useState('');
   const [isScraping, setIsScraping] = useState(false);
+  const [recentScrapes, setRecentScrapes] = useState<{url: string, title: string, macros: string}[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const todayPlan = weeklyPlan[currentDayIndex];
   
@@ -34,11 +36,27 @@ export default function DashboardScreen() {
   const handleScrape = () => {
     if (!recipeLink) return;
     setIsScraping(true);
+    setShowSuccess(false);
+    
     setTimeout(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setIsScraping(false);
+      
+      // Extract a fake domain name to make it look real
+      const domainMatch = recipeLink.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img);
+      const domain = domainMatch ? domainMatch[0].replace('https://', '').replace('www.', '') : 'Recipe Website';
+      
+      setRecentScrapes(prev => [{
+        url: recipeLink,
+        title: `Pulled from ${domain}`,
+        macros: '+45g Protein added to Taste Profile'
+      }, ...prev].slice(0, 3)); // Keep last 3
+      
       setRecipeLink('');
-      // In a real app we'd use a toast or an alert
-      console.log("Taste profile updated with new recipe!");
+      setShowSuccess(true);
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => setShowSuccess(false), 3000);
     }, 1500);
   };
 
@@ -61,7 +79,8 @@ export default function DashboardScreen() {
             <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
               <Text className="text-charcoal text-xl font-bold mb-2 tracking-tight">Train the Engine</Text>
               <Text className="text-gray-600 text-sm mb-4 leading-relaxed">Paste a recipe URL to refine your taste profile and automatically add it to your database.</Text>
-              <View className="flex-row h-12 shadow-sm rounded-xl">
+              
+              <View className="flex-row h-12 shadow-sm rounded-xl mb-2">
                 <TextInput 
                   value={recipeLink}
                   onChangeText={setRecipeLink}
@@ -71,7 +90,8 @@ export default function DashboardScreen() {
                 />
                 <TouchableOpacity 
                   onPress={handleScrape}
-                  className="bg-avocado justify-center items-center px-6 rounded-xl active:opacity-80 hover:bg-[#5dae65] transition-colors"
+                  disabled={isScraping || !recipeLink}
+                  className={`justify-center items-center px-6 rounded-xl transition-colors ${isScraping || !recipeLink ? 'bg-avocado/50' : 'bg-avocado hover:bg-[#5dae65] active:opacity-80'}`}
                 >
                   {isScraping ? (
                     <FontAwesome5 name="cog" size={16} color="white" />
@@ -80,6 +100,32 @@ export default function DashboardScreen() {
                   )}
                 </TouchableOpacity>
               </View>
+
+              {/* Success Feedback */}
+              {showSuccess && (
+                <View className="bg-avocado/10 rounded-lg p-3 border border-avocado/20 flex-row items-center mb-2">
+                  <FontAwesome5 name="check-circle" size={14} color="#6DBE75" />
+                  <Text className="text-avocado font-medium text-sm ml-2">Recipe successfully parsed & added!</Text>
+                </View>
+              )}
+
+              {/* Recent Scrapes History */}
+              {recentScrapes.length > 0 && (
+                <View className="mt-4 border-t border-black/5 pt-4">
+                  <Text className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Additions</Text>
+                  {recentScrapes.map((scrape, idx) => (
+                    <View key={idx} className="flex-row items-center mb-2">
+                      <View className="w-8 h-8 rounded-full bg-white items-center justify-center border border-black/5 mr-3">
+                        <FontAwesome5 name="link" size={12} color="#a1a1aa" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-charcoal font-bold text-sm" numberOfLines={1}>{scrape.title}</Text>
+                        <Text className="text-blueberry text-xs font-medium">{scrape.macros}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* Macro Summary Ring (Mocked) */}
