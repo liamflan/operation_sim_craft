@@ -59,7 +59,7 @@ export default function ShoppingListScreen() {
   return (
     <SafeAreaView className="flex-1 bg-cream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-4xl min-h-[90vh]">
+        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:px-12 min-h-[90vh]">
           {/* Header Section */}
           <View className="mb-8 md:mb-12 mt-4 md:mt-8">
             <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight">The Fuel List</Text>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
 import { generateWeeklyPlan, calculateDailyMacros } from '../../data/engine';
 import { MOCK_RECIPES } from '../../data/seed';
@@ -18,6 +19,7 @@ const mockUser = {
 const weeklyPlan = generateWeeklyPlan(mockUser);
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [recipeLink, setRecipeLink] = useState('');
   const [isScraping, setIsScraping] = useState(false);
@@ -63,10 +65,10 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView className="flex-1 bg-cream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-6xl md:flex-row md:pt-12">
+        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:flex-row md:pt-12 md:px-12">
           
           {/* Left Column (Desktop) / Top Section (Mobile) */}
-          <View className="md:w-1/3 md:pr-8 md:sticky md:top-12 h-fit">
+          <View className="md:w-1/3 md:min-w-[340px] md:pr-12 md:sticky md:top-12 h-fit">
             {/* Header Section */}
             <View className="flex-row justify-between items-start mb-8 md:mb-12 mt-4 md:mt-0">
               <View>
@@ -75,10 +77,15 @@ export default function DashboardScreen() {
               </View>
             </View>
 
-            {/* Recipe Upload Feature */}
+            {/* Taste Profile Quick Add Feature */}
             <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
-              <Text className="text-charcoal text-xl font-bold mb-2 tracking-tight">Train the Engine</Text>
-              <Text className="text-gray-600 text-sm mb-4 leading-relaxed">Paste a recipe URL to refine your taste profile and automatically add it to your database.</Text>
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-charcoal text-xl font-bold tracking-tight">Taste Profile</Text>
+                <TouchableOpacity onPress={() => router.push('/taste-profile')}>
+                  <Text className="text-avocado font-bold">View full</Text>
+                </TouchableOpacity>
+              </View>
+              <Text className="text-gray-600 text-sm mb-4 leading-relaxed">Paste a recipe URL to extract macros and teach the engine your exact preferences.</Text>
               
               <View className="flex-row h-12 shadow-sm rounded-xl mb-2">
                 <TextInput 
