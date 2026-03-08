@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, Pressable, Animated, PanResponder, Dimensions } from 'react-native';
+import { View, Text, Pressable, Animated, PanResponder, Dimensions, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -80,16 +80,22 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           transition={600}
         />
         
-        {/* Dedicated Desktop 'Swap' Button for Web mouse users (avoids janky mouse-swiping) */}
+        {/* Dedicated Desktop 'Swap' Button for Web mouse users */}
         {onSwipe && (
           <Pressable 
             onPress={(e) => {
               e.stopPropagation(); // Prevent opening the recipe
               onSwipe();
             }}
-            className="absolute top-4 right-4 z-30 bg-white/20 hover:bg-white backdrop-blur-md w-12 h-12 rounded-full items-center justify-center border border-white/30 transition-colors group"
+            className="absolute top-4 right-4 z-30 w-12 h-12 rounded-full items-center justify-center transition-colors group"
+            style={({ hovered, pressed }) => [
+              { backgroundColor: pressed ? 'rgba(255,255,255,0.9)' : hovered ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.5)' },
+              { borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)' },
+              // Enable backdrop-blur-md explicitly for web
+              Platform.OS === 'web' ? { backdropFilter: 'blur(12px)' } : {}
+            ]}
           >
-            <FontAwesome5 name="random" size={16} color="white" className="group-hover:text-avocado" />
+            <FontAwesome5 name="random" size={16} color="#2C2C2C" />
           </Pressable>
         )}
 
@@ -104,11 +110,11 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           </View>
         </Animated.View>
 
-        {/* Smoother Full-Height Gradient to prevent hard lines on wide screens */}
+        {/* Seamless Soft Bottom Gradient for Text Readability */}
         <LinearGradient
-          colors={['transparent', 'rgba(20,20,20,0.4)', 'rgba(20,20,20,0.95)']}
-          locations={[0, 0.6, 1]}
-          className="absolute bottom-0 w-full h-full justify-end p-6 md:p-8 z-10"
+          colors={['transparent', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.8)']}
+          locations={[0, 0.4, 1]}
+          className="absolute bottom-0 w-full h-[60%] justify-end p-6 md:p-8 z-10"
         >
           <Text className="text-white font-bold text-3xl md:text-4xl mb-4 tracking-tight leading-tight shadow-md">
             {recipe.title}
