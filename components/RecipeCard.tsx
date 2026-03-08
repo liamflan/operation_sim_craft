@@ -80,7 +80,20 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           transition={600}
         />
         
-        {/* Swipe overlay (appears when dragging) */}
+        {/* Dedicated Desktop 'Swap' Button for Web mouse users (avoids janky mouse-swiping) */}
+        {onSwipe && (
+          <Pressable 
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent opening the recipe
+              onSwipe();
+            }}
+            className="absolute top-4 right-4 z-30 bg-white/20 hover:bg-white backdrop-blur-md w-12 h-12 rounded-full items-center justify-center border border-white/30 transition-colors group"
+          >
+            <FontAwesome5 name="random" size={16} color="white" className="group-hover:text-avocado" />
+          </Pressable>
+        )}
+
+        {/* Swipe overlay (appears when dragging natively) */}
         <Animated.View 
           style={{ opacity: swipeOverlayOpacity }} 
           className="absolute inset-0 bg-avocado/80 justify-center items-center z-20 pointer-events-none"
@@ -91,12 +104,13 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           </View>
         </Animated.View>
 
-        {/* Dark gradient mapping bottom up for text readability */}
+        {/* Smoother Full-Height Gradient to prevent hard lines on wide screens */}
         <LinearGradient
-          colors={['transparent', 'rgba(44,44,44,0.95)']}
-          className="absolute bottom-0 w-full h-1/2 justify-end p-6 z-10"
+          colors={['transparent', 'rgba(20,20,20,0.4)', 'rgba(20,20,20,0.95)']}
+          locations={[0, 0.6, 1]}
+          className="absolute bottom-0 w-full h-full justify-end p-6 md:p-8 z-10"
         >
-          <Text className="text-white font-bold text-3xl mb-3 tracking-tight leading-tight shadow-md">
+          <Text className="text-white font-bold text-3xl md:text-4xl mb-4 tracking-tight leading-tight shadow-md">
             {recipe.title}
           </Text>
           
