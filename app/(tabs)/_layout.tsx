@@ -32,10 +32,10 @@ export default function TabLayout() {
     return (
       <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
         {/* Persistent Left Sidebar */}
-        <View className="w-64 bg-white dark:bg-darkgrey border-r border-black/5 dark:border-white/5 pt-12 px-6 pb-8 h-full sticky top-0" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
+        <View className="w-64 bg-white dark:bg-darkgrey border-r border-black/5 dark:border-white/5 pt-12 px-6 pb-8 h-full sticky top-0 print-hide" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
           <View className="mb-12">
             <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Provision</Text>
-            <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Engine MVP</Text>
+            <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Taste-Led Planning</Text>
           </View>
 
           <View className="flex-1">
@@ -74,7 +74,7 @@ export default function TabLayout() {
         </View>
 
         {/* Fluid Main Content Area */}
-        <View className="flex-1" style={{marginLeft: Platform.OS === 'web' ? 256 : 0}}> {/* 256px is w-64 */}
+        <View className="flex-1 print-expand" style={{marginLeft: Platform.OS === 'web' ? 256 : 0}}> {/* 256px is w-64 */}
           <Slot />
         </View>
       </View>

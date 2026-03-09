@@ -27,6 +27,7 @@ function RootApp() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="calibration" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="+not-found" />
         </Stack>
       </View>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />

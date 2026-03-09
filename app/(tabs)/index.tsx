@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
+import ImportRecipeModal from '../../components/ImportRecipeModal';
 import { generateWeeklyPlan, calculateDailyMacros } from '../../data/engine';
 import { MOCK_RECIPES } from '../../data/seed';
 
@@ -21,204 +22,381 @@ const weeklyPlan = generateWeeklyPlan(mockUser);
 export default function DashboardScreen() {
   const router = useRouter();
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
-  const [swappedMeals, setSwappedMeals] = useState<Record<string, string>>({}); // Tracks meal swaps for today
+  const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({}); 
+  const [importModalVisible, setImportModalVisible] = useState(false);
 
-  const todayPlan = weeklyPlan[currentDayIndex];
+  const activeDayPlan = weeklyPlan[currentDayIndex];
   
-  // Helper to fetch the actual active meal ID (accounting for user swaps)
+  // Helper to fetch the actual active meal ID for the current day
   const getActiveMealId = (type: 'breakfast' | 'lunch' | 'dinner') => {
-    return swappedMeals[type] || todayPlan[type];
+    return (swappedMeals[currentDayIndex] && swappedMeals[currentDayIndex][type]) || activeDayPlan[type];
   };
 
   // Helper to find recipe object
   const getRecipe = (id?: string) => MOCK_RECIPES.find(r => r.id === id);
 
-  // Re-calculate macros based on ACTIVE meals (including swaps)
+  // Re-calculate macros based on ACTIVE meals
   const activePlan = {
-    ...todayPlan,
+    ...activeDayPlan,
     breakfast: getActiveMealId('breakfast'),
     lunch: getActiveMealId('lunch'),
     dinner: getActiveMealId('dinner'),
   };
-  const todayMacros = calculateDailyMacros(activePlan, MOCK_RECIPES);
+  const activeMacros = calculateDailyMacros(activePlan, MOCK_RECIPES);
 
   const handleSwap = (type: 'breakfast' | 'lunch' | 'dinner') => {
     const currentId = getActiveMealId(type);
-    // In a real app, query the engine for a matched alternative.
-    // For MVP: grab a random recipe that isn't the current one.
     const alternatives = MOCK_RECIPES.filter(r => r.id !== currentId);
-    const newRecipe = alternatives[Math.floor(Math.random() * Math.min(alternatives.length, 5))]; // Pick from first 5
+    const newRecipe = alternatives[Math.floor(Math.random() * Math.min(alternatives.length, 5))];
     
-    setSwappedMeals(prev => ({ ...prev, [type]: newRecipe.id }));
+    setSwappedMeals(prev => ({ 
+      ...prev, 
+      [currentDayIndex]: { 
+        ...(prev[currentDayIndex] || {}), 
+        [type]: newRecipe.id 
+      } 
+    }));
   };
 
-  // In a real app, this would open a modal or sheet to input the URL
-  const handleAddRecipeClick = () => {
-    alert("Open 'Add Recipe URL' modal");
+  const [tasteProfileTags, setTasteProfileTags] = useState(['High-protein', 'Spicy', 'Quick meals']);
+
+  // Open the Import Recipe modal
+  const handleAddRecipeClick = () => setImportModalVisible(true);
+  const handleImportSave = (data: any) => {
+    // In production: persist to taste profile / trigger planner refresh
+    console.log('Recipe imported:', data);
+    
+    // Mock UI feedback: add a new tag if it's a "Learning" save
+    if (data.userFeedback !== 'saved_only') {
+      const newTag = 'Salmon'; // From the mock recipe
+      if (!tasteProfileTags.includes(newTag)) {
+        if (Platform.OS !== 'web') LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setTasteProfileTags(prev => [newTag, ...prev]);
+      }
+    }
+  };
+
+  // Premium week planner header
+  const WeekSelector = () => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const todayIndex = 0; // MVP: Today = Monday
+
+    return (
+      <View testID="week-selector-container">
+        {/* Top row: label + date range + nav arrows all in one tight line */}
+        <View testID="week-selector-header" className="flex-row items-center justify-between mb-3">
+          <View className="flex-row items-center gap-2">
+            <FontAwesome5 name="calendar-week" size={11} color="#6DBE75" />
+            <Text className="text-avocado font-bold text-xs uppercase tracking-[0.12em]">This Week</Text>
+            <Text className="text-gray-400 text-xs font-medium">Mar 9 – 15</Text>
+          </View>
+          {/* Arrows sit right next to the label, not floating far right */}
+          <View className="flex-row items-center gap-1">
+            <TouchableOpacity
+              testID="week-selector-prev-btn"
+              className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 items-center justify-center hover:bg-black/5 transition-colors"
+              onPress={() => {}}
+            >
+              <FontAwesome5 name="chevron-left" size={9} color="#9CA3AF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="week-selector-next-btn"
+              className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 items-center justify-center hover:bg-black/5 transition-colors"
+              onPress={() => {}}
+            >
+              <FontAwesome5 name="chevron-right" size={9} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Day pills — compact, minimum gap */}
+        <View testID="week-selector-pills" className="flex-row gap-0.5">
+          {weeklyPlan.map((day, idx) => {
+            const isSelected = currentDayIndex === idx;
+            const isToday = todayIndex === idx;
+            return (
+              <TouchableOpacity
+                key={idx}
+                testID={`week-selector-day-${days[idx].toLowerCase()}`}
+                onPress={() => setCurrentDayIndex(idx)}
+                className={`flex-1 items-center justify-center py-1.5 rounded-lg border transition-all ${
+                  isSelected
+                    ? 'bg-avocado/20 border-avocado/60 dark:bg-avocado/25 dark:border-avocado/60'
+                    : 'bg-white/40 dark:bg-white/5 border-black/[0.04] dark:border-white/5 hover:bg-black/[0.03]'
+                }`}
+              >
+                <Text className={`font-bold text-[9px] uppercase tracking-wide ${
+                  isSelected ? 'text-avocado' : 'text-gray-400'
+                }`}>
+                  {days[idx]}
+                </Text>
+                <Text className={`font-extrabold text-sm leading-tight ${
+                  isSelected ? 'text-avocado' : 'text-charcoal dark:text-white'
+                }`}>
+                  {idx + 9}
+                </Text>
+                {isToday && (
+                  <View className={`w-1 h-1 rounded-full ${isSelected ? 'bg-avocado' : 'bg-avocado/40'}`} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Selected day heading — tight, inline, clean */}
+        <View testID="week-selector-active-day" className="flex-row items-center justify-between mt-2 mb-3">
+          <View>
+            <Text testID="dashboard-current-date-heading" className="text-charcoal dark:text-darkcharcoal text-lg font-extrabold tracking-tight leading-tight">
+              {fullDays[currentDayIndex]}
+              <Text className="text-gray-400 font-medium text-sm"> · March {currentDayIndex + 9}</Text>
+            </Text>
+            <Text className="text-gray-400 text-[10px] font-medium">3 meals planned</Text>
+          </View>
+          <View className="flex-row items-center gap-3">
+            <View testID="week-selector-mini-cal" className="flex-row items-center">
+              <FontAwesome5 name="fire" size={10} color="#FF6B5A" />
+              <Text className="text-gray-500 text-xs font-bold ml-1">{Math.round(activeMacros.calories)} kcal</Text>
+            </View>
+            <View testID="week-selector-mini-protein" className="flex-row items-center">
+              <FontAwesome5 name="dumbbell" size={10} color="#4F7FFF" />
+              <Text className="text-gray-500 text-xs font-bold ml-1">{Math.round(activeMacros.protein)}g P</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream dark:bg-darkcream">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:flex-row md:pt-12 md:px-12">
-          
-          {/* Left Column (Desktop) / Top Section (Mobile) */}
-          <View className="md:w-1/3 md:min-w-[340px] md:pr-12 md:sticky md:top-12 h-fit">
-            {/* Header Section (Compacted) */}
-            <View className="flex-row justify-between items-end mb-4 md:mt-0 pb-3 border-b border-black/5 dark:border-white/5">
+    // Use plain View instead of SafeAreaView to avoid any platform transform
+    // that would break CSS position:sticky on child elements.
+    // SafeAreaView on web adds transforms/padding via JS which creates new stacking contexts.
+    <View
+      testID="dashboard-screen"
+      className="flex-1 bg-cream dark:bg-darkcream"
+      style={Platform.OS === 'web'
+        ? { display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'visible' } as any
+        : { flex: 1 }
+      }
+    >
+      {/* Single page scroll — no nested scroll contexts */}
+      <ScrollView
+        testID="dashboard-scroll"
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        // Critical: no overflow override on the scroll container itself on web
+        // — let the browser handle overflow so sticky children work correctly
+        style={Platform.OS === 'web' ? { overflowY: 'auto', overflowX: 'visible' } as any : undefined}
+      >
+        <View
+          testID="dashboard-layout"
+          className="px-4 pb-32 mx-auto w-full md:max-w-7xl md:px-10"
+          style={Platform.OS === 'web'
+            // IMPORTANT: parent must NOT have overflow:hidden or transforms, or sticky breaks.
+            // Removed pt-6/10 to avoid scroll-dependent spacing drift.
+            ? { display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 40, overflow: 'visible', paddingTop: 24 } as any
+            : { paddingTop: 24 }
+          }
+        >
+          {/* ─── LEFT COLUMN ─── visually locked sticky rail ─── */}
+          <View
+            testID="dashboard-left-column"
+            style={Platform.OS === 'web'
+              ? {
+                  width: 300,
+                  flexShrink: 0,
+                  position: 'sticky',
+                  top: 24, // Matches parent paddingTop for stable initial load
+                  alignSelf: 'flex-start',
+                  willChange: 'unset',
+                  transform: 'none',
+                  zIndex: 20,
+                } as any
+              : undefined
+            }
+          >
+            {/* Header */}
+            <View className="flex-row justify-between items-end mb-4 pb-3 border-b border-black/5 dark:border-white/5">
               <View>
                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-widest">Welcome back,</Text>
-                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight mt-0.5">{mockUser.name}</Text>
+                <Text className="text-charcoal dark:text-darkcharcoal text-xl font-extrabold tracking-tight mt-0.5">{mockUser.name}</Text>
               </View>
             </View>
 
-            {/* Daily Progress Card */}
-            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-5 mb-4 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
-              <View className="mb-4">
-                <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Today</Text>
-                <Text className="text-gray-500 text-sm font-medium">Daily Progress</Text>
+            {/* Daily Progress Card — single source of truth: activeMacros */}
+            <View testID="dashboard-daily-progress-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 mb-3 shadow-sm">
+              <View className="flex-row justify-between items-baseline mb-3">
+                <Text testID="dashboard-active-day-title" className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Active Day</Text>
+                <Text className="text-gray-400 text-[10px] font-medium">{activeDayPlan.date}</Text>
               </View>
 
-              <View className="space-y-4">
-                <View>
-                  <View className="flex-row justify-between items-end mb-1">
-                    <Text className="text-charcoal dark:text-gray-300 font-bold">Calories: 0 <Text className="text-gray-400 font-normal">/ {mockUser.targetMacros.calories}</Text></Text>
-                    <Text className="text-avocado text-xs font-bold">{mockUser.targetMacros.calories} left</Text>
-                  </View>
-                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
-                    <View className="h-full bg-avocado rounded-full" style={{ width: '0%' }}></View>
-                  </View>
+              {/* ── Calories ── */}
+              <View className="mb-3">
+                <View className="flex-row justify-between items-baseline mb-1.5">
+                  <Text testID="dashboard-calories-label" className="text-charcoal dark:text-gray-300 font-bold text-xs">
+                    Calories{' '}
+                    <Text testID="dashboard-calories-current" className="text-charcoal dark:text-darkcharcoal font-extrabold">
+                      {Math.round(activeMacros.calories)}
+                    </Text>
+                    <Text className="text-gray-400 font-normal"> / {mockUser.targetMacros.calories}</Text>
+                  </Text>
+                  <Text testID="dashboard-calories-remaining" className="text-avocado text-[10px] font-bold">
+                    {Math.max(0, mockUser.targetMacros.calories - Math.round(activeMacros.calories))} left
+                  </Text>
                 </View>
-                
-                <View className="mt-3">
-                  <View className="flex-row justify-between items-end mb-1">
-                    <Text className="text-charcoal dark:text-gray-300 font-bold">Protein: 0g <Text className="text-gray-400 font-normal">/ {mockUser.targetMacros.protein}g</Text></Text>
-                    <Text className="text-blueberry text-xs font-bold">{mockUser.targetMacros.protein}g left</Text>
-                  </View>
-                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
-                    <View className="h-full bg-blueberry rounded-full" style={{ width: '0%' }}></View>
-                  </View>
-                </View>
-
-                <View className="mt-3">
-                  <View className="flex-row justify-between items-end mb-1">
-                    <Text className="text-charcoal dark:text-gray-300 font-bold">Meals: 0 <Text className="text-gray-400 font-normal">/ 3 completed</Text></Text>
-                  </View>
-                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
-                    <View className="h-full bg-tomato rounded-full" style={{ width: '0%' }}></View>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Weekly Budget Card */}
-            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-5 mb-5 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
-              <View className="flex-row justify-between items-start mb-4">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Weekly Budget</Text>
-                  <Text className="text-avocado font-bold text-sm mt-0.5">On track for the week</Text>
+                <View className="h-1.5 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
+                  <View
+                    testID="dashboard-calories-progress-bar"
+                    className="h-full bg-avocado rounded-full"
+                    style={{ width: `${Math.min(100, Math.round((activeMacros.calories / mockUser.targetMacros.calories) * 100))}%` as any }}
+                  />
                 </View>
               </View>
 
-              <View className="flex-row justify-between items-end border-t border-black/5 dark:border-white/5 pt-4">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-3xl font-extrabold">£34<Text className="text-lg font-medium text-gray-400"> / £{mockUser.budgetWeekly}</Text></Text>
+              {/* ── Protein ── separator line for rhythm */}
+              <View className="border-t border-black/[0.04] dark:border-white/[0.04] pt-3">
+                <View className="flex-row justify-between items-baseline mb-1.5">
+                  <Text testID="dashboard-protein-label" className="text-charcoal dark:text-gray-300 font-bold text-xs">
+                    Protein{' '}
+                    <Text testID="dashboard-protein-current" className="text-charcoal dark:text-darkcharcoal font-extrabold">
+                      {Math.round(activeMacros.protein)}g
+                    </Text>
+                    <Text className="text-gray-400 font-normal"> / {mockUser.targetMacros.protein}g</Text>
+                  </Text>
+                  <Text testID="dashboard-protein-remaining" className="text-blueberry text-[10px] font-bold">
+                    {Math.max(0, mockUser.targetMacros.protein - Math.round(activeMacros.protein))}g left
+                  </Text>
                 </View>
-                <Text className="text-gray-500 font-bold mb-1">£{mockUser.budgetWeekly - 34} remaining</Text>
+                <View className="h-1.5 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
+                  <View
+                    testID="dashboard-protein-progress-bar"
+                    className="h-full bg-blueberry rounded-full"
+                    style={{ width: `${Math.min(100, Math.round((activeMacros.protein / mockUser.targetMacros.protein) * 100))}%` as any }}
+                  />
+                </View>
               </View>
             </View>
 
-            {/* Next Action Widget */}
-            <TouchableOpacity 
+            {/* Weekly Budget Card — trimmed */}
+            <View testID="dashboard-weekly-budget-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 mb-3 shadow-sm">
+              <Text className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Weekly Budget</Text>
+              <Text className="text-avocado font-bold text-xs mt-0.5 mb-3">On track for the week</Text>
+              <View className="flex-row justify-between items-end border-t border-black/5 dark:border-white/5 pt-3">
+                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold">£34<Text className="text-sm font-medium text-gray-400"> / £{mockUser.budgetWeekly}</Text></Text>
+                <Text className="text-gray-400 font-bold text-xs">£{mockUser.budgetWeekly - 34} left</Text>
+              </View>
+            </View>
+
+            {/* Next Action — compact, slightly less dominant green */}
+            <TouchableOpacity
+              testID="dashboard-next-action-card"
               onPress={() => router.push('/explore')}
-              className="bg-avocado rounded-3xl p-5 mb-5 shadow-sm active:opacity-80 transition-opacity hover:opacity-90"
+              className="bg-avocado/90 rounded-2xl p-4 mb-3 shadow-sm active:opacity-80 hover:opacity-90 transition-opacity"
             >
-              <View className="flex-row items-start justify-between mb-3">
-                <View className="flex-1 mr-4">
-                  <Text className="text-white/80 text-xs font-bold uppercase tracking-widest mb-1">Next Action</Text>
-                  <Text className="text-white text-lg font-bold leading-tight">12 ingredients needed for this week's plan</Text>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 mr-3">
+                  <Text className="text-white/70 text-[9px] font-bold uppercase tracking-widest mb-0.5">Next Action</Text>
+                  <Text className="text-white text-sm font-bold leading-tight">12 ingredients needed this week</Text>
                 </View>
-                <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
-                  <FontAwesome5 name="shopping-basket" size={16} color="white" />
+                <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/30">
+                  <Text className="text-white font-bold text-xs mr-1.5">Shop</Text>
+                  <FontAwesome5 name="arrow-right" size={9} color="white" />
                 </View>
-              </View>
-              <View className="bg-white/20 self-start px-4 py-2 rounded-full flex-row items-center border border-white/30">
-                <Text className="text-white font-bold text-sm mr-2">Open Fuel List</Text>
-                <FontAwesome5 name="arrow-right" size={10} color="white" />
               </View>
             </TouchableOpacity>
 
-            {/* Taste Profile Summary */}
-            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-5 mb-8 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
-              <View className="flex-row justify-between items-center mb-3">
+            {/* Taste Profile — trimmed padding */}
+            <View testID="dashboard-taste-profile-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 shadow-sm">
+              <View className="flex-row justify-between items-center mb-2">
                 <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Taste Profile</Text>
-                  <Text className="text-gray-500 text-sm font-medium">Shaping next week's plan</Text>
+                  <Text className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Taste Profile</Text>
+                  <Text className="text-gray-400 text-xs font-medium">Shaping next week's plan</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/taste-profile')}>
-                  <Text className="text-avocado font-bold">View full</Text>
+                <TouchableOpacity testID="dashboard-view-taste-profile-btn" onPress={() => router.push('/taste-profile')}>
+                  <Text className="text-avocado font-bold text-xs">View full</Text>
                 </TouchableOpacity>
               </View>
-
-              <View className="flex-row flex-wrap gap-2 mb-4 mt-2">
-                <View className="bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5">
-                  <Text className="text-charcoal dark:text-gray-300 text-xs font-bold">High-protein</Text>
-                </View>
-                <View className="bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5">
-                  <Text className="text-charcoal dark:text-gray-300 text-xs font-bold">Spicy</Text>
-                </View>
-                <View className="bg-gray-100 dark:bg-black/20 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5">
-                  <Text className="text-charcoal dark:text-gray-300 text-xs font-bold">Quick meals</Text>
-                </View>
+              <View className="flex-row flex-wrap gap-1 mb-3 mt-1.5">
+                {tasteProfileTags.map(tag => (
+                  <View key={tag} className="bg-gray-100 dark:bg-black/20 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
+                    <Text className="text-charcoal dark:text-gray-300 text-[10px] font-bold">{tag}</Text>
+                  </View>
+                ))}
               </View>
-              
-              <Text className="text-gray-400 text-xs font-medium mb-4">Based on 4 imported recipes</Text>
-
-              <TouchableOpacity 
+              <Text className="text-gray-400 text-[10px] font-medium mb-3">Based on {tasteProfileTags.length + 1} imported recipes</Text>
+              {/* Import Recipe — clean secondary CTA, single icon, no double-plus */}
+              <TouchableOpacity
+                testID="dashboard-add-recipe-btn"
                 onPress={handleAddRecipeClick}
-                className="bg-gray-100 dark:bg-black/20 hover:bg-gray-200 dark:hover:bg-black/40 py-3 rounded-xl flex-row items-center justify-center border border-black/5 dark:border-white/5 transition-colors"
+                className="py-2.5 rounded-xl flex-row items-center justify-center border border-avocado/40 bg-avocado/8 hover:bg-avocado/15 transition-colors"
               >
-                <FontAwesome5 name="plus" size={12} color="#9CA3AF" className="mr-2" />
-                <Text className="text-gray-600 dark:text-gray-300 font-bold text-sm">Add recipe</Text>
+                <FontAwesome5 name="file-import" size={10} color="#6DBE75" />
+                <Text className="text-avocado font-bold text-xs ml-1.5">Import recipe</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Right Column (Desktop) / Bottom Section (Mobile) */}
-          <View className="md:w-2/3">
-            <Text className="text-charcoal dark:text-darkcharcoal text-3xl font-extrabold mb-8 tracking-tight capitalize">
-              {todayPlan.date}, <Text className="text-gray-400 font-medium">March 9</Text>
-            </Text>
+          {/* ─── RIGHT COLUMN ─── week selector sticky at top, meals below ─── */}
+          <View
+            testID="dashboard-right-column"
+            style={Platform.OS === 'web' ? { flex: 1, minWidth: 0 } as any : undefined}
+            className="mt-6 md:mt-0"
+          >
+            {/* Sticky week planner header — locked offset matches rail */}
+            <View
+              testID="dashboard-week-selector-sticky"
+              style={Platform.OS === 'web'
+                ? { 
+                    position: 'sticky', 
+                    top: 24, // Locked at same offset as left rail
+                    zIndex: 30, 
+                    backgroundColor: 'var(--color-cream, #FAF8F4)', 
+                    paddingBottom: 2 
+                  } as any
+                : undefined
+              }
+              className="bg-cream dark:bg-darkcream pb-0"
+            >
+              <WeekSelector />
+              {/* Faint rule that content slides under */}
+              <View className="h-px bg-black/[0.04] dark:bg-white/[0.05] mb-6" />
+            </View>
 
-        <View className="mb-20">
-          <Text className="text-gray-400 text-sm mb-3 uppercase tracking-wider font-bold ml-2">Breakfast</Text>
-          {getRecipe(getActiveMealId('breakfast')) && (
-            <RecipeCard 
-              recipe={getRecipe(getActiveMealId('breakfast'))!} 
-              onSwipe={() => handleSwap('breakfast')}
-            />
-          )}
-
-          <Text className="text-gray-400 text-sm mb-3 mt-4 uppercase tracking-wider font-bold ml-2">Lunch</Text>
-          {getRecipe(getActiveMealId('lunch')) && (
-            <RecipeCard 
-               recipe={getRecipe(getActiveMealId('lunch'))!} 
-               onSwipe={() => handleSwap('lunch')}
-            />
-          )}
-
-          <Text className="text-gray-400 text-sm mb-3 mt-4 uppercase tracking-wider font-bold ml-2">Dinner</Text>
-          {getRecipe(getActiveMealId('dinner')) && (
-            <RecipeCard 
-               recipe={getRecipe(getActiveMealId('dinner'))!} 
-               onSwipe={() => handleSwap('dinner')}
-            />
-          )}
-        </View>
-
+            {/* Meal Feed */}
+            <View testID="dashboard-meal-feed">
+              <Text className="text-gray-400 text-xs mb-3 uppercase tracking-wider font-bold">Breakfast</Text>
+              {getRecipe(getActiveMealId('breakfast')) && (
+                <RecipeCard
+                  recipe={getRecipe(getActiveMealId('breakfast'))!}
+                  onSwipe={() => handleSwap('breakfast')}
+                />
+              )}
+              <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Lunch</Text>
+              {getRecipe(getActiveMealId('lunch')) && (
+                <RecipeCard
+                  recipe={getRecipe(getActiveMealId('lunch'))!}
+                  onSwipe={() => handleSwap('lunch')}
+                />
+              )}
+              <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Dinner</Text>
+              {getRecipe(getActiveMealId('dinner')) && (
+                <RecipeCard
+                  recipe={getRecipe(getActiveMealId('dinner'))!}
+                  onSwipe={() => handleSwap('dinner')}
+                />
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Import Recipe Modal */}
+      <ImportRecipeModal
+        visible={importModalVisible}
+        onClose={() => setImportModalVisible(false)}
+        onSave={handleImportSave}
+      />
+    </View>
   );
 }

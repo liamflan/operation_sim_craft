@@ -1,3 +1,37 @@
-@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media print {
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+  
+  /* Hide specific elements on print */
+  .print-hide, 
+  [role="navigation"],
+  [data-testid="sidebar"] {
+    display: none !important;
+  }
+
+  /* Ensure content expands */
+  .print-expand {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Force boxes to print borders and backgrounds if needed */
+  .print-element {
+    break-inside: avoid;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+  
+  /* Kill rounded corners for crisp paper */
+  * {
+    border-radius: 0 !important;
+  }
+}

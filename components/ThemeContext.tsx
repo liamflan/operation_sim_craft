@@ -14,8 +14,7 @@ const ThemeContext = createContext<ThemeContextType>({
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemColorScheme = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState(systemColorScheme === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(false); // Default to light mode explicitly
 
   // Manual toggle overrides system
   const toggleDarkMode = () => {

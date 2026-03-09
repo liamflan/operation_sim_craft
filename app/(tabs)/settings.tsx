@@ -202,14 +202,14 @@ export default function SettingsScreen() {
             <Text className="text-charcoal text-2xl font-extrabold mb-2">Weekly Budget</Text>
             <Text className="text-gray-500 mb-6 font-medium">Set the hard limit for generating groceries (in £).</Text>
             
-            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6">
-              <Text className="text-charcoal text-xl font-bold mr-2">£</Text>
+            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6 overflow-hidden">
+              <Text className="text-charcoal text-xl font-bold mr-2 flex-shrink-0">£</Text>
               <TextInput 
                 autoFocus
                 keyboardType="numeric"
                 value={tempBudget}
                 onChangeText={setTempBudget}
-                className="flex-1 text-charcoal text-xl font-bold outline-none"
+                className="flex-1 text-charcoal text-xl font-bold outline-none min-w-0"
                 style={{ outlineWidth: 0 } as any}
               />
             </View>
@@ -233,16 +233,16 @@ export default function SettingsScreen() {
             <Text className="text-charcoal text-2xl font-extrabold mb-2">Daily Calories</Text>
             <Text className="text-gray-500 mb-6 font-medium">Target ceiling for engine algorithm calculation.</Text>
             
-            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6">
+            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6 overflow-hidden">
               <TextInput 
                 autoFocus
                 keyboardType="numeric"
                 value={tempCalories}
                 onChangeText={setTempCalories}
-                className="flex-1 text-charcoal text-xl font-bold text-right outline-none"
+                className="flex-1 text-charcoal text-xl font-bold text-right outline-none min-w-0"
                 style={{ outlineWidth: 0 } as any}
               />
-              <Text className="text-gray-400 text-lg font-bold ml-2">kcal</Text>
+              <Text className="text-gray-400 text-lg font-bold ml-2 flex-shrink-0">kcal</Text>
             </View>
 
             <View className="flex-row gap-3">

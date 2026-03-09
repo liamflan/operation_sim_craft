@@ -62,6 +62,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
 
   return (
     <Animated.View 
+      testID="recipe-card"
       style={{
         transform: [{ translateX: pan.x }],
         opacity: opacity,
@@ -70,27 +71,66 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
       className="mb-8"
     >
       <Pressable 
+        testID="recipe-card-pressable"
         onPress={onPress}
-        className="w-full h-80 md:h-56 rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-gray-200 dark:bg-darkgrey"
+        className="w-full h-80 md:h-56 rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 transition-opacity duration-300 relative bg-black"
+        style={{ backfaceVisibility: 'hidden' as any }}
       >
+        {/* Branded fallback — shown when image is absent/slowly loading; looks intentional */}
+        <View className="absolute inset-0" style={{ backgroundColor: '#C8B89A' }}>
+          {/* Warm layered depth */}
+          <View
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(145deg, #D4C4A0 0%, #B89A72 60%, #8B6F4E 100%)',
+            } as any}
+          />
+          {/* Subtle radial highlight — top left */}
+          <View
+            className="absolute"
+            style={{ top: -60, left: -60, width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,245,220,0.18)' }}
+          />
+          {/* Centre icon cluster */}
+          <View className="absolute inset-0 items-center justify-center">
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.18)',
+              }}
+            >
+              <FontAwesome5 name="utensils" size={22} color="rgba(255,255,255,0.7)" />
+            </View>
+          </View>
+        </View>
+
         <Image 
           source={recipe.imageUrl} 
-          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backfaceVisibility: 'hidden' as any }}
           contentFit="cover"
           transition={600}
         />
         
+        {/* Subtle Inner Top Highlight for depth - Removed as per user request to remove any faint edge/border */}
+        {/* <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/15 z-20" /> */}
+        
         {/* Dedicated Desktop 'Swap' Button for Web mouse users */}
         {onSwipe && (
           <Pressable 
+            testID="recipe-card-swap-desktop-btn"
             onPress={(e) => {
-              e.stopPropagation(); // Prevent opening the recipe
+              e.stopPropagation();
               onSwipe();
             }}
-            className="absolute top-4 right-4 z-30 bg-black/40 hover:bg-white dark:hover:bg-darkgrey backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 transition-colors group"
+            className="absolute top-4 right-4 z-30 bg-black/30 hover:bg-black/50 backdrop-blur-md px-3.5 h-9 rounded-full flex-row items-center border border-white/15 transition-colors"
           >
-            <FontAwesome5 name="random" size={12} color="white" className="group-hover:text-avocado dark:group-hover:text-white mr-2" />
-            <Text className="text-white group-hover:text-charcoal dark:group-hover:text-white font-bold text-sm tracking-wide">Swap</Text>
+            <FontAwesome5 name="random" size={11} color="rgba(255,255,255,0.85)" className="mr-1.5" />
+            <Text className="text-white/90 font-semibold text-xs tracking-wide">Swap</Text>
           </Pressable>
         )}
 
@@ -110,24 +150,24 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           locations={[0, 0.4, 1]}
           className="absolute inset-0 w-full h-full justify-end p-6 z-10"
         >
-          <Text className="text-white font-bold text-3xl md:text-4xl mb-2 tracking-tight leading-tight shadow-md">
+          <Text testID="recipe-card-title" className="text-white font-bold text-3xl md:text-4xl mb-2 tracking-tight leading-tight">
             {recipe.title}
           </Text>
           
           {/* Glassmorphism Pills area */}
           <View className="flex-row items-center justify-between">
             <View className="flex-row flex-wrap gap-2">
-              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+              <View className="bg-black/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md">
                 <FontAwesome5 name="clock" size={12} color="#6DBE75" />
                 <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
               </View>
               
-              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+              <View className="bg-black/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md">
                 <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
                 <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
               </View>
 
-              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md hidden sm:flex">
+              <View className="bg-black/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/10 backdrop-blur-md hidden sm:flex">
                 <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
                 <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
               </View>

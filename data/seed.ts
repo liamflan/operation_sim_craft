@@ -63,7 +63,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r4",
     title: "Garlic Butter Chicken & Spinach",
-    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop", // Replaced potentially broken link
+    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop",
     prepTimeMinutes: 20,
     macros: { calories: 480, protein: 50, carbs: 10, fats: 26 },
     tags: ["Low Carb", "High Protein", "Keto"],
@@ -72,6 +72,58 @@ export const MOCK_RECIPES: Recipe[] = [
       { ingredientId: "i5", amount: 100, unit: "g" },
       { ingredientId: "i6", amount: 3, unit: "clove" },
       { ingredientId: "i8", amount: 2, unit: "tbsp" },
+    ],
+  },
+  {
+    id: "r5",
+    title: "Mediterranean Quinoa Salad",
+    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 10,
+    macros: { calories: 420, protein: 12, carbs: 58, fats: 18 },
+    tags: ["Vegan", "Healthy", "Quick"],
+    ingredients: [
+      { ingredientId: "i7", amount: 100, unit: "g" }, // Quinoa mock
+      { ingredientId: "i12", amount: 100, unit: "g" },
+      { ingredientId: "i11", amount: 0.5, unit: "item" },
+      { ingredientId: "i8", amount: 1, unit: "tbsp" },
+    ],
+  },
+  {
+    id: "r6",
+    title: "Beef & Broccoli Stir-Fry",
+    imageUrl: "https://images.unsplash.com/photo-1512058560566-42724afbc2db?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 15,
+    macros: { calories: 450, protein: 38, carbs: 15, fats: 28 },
+    tags: ["High Protein", "Low Carb", "Quick"],
+    ingredients: [
+      { ingredientId: "i1", amount: 150, unit: "g" },
+      { ingredientId: "i4", amount: 1, unit: "item" },
+      { ingredientId: "i14", amount: 2, unit: "tbsp" },
+    ],
+  },
+  {
+    id: "r7",
+    title: "Blueberry Protein Pancakes",
+    imageUrl: "https://images.unsplash.com/photo-1506084868730-342b1f894493?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 10,
+    macros: { calories: 380, protein: 30, carbs: 45, fats: 8 },
+    tags: ["Vegetarian", "High Protein", "Breakfast"],
+    ingredients: [
+      { ingredientId: "i9", amount: 2, unit: "item" },
+      { ingredientId: "i15", amount: 1, unit: "slice" }, // Mock pancake ingredients
+    ],
+  },
+  {
+    id: "r8",
+    title: "Sweet Potato & Black Bean Bowl",
+    imageUrl: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 20,
+    macros: { calories: 490, protein: 15, carbs: 75, fats: 14 },
+    tags: ["Vegan", "High Fiber", "Healthy"],
+    ingredients: [
+      { ingredientId: "i10", amount: 200, unit: "g" },
+      { ingredientId: "i5", amount: 50, unit: "g" },
+      { ingredientId: "i12", amount: 50, unit: "g" },
     ],
   }
 ];
