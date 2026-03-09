@@ -6,6 +6,8 @@ import RecipeCard from '../../components/RecipeCard';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
 import { generateWeeklyPlan, calculateDailyMacros } from '../../data/engine';
 import { MOCK_RECIPES } from '../../data/seed';
+import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
+import { DAYS, slotLabel, isPlanned } from '../../data/weeklyRoutine';
 
 // Mock User for MVP
 const mockUser = {
@@ -21,9 +23,13 @@ const weeklyPlan = generateWeeklyPlan(mockUser);
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { routine } = useWeeklyRoutine();
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
-  const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({}); 
+  const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({});
   const [importModalVisible, setImportModalVisible] = useState(false);
+
+  // Day abbrev -> routine key map
+  const currentDayKey = DAYS[currentDayIndex];
 
   const activeDayPlan = weeklyPlan[currentDayIndex];
   
@@ -226,10 +232,24 @@ export default function DashboardScreen() {
 
             {/* Daily Progress Card — single source of truth: activeMacros */}
             <View testID="dashboard-daily-progress-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 mb-3 shadow-sm">
-              <View className="flex-row justify-between items-baseline mb-3">
-                <Text testID="dashboard-active-day-title" className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Active Day</Text>
-                <Text className="text-gray-400 text-[10px] font-medium">{activeDayPlan.date}</Text>
-              </View>
+              {(() => {
+                const dayRoutine = routine[currentDayKey];
+                const plannedToday = (['breakfast','lunch','dinner'] as const).filter(
+                  slot => isPlanned(dayRoutine[slot])
+                ).length;
+                const totalSlots = 3;
+                const summaryLabel = plannedToday === totalSlots
+                  ? 'Full day planned'
+                  : plannedToday === 0
+                  ? 'No meals planned today'
+                  : `${plannedToday} of ${totalSlots} meals planned today`;
+                return (
+                  <View className="flex-row justify-between items-baseline mb-3">
+                    <Text testID="dashboard-active-day-title" className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Active Day</Text>
+                    <Text className="text-gray-400 text-[10px] font-medium">{summaryLabel}</Text>
+                  </View>
+                );
+              })()}
 
               {/* ── Calories ── */}
               <View className="mb-3">
@@ -363,29 +383,75 @@ export default function DashboardScreen() {
               <View className="h-px bg-black/[0.04] dark:bg-white/[0.05] mb-6" />
             </View>
 
-            {/* Meal Feed */}
+            {/* Meal Feed — routine-aware */}
             <View testID="dashboard-meal-feed">
+
+              {/* Breakfast */}
               <Text className="text-gray-400 text-xs mb-3 uppercase tracking-wider font-bold">Breakfast</Text>
-              {getRecipe(getActiveMealId('breakfast')) && (
-                <RecipeCard
-                  recipe={getRecipe(getActiveMealId('breakfast'))!}
-                  onSwipe={() => handleSwap('breakfast')}
-                />
-              )}
+              {isPlanned(routine[currentDayKey].breakfast)
+                ? getRecipe(getActiveMealId('breakfast')) && (
+                    <RecipeCard
+                      recipe={getRecipe(getActiveMealId('breakfast'))!}
+                      onSwipe={() => handleSwap('breakfast')}
+                    />
+                  )
+                : (
+                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="coffee" size={13} color="#9CA3AF" />
+                    </View>
+                    <View>
+                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('breakfast', routine[currentDayKey].breakfast)}</Text>
+                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                    </View>
+                  </View>
+                )
+              }
+
+              {/* Lunch */}
               <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Lunch</Text>
-              {getRecipe(getActiveMealId('lunch')) && (
-                <RecipeCard
-                  recipe={getRecipe(getActiveMealId('lunch'))!}
-                  onSwipe={() => handleSwap('lunch')}
-                />
-              )}
+              {isPlanned(routine[currentDayKey].lunch)
+                ? getRecipe(getActiveMealId('lunch')) && (
+                    <RecipeCard
+                      recipe={getRecipe(getActiveMealId('lunch'))!}
+                      onSwipe={() => handleSwap('lunch')}
+                    />
+                  )
+                : (
+                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="utensils" size={13} color="#9CA3AF" />
+                    </View>
+                    <View>
+                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('lunch', routine[currentDayKey].lunch)}</Text>
+                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                    </View>
+                  </View>
+                )
+              }
+
+              {/* Dinner */}
               <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Dinner</Text>
-              {getRecipe(getActiveMealId('dinner')) && (
-                <RecipeCard
-                  recipe={getRecipe(getActiveMealId('dinner'))!}
-                  onSwipe={() => handleSwap('dinner')}
-                />
-              )}
+              {isPlanned(routine[currentDayKey].dinner)
+                ? getRecipe(getActiveMealId('dinner')) && (
+                    <RecipeCard
+                      recipe={getRecipe(getActiveMealId('dinner'))!}
+                      onSwipe={() => handleSwap('dinner')}
+                    />
+                  )
+                : (
+                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
+                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="moon" size={13} color="#9CA3AF" />
+                    </View>
+                    <View>
+                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('dinner', routine[currentDayKey].dinner)}</Text>
+                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                    </View>
+                  </View>
+                )
+              }
+
             </View>
           </View>
         </View>

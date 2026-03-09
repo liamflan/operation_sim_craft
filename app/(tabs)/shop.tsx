@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { generateWeeklyPlan } from '../../data/engine';
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
 import { UserProfile } from '../../data/schema';
+import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
+import { WeeklyRoutine, DAYS, isPlanned } from '../../data/weeklyRoutine';
 
 // ─── Shopping Intelligence Layer ────────────────────────────────────────────
 
@@ -135,7 +137,7 @@ function computePurchaseRecommendation(
 import { MOCK_INGREDIENTS as ALL_MOCKS } from '../../data/seed';
 function ingDataForNote(id: string) { return ALL_MOCKS.find(i=>i.id===id); }
 
-function generateShoppingList(): CategorizedList {
+function generateShoppingList(routine?: WeeklyRoutine): CategorizedList {
   const mockUser: UserProfile = { 
     id: "u1", 
     name: "Liam", 
@@ -143,20 +145,26 @@ function generateShoppingList(): CategorizedList {
     budgetWeekly: 50, 
     dietaryPreference: "Omnivore" as const, 
     allergies: [],
-    // Mock pantry: lots of olive oil, but very low soy sauce; rice stocked
     pantry: {
-      "i8": 20,   // 20 tbsp Olive Oil — plenty for the week
-      "i14": 1,   // 1 tbsp Soy Sauce — needs restock
-      "i7": 2000, // 2kg Rice — plenty
+      "i8": 20,
+      "i14": 1,
+      "i7": 2000,
     }
   };
   const weeklyPlan = generateWeeklyPlan(mockUser);
   
-  // Aggregate ingredient usage across all recipes this week
   const ingredientMap: Record<string, { amount: number, recipes: Set<string> }> = {};
-  weeklyPlan.forEach(day => {
-    [day.breakfast, day.lunch, day.dinner].forEach(recipeId => {
+  weeklyPlan.forEach((day, idx) => {
+    const dayKey = DAYS[idx % DAYS.length];
+    const slots: Array<{ id: string | undefined; slot: 'breakfast'|'lunch'|'dinner' }> = [
+      { id: day.breakfast, slot: 'breakfast' },
+      { id: day.lunch,     slot: 'lunch'     },
+      { id: day.dinner,    slot: 'dinner'    },
+    ];
+    slots.forEach(({ id: recipeId, slot }) => {
       if (!recipeId) return;
+      // Skip if the user's routine marks this slot as non-planned
+      if (routine && !isPlanned(routine[dayKey][slot])) return;
       const recipe = MOCK_RECIPES.find(r => r.id === recipeId);
       if (recipe) {
         recipe.ingredients.forEach(ing => {
@@ -171,33 +179,20 @@ function generateShoppingList(): CategorizedList {
   });
 
   const categorizedList: CategorizedList = {};
-  
   Object.keys(ingredientMap).forEach(ingId => {
     const ingData = MOCK_INGREDIENTS.find(i => i.id === ingId);
     if (!ingData) return;
-
     const requiredAmount = ingredientMap[ingId].amount;
-    const currentStock = mockUser.pantry ? mockUser.pantry[ingId] || 0 : 0;
+    const currentStock = mockUser.pantry ? (mockUser.pantry as Record<string,number>)[ingId] || 0 : 0;
     const purchaseSize = ingData.purchaseSize || 1;
     const purchaseUnit = ingData.purchaseUnit || ingData.defaultUnit;
-
-    // Staples: only buy if pantry stock is insufficient
-    const deficit = ingData.isStaple 
-      ? Math.max(0, requiredAmount - currentStock)
-      : requiredAmount;
-
-    if (deficit <= 0 && !!ingData.isStaple) return; // Well stocked, skip
-
+    const deficit = ingData.isStaple ? Math.max(0, requiredAmount - currentStock) : requiredAmount;
+    if (deficit <= 0 && !!ingData.isStaple) return;
     const isRestock = !!ingData.isStaple && currentStock < requiredAmount;
-
     const { buyAmount, note } = computePurchaseRecommendation(
       ingId, deficit, requiredAmount, currentStock, purchaseSize, purchaseUnit, isRestock
     );
-
-    if (!categorizedList[ingData.category]) {
-      categorizedList[ingData.category] = [];
-    }
-
+    if (!categorizedList[ingData.category]) categorizedList[ingData.category] = [];
     categorizedList[ingData.category].push({
       id: ingId,
       name: ingData.name,
@@ -212,10 +207,10 @@ function generateShoppingList(): CategorizedList {
       purchaseNote: note,
     });
   });
-
   return categorizedList;
 }
 
+// Module-level initial list (no routine = include everything)
 const initialList = generateShoppingList();
 
 // Sub-components for structure and utility
@@ -273,11 +268,49 @@ import { usePantry } from '../../data/PantryContext';
 import PageHeader from '../../components/PageHeader';
 
 export default function ShoppingListScreen() {
+  const { routine } = useWeeklyRoutine();
+
+  // Re-compute the shopping list whenever the routine changes
+  const routineFilteredList = useMemo(() => generateShoppingList(routine), [routine]);
+
   const [list, setList] = useState(initialList);
   const [isExporting, setIsExporting] = useState(false);
   const [hideStaples, setHideStaples] = useState(false);
   
   const { confirmShop } = usePantry();
+
+  // Sync list whenever routine changes
+  React.useEffect(() => { setList(routineFilteredList); }, [routineFilteredList]);
+
+  // Compute exclusion summary for the header
+  const exclusionSummary = useMemo(() => {
+    let takeaway = 0, skipped = 0, quick = 0, out = 0;
+    DAYS.forEach(day => {
+      (['breakfast','lunch','dinner'] as Array<'breakfast'|'lunch'|'dinner'>).forEach(slot => {
+        const mode = routine[day][slot];
+        if (mode === 'takeaway') takeaway++;
+        else if (mode === 'skip') skipped++;
+        else if (mode === 'quick') quick++;
+        else if (mode === 'out') out++;
+      });
+    });
+    const parts: string[] = [];
+    if (takeaway > 0) parts.push(`${takeaway} takeaway ${takeaway === 1 ? 'night' : 'nights'}`);
+    if (out > 0)      parts.push(`${out} eating out`);
+    if (quick > 0)    parts.push(`${quick} quick ${quick === 1 ? 'meal' : 'meals'}`);
+    if (skipped > 0)  parts.push(`${skipped} skipped`);
+    return parts;
+  }, [routine]);
+
+  const plannedMealCount = useMemo(() => {
+    let count = 0;
+    DAYS.forEach(day => {
+      (['breakfast','lunch','dinner'] as Array<'breakfast'|'lunch'|'dinner'>).forEach(slot => {
+        if (isPlanned(routine[day][slot])) count++;
+      });
+    });
+    return count;
+  }, [routine]);
 
   const totalIngredients = Object.values(list).flat().filter(item => !hideStaples || !item.isRestock).length;
   const categoryCount = Object.keys(list).filter(cat => !hideStaples || list[cat].some(i => !i.isRestock)).length;
@@ -356,7 +389,13 @@ export default function ShoppingListScreen() {
             <PageHeader 
               eyebrow="Active Shopping List"
               title="The Fuel List"
-              subtitle="Built from this week's plan."
+              subtitle={
+                plannedMealCount === 21
+                  ? `Built for this week's full plan.`
+                  : exclusionSummary.length > 0
+                    ? `Built for ${plannedMealCount} planned meals — ${exclusionSummary.join(' and ')} excluded.`
+                    : `Built for ${plannedMealCount} planned meals this week.`
+              }
               rightActions={
                 <View className="hidden md:flex flex-row items-center bg-white/50 dark:bg-darkgrey/50 p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
                   <ActionButton icon="copy" onPress={handleCopyText} />

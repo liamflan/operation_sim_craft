@@ -6,6 +6,12 @@ import PageHeader from '../../components/PageHeader';
 import { MOCK_RECIPES } from '../../data/seed';
 import { FontAwesome5 } from '@expo/vector-icons';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
+import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
+import {
+  DAYS, Day, MealSlot, MealMode,
+  BREAKFAST_OPTIONS, LUNCH_OPTIONS, DINNER_OPTIONS,
+  ROUTINE_PRESETS,
+} from '../../data/weeklyRoutine';
 
 // Predefined Tags
 const PREDEFINED_GOALS = ['High Protein', 'Lower Carb', 'Fast Prep', 'Calorie Deficit', 'Budget-First'];
@@ -157,6 +163,136 @@ const ChipSelector = ({
   );
 };
 
+// ─── Weekly Routine Section ───────────────────────────────────────────────────
+
+type SlotOptions = { value: string; label: string }[];
+
+function SlotPicker({ options, value, onChange }: {
+  options: SlotOptions;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <View className="flex-row bg-black/[0.05] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
+      {options.map(opt => {
+        const active = opt.value === value;
+        return (
+          <TouchableOpacity
+            key={opt.value}
+            onPress={() => onChange(opt.value)}
+            className={`px-2.5 py-1.5 rounded-lg transition-all ${
+              active
+                ? 'bg-white dark:bg-darkgrey shadow-sm'
+                : 'hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Text className={`text-[11px] font-bold text-center leading-none ${
+              active ? 'text-charcoal dark:text-white' : 'text-gray-400 dark:text-gray-500'
+            }`}>
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function WeeklyRoutineSection() {
+  const { routine, setSlot, applyPreset, reset } = useWeeklyRoutine();
+  const [activePreset, setActivePreset] = useState<string | null>('full');
+
+  const handlePreset = (key: string, routineData: any) => {
+    applyPreset(routineData);
+    setActivePreset(key);
+  };
+
+  const handleSlotChange = (day: Day, slot: MealSlot, mode: MealMode) => {
+    setSlot(day, slot, mode);
+    setActivePreset(null); // custom configuration
+  };
+
+  return (
+    <View className="mt-6">
+      {/* Preset pills */}
+      <View className="flex-row flex-wrap gap-2 mb-6">
+        {ROUTINE_PRESETS.map(preset => (
+          <TouchableOpacity
+            key={preset.key}
+            onPress={() => handlePreset(preset.key, preset.routine)}
+            className={`px-3.5 py-2 rounded-xl border transition-all ${
+              activePreset === preset.key
+                ? 'bg-avocado/10 border-avocado/30'
+                : 'bg-white/60 dark:bg-white/5 border-black/5 dark:border-white/10 hover:bg-black/5'
+            }`}
+          >
+            <Text className={`text-xs font-bold ${
+              activePreset === preset.key ? 'text-avocado' : 'text-gray-500 dark:text-gray-400'
+            }`}>{preset.label}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          onPress={() => handlePreset('full', ROUTINE_PRESETS[0].routine)}
+          className="px-3.5 py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:bg-black/5 transition-all"
+        >
+          <Text className="text-xs font-bold text-gray-400">Reset</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Column headers */}
+      <View className="flex-row mb-2 pl-14">
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Breakfast</Text>
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Lunch</Text>
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Dinner</Text>
+      </View>
+
+      {/* Day rows */}
+      <View className="bg-white/50 dark:bg-darkgrey/50 rounded-3xl overflow-hidden border border-black/5 dark:border-white/5 shadow-sm">
+        {DAYS.map((day, idx) => (
+          <View
+            key={day}
+            className={`flex-row items-center px-4 py-3 ${
+              idx < DAYS.length - 1 ? 'border-b border-black/[0.04] dark:border-white/[0.04]' : ''
+            }`}
+          >
+            {/* Day label */}
+            <View className="w-10 mr-4">
+              <Text className="font-extrabold text-xs text-charcoal dark:text-white uppercase tracking-widest">{day}</Text>
+            </View>
+
+            {/* Breakfast picker */}
+            <View className="flex-1 mr-1.5">
+              <SlotPicker
+                options={BREAKFAST_OPTIONS}
+                value={routine[day].breakfast}
+                onChange={(v) => handleSlotChange(day, 'breakfast', v as any)}
+              />
+            </View>
+
+            {/* Lunch picker */}
+            <View className="flex-1 mr-1.5">
+              <SlotPicker
+                options={LUNCH_OPTIONS}
+                value={routine[day].lunch}
+                onChange={(v) => handleSlotChange(day, 'lunch', v as any)}
+              />
+            </View>
+
+            {/* Dinner picker */}
+            <View className="flex-1">
+              <SlotPicker
+                options={DINNER_OPTIONS}
+                value={routine[day].dinner}
+                onChange={(v) => handleSlotChange(day, 'dinner', v as any)}
+              />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function TasteProfileScreen() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<{title: string, value: string, type: 'diet'|'number', onSave: (v:string)=>void, prefix?: string, suffix?: string} | null>(null);
@@ -237,6 +373,7 @@ export default function TasteProfileScreen() {
           
           {/* Header Section */}
           <PageHeader 
+            eyebrow="MEAL RECOMMENDATION PROFILE"
             title="Taste Profile"
             subtitle="What shapes your recommendations."
           />
@@ -491,6 +628,19 @@ export default function TasteProfileScreen() {
                   </View>
                 ))}
               </View>
+            </View>
+
+            {/* 4. Weekly Routine */}
+            <View>
+              <View className="flex-row justify-between items-center mb-1">
+                <View>
+                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Weekly Routine</Text>
+                  <Text className="text-gray-500 text-sm font-medium mt-0.5">Tell Provision which meals you actually want help planning.</Text>
+                </View>
+              </View>
+
+              {/* Preset row */}
+              <WeeklyRoutineSection />
             </View>
 
           </View>

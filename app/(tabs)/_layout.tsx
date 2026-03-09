@@ -7,6 +7,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { PantryProvider } from '../../data/PantryContext';
+import { WeeklyRoutineProvider } from '../../data/WeeklyRoutineContext';
 
 function NavItem({ icon, label, isActive, onPress }: { icon: string, label: string, isActive: boolean, onPress: () => void }) {
   return (
@@ -31,6 +32,7 @@ export default function TabLayout() {
 
   if (isDesktop) {
     return (
+      <WeeklyRoutineProvider>
       <PantryProvider>
         <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
         {/* Persistent Left Sidebar */}
@@ -87,11 +89,13 @@ export default function TabLayout() {
         </View>
       </View>
       </PantryProvider>
+      </WeeklyRoutineProvider>
     );
   }
 
   // Mobile Fallback: Standard Bottom Tabs
   return (
+    <WeeklyRoutineProvider>
     <PantryProvider>
       <Tabs
       screenOptions={{
@@ -140,5 +144,6 @@ export default function TabLayout() {
       />
     </Tabs>
     </PantryProvider>
+    </WeeklyRoutineProvider>
   );
 }
