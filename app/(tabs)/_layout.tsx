@@ -6,6 +6,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { PantryProvider } from '../../data/PantryContext';
 
 function NavItem({ icon, label, isActive, onPress }: { icon: string, label: string, isActive: boolean, onPress: () => void }) {
   return (
@@ -30,7 +31,8 @@ export default function TabLayout() {
 
   if (isDesktop) {
     return (
-      <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
+      <PantryProvider>
+        <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
         {/* Persistent Left Sidebar */}
         <View className="w-64 bg-white dark:bg-darkgrey border-r border-black/5 dark:border-white/5 pt-12 px-6 pb-8 h-full sticky top-0 print-hide" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
           <View className="mb-12">
@@ -57,6 +59,12 @@ export default function TabLayout() {
               isActive={pathname === '/taste-profile'} 
               onPress={() => router.push('/(tabs)/taste-profile')} 
             />
+            <NavItem 
+              icon="box-open" 
+              label="Pantry" 
+              isActive={pathname === '/pantry'} 
+              onPress={() => router.push('/(tabs)/pantry')} 
+            />
           </View>
           
           <TouchableOpacity 
@@ -78,12 +86,14 @@ export default function TabLayout() {
           <Slot />
         </View>
       </View>
+      </PantryProvider>
     );
   }
 
   // Mobile Fallback: Standard Bottom Tabs
   return (
-    <Tabs
+    <PantryProvider>
+      <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#6DBE75',
         headerShown: false,
@@ -115,6 +125,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="pantry"
+        options={{
+          title: 'Pantry',
+          tabBarIcon: ({ color }) => <FontAwesome5 size={24} name="box-open" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
@@ -122,5 +139,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </PantryProvider>
   );
 }

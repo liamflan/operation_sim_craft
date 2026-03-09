@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome5 } from '@expo/vector-icons';
+import PageHeader from '../../components/PageHeader';
 import { MOCK_RECIPES } from '../../data/seed';
+import { FontAwesome5 } from '@expo/vector-icons';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
 
 // Predefined Tags
@@ -232,17 +233,16 @@ export default function TasteProfileScreen() {
   return (
     <SafeAreaView testID="taste-profile-screen" className="flex-1 bg-cream dark:bg-darkcream">
       <ScrollView testID="taste-profile-scroll" className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-4xl md:px-8 min-h-[90vh]">
+        <View className="flex-1 w-full mx-auto md:max-w-4xl px-4 md:px-8 pt-10 pb-32 min-h-[90vh]">
           
           {/* Header Section */}
-          <View className="mb-10 mt-4 md:mt-8">
-            <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight italic">
-              Taste Profile
-            </Text>
-            <Text className="text-gray-500 text-lg font-medium mt-1">What shapes your recommendations.</Text>
+          <PageHeader 
+            title="Taste Profile"
+            subtitle="What shapes your recommendations."
+          />
 
-            {/* Synthesized DNA Summary (Intelligence Area) */}
-            <View className="mt-8 bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 md:p-8 relative overflow-hidden shadow-sm border border-white dark:border-white/5 backdrop-blur-md">
+          {/* Synthesized DNA Summary (Intelligence Area) */}
+          <View className="bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 md:p-8 relative overflow-hidden shadow-sm border border-white dark:border-white/5 backdrop-blur-md">
               <View className="flex-row justify-between items-start z-10">
                 <View className="flex-1">
                   <View className="flex-row items-center mb-2">
@@ -286,7 +286,6 @@ export default function TasteProfileScreen() {
               {/* Background abstract decoration placeholder */}
               <View className="absolute -bottom-10 -right-10 w-40 h-40 bg-avocado/20 rounded-full blur-3xl opacity-30" />
             </View>
-          </View>
 
           <View className="gap-y-16">
             

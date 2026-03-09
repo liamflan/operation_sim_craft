@@ -9,6 +9,7 @@ import { UserProfile } from '../../data/schema';
 // ─── Shopping Intelligence Layer ────────────────────────────────────────────
 
 export type ShoppingListItem = { 
+  id: string,
   name: string, 
   amount: number,      // Purchase quantity (in retail units)
   unit: string,        // Purchase unit (singular)
@@ -198,6 +199,7 @@ function generateShoppingList(): CategorizedList {
     }
 
     categorizedList[ingData.category].push({
+      id: ingId,
       name: ingData.name,
       amount: buyAmount,
       unit: purchaseUnit,
@@ -267,10 +269,15 @@ const getCategoryIcon = (cat: string) => {
   }
 };
 
+import { usePantry } from '../../data/PantryContext';
+import PageHeader from '../../components/PageHeader';
+
 export default function ShoppingListScreen() {
   const [list, setList] = useState(initialList);
   const [isExporting, setIsExporting] = useState(false);
   const [hideStaples, setHideStaples] = useState(false);
+  
+  const { confirmShop } = usePantry();
 
   const totalIngredients = Object.values(list).flat().filter(item => !hideStaples || !item.isRestock).length;
   const categoryCount = Object.keys(list).filter(cat => !hideStaples || list[cat].some(i => !i.isRestock)).length;
@@ -342,31 +349,24 @@ export default function ShoppingListScreen() {
   return (
     <SafeAreaView testID="shopping-list-screen" className="flex-1 bg-cream dark:bg-darkcream">
       <ScrollView testID="shopping-list-scroll" className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-4 pt-10 pb-32 mx-auto w-full md:max-w-5xl md:px-12 min-h-screen">
+        <View className="flex-1 w-full mx-auto md:max-w-4xl px-4 md:px-8 pt-10 pb-32 min-h-[90vh]">
           
           {/* Header Section */}
-          <View className="mb-12 print-hide">
-            <View className="flex-row justify-between items-end mb-10">
-              <View className="flex-1 pr-8">
-                <View className="flex-row items-center mb-2">
-                  <View className="w-2 h-2 rounded-full bg-avocado mr-3" />
-                  <Text className="text-avocado text-xs font-bold uppercase tracking-[0.2em]">Active Shopping List</Text>
+          <View className="print-hide">
+            <PageHeader 
+              eyebrow="Active Shopping List"
+              title="The Fuel List"
+              subtitle="Built from this week's plan."
+              rightActions={
+                <View className="hidden md:flex flex-row items-center bg-white/50 dark:bg-darkgrey/50 p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
+                  <ActionButton icon="copy" onPress={handleCopyText} />
+                  <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
+                  <ActionButton icon="file-csv" onPress={handleExportCSV} disabled={isExporting} />
+                  <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
+                  <ActionButton icon="print" onPress={() => Platform.OS === 'web' ? window.print() : Alert.alert("Web only")} />
                 </View>
-                <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight">
-                  The Fuel List
-                </Text>
-                <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2 leading-relaxed">Built from this week's plan.</Text>
-              </View>
-              
-              {/* Tightened Desktop Actions */}
-              <View className="hidden md:flex flex-row items-center bg-white/50 dark:bg-darkgrey/50 p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
-                <ActionButton icon="copy" onPress={handleCopyText} />
-                <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
-                <ActionButton icon="file-csv" onPress={handleExportCSV} disabled={isExporting} />
-                <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
-                <ActionButton icon="print" onPress={() => Platform.OS === 'web' ? window.print() : Alert.alert("Web only")} />
-              </View>
-            </View>
+              }
+            />
 
             {/* Contextual Summary Area */}
             <View className="flex-row flex-wrap gap-3 mb-10">
@@ -486,6 +486,37 @@ export default function ShoppingListScreen() {
               );
             })}
           </View>
+          
+          {/* Post-Shop Integration Action */}
+          {checkedCount > 0 && (
+            <View className="mt-12 mb-8 pt-8 border-t border-black/5 dark:border-white/5 items-center print-hide">
+              <TouchableOpacity 
+                onPress={() => {
+                  const checkedItems = Object.values(list).flat().filter(item => item.checked);
+                  confirmShop(checkedItems);
+                  
+                  // Reset checked bounds
+                  const resetList = { ...list };
+                  Object.keys(resetList).forEach(cat => {
+                    resetList[cat].forEach(item => { item.checked = false; });
+                  });
+                  setList(resetList);
+                  
+                  if (Platform.OS === 'web') {
+                    window.alert("Shop completed. Items written to Pantry.");
+                  } else {
+                    Alert.alert("Shop Complete", "Purchased items have been logged to your Pantry.");
+                  }
+                }}
+                className="bg-avocado hover:bg-avocado/80 active:opacity-80 transition-all rounded-2xl px-8 py-4 flex-row items-center shadow-lg shadow-avocado/20"
+              >
+                <FontAwesome5 name="check-double" size={16} color="white" className="mr-3" />
+                <Text className="text-white font-extrabold text-lg tracking-tight">Complete Shop</Text>
+              </TouchableOpacity>
+              <Text className="text-gray-400 font-semibold text-xs mt-3">Add {checkedCount} item{checkedCount > 1 ? 's' : ''} to Pantry memory.</Text>
+            </View>
+          )}
+
         </View>
       </ScrollView>
     </SafeAreaView>
