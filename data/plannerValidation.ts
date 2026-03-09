@@ -356,6 +356,9 @@ export function validatePlannerOutput(
     const currentCals = dayAssignments.reduce((sum, a) => sum + (candidateMap.get(a.recipeId)?.macros.calories ?? 0), 0);
     const currentProt = dayAssignments.reduce((sum, a) => sum + (candidateMap.get(a.recipeId)?.macros.protein ?? 0), 0);
     
+    // Phase 12B: Compute current running plan cost for budget-aware scoring
+    const currentPlanCost = validAssignments.reduce((sum, a) => sum + (candidateMap.get(a.recipeId)?.estimatedCostGBP ?? 0), 0);
+    
     const repairedId = globalRepair(
       r.day, 
       r.slot, 
@@ -365,18 +368,31 @@ export function validatePlannerOutput(
       currentCals, 
       currentProt, 
       r.originalId,
-      candidateMap
+      candidateMap,
+      currentPlanCost,
     );
 
     if (repairedId) {
-      validAssignments.push({ day: r.day, slot: r.slot, recipeId: repairedId });
-      repeatCounts.set(repairedId, (repeatCounts.get(repairedId) ?? 0) + 1);
-      const repArch = candidateMap.get(repairedId)!.archetype;
+      // Phase 12: Parse EMERGENCY_FALLBACK tag from the returned id
+      const isEmergencyFallback = repairedId.endsWith('::EMERGENCY_FALLBACK');
+      // Phase 12D: Parse LUNCH_RESCUE / DINNER_RESCUE tags
+      const isLunchRescue = repairedId.endsWith('::LUNCH_RESCUE');
+      const isDinnerRescue = repairedId.endsWith('::DINNER_RESCUE');
+      const hasRescueTag = isLunchRescue || isDinnerRescue;
+
+      const cleanRepairedId = repairedId
+        .replace('::EMERGENCY_FALLBACK', '')
+        .replace('::LUNCH_RESCUE', '')
+        .replace('::DINNER_RESCUE', '');
+
+      validAssignments.push({ day: r.day, slot: r.slot, recipeId: cleanRepairedId });
+      repeatCounts.set(cleanRepairedId, (repeatCounts.get(cleanRepairedId) ?? 0) + 1);
+      const repArch = candidateMap.get(cleanRepairedId)!.archetype;
       archetypeCounts.set(repArch, (archetypeCounts.get(repArch) ?? 0) + 1);
       
       if (r.originalId) {
         const orig = candidateMap.get(r.originalId);
-        const rep = candidateMap.get(repairedId);
+        const rep = candidateMap.get(cleanRepairedId);
         if (orig && rep) {
           const costDelta = (rep.estimatedCostGBP - orig.estimatedCostGBP).toFixed(2);
           const sign = rep.estimatedCostGBP >= orig.estimatedCostGBP ? '+' : '';
@@ -384,16 +400,32 @@ export function validatePlannerOutput(
           const calSign = calDelta >= 0 ? '+' : '';
           const proDelta = rep.macros.protein - orig.macros.protein;
           const proSign = proDelta >= 0 ? '+' : '';
+          const emergencyTag = isEmergencyFallback ? ' [EMERGENCY FALLBACK]' : '';
           
+          // Phase 12B: Budget classification tag
+          const netCostDelta = rep.estimatedCostGBP - orig.estimatedCostGBP;
+          const projectedAfter = currentPlanCost + rep.estimatedCostGBP;
+          const budgetTag = netCostDelta < -0.01
+            ? ` [BUDGET SAVING] [Proj: £${projectedAfter.toFixed(2)}]`
+            : netCostDelta > 0.01
+              ? ` [BUDGET ESCALATION] [Proj: £${projectedAfter.toFixed(2)}]`
+              : ` [BUDGET NEUTRAL] [Proj: £${projectedAfter.toFixed(2)}]`;
+          
+          // Phase 12C/12D: Premium escalation flag for any slot repair costing more than £1.00 extra
+          const premiumEscalationTag = netCostDelta > 1.00 ? ' [PREMIUM ESCALATION]' : '';
+
+          // Phase 12D: Pool-collapse rescue diagnostic tag
+          const rescueTag = isLunchRescue ? ' [LUNCH RESCUE]' : isDinnerRescue ? ' [DINNER RESCUE]' : '';
+
           warnings.push(
             `Repaired ${r.day} ${r.slot} to "${rep.title}" ` +
-            `(was "${orig.title}") [Cost: ${sign}£${costDelta}] [Cals: ${calSign}${calDelta}] [Protein: ${proSign}${proDelta}g]`
+            `(was "${orig.title}") [Cost: ${sign}£${costDelta}] [Cals: ${calSign}${calDelta}] [Protein: ${proSign}${proDelta}g]${emergencyTag}${premiumEscalationTag}${rescueTag}${budgetTag}`
           );
         } else {
-          warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(repairedId)?.title}"`);
+          warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(cleanRepairedId)?.title}"`);
         }
       } else {
-        warnings.push(`Filled missing ${r.day} ${r.slot} with "${candidateMap.get(repairedId)?.title}"`);
+        warnings.push(`Filled missing ${r.day} ${r.slot} with "${candidateMap.get(cleanRepairedId)?.title}"`);
       }
     } else {
       // If we couldn't repair, but we have an over-cap original ID that actually exists, accept it to avoid breaking the plan
@@ -456,6 +488,23 @@ function getArchetypeFamily(arch: string): string | null {
   return null;
 }
 
+// ─── Phase 12: Lunch Quality Classification ──────────────────────────────────
+// strong_lunch:     protein >= 35g OR calories >= 600  (original threshold before flagging)
+// substantial_lunch: protein >= 30g AND calories >= 500  (acceptable replacement)
+// filler_lunch:     anything below substantial
+
+function isStrongLunch(c: { macros: { protein: number; calories: number } }): boolean {
+  return c.macros.protein >= 35 || c.macros.calories >= 600;
+}
+
+function isSubstantialLunch(c: { macros: { protein: number; calories: number } }): boolean {
+  return c.macros.protein >= 30 && c.macros.calories >= 500;
+}
+
+function isFillerLunch(c: { macros: { protein: number; calories: number } }): boolean {
+  return !isSubstantialLunch(c);
+}
+
 function globalRepair(
   day: PlannerDay,
   slot: PlannerSlot,
@@ -466,6 +515,7 @@ function globalRepair(
   currentDayProt: number,
   excludeId?: string,
   candidateMap?: Map<string, PlannerCandidate>,
+  currentPlanCost?: number,
 ): string | null {
   const { candidates, preferences, profile } = input;
 
@@ -477,14 +527,80 @@ function globalRepair(
     (archetypeCounts.get(c.archetype) ?? 0) < (input.composition.archetypeRepeatCaps[c.archetype] ?? 99)
   );
 
+  // Phase 12: Viable-Alternative Gate
+  // Before allowing a filler lunch to replace a strong lunch, check if ANY
+  // substantial alternative exists in the current cap-compliant pool.
+  const excludeRecipe = (excludeId && candidateMap) ? candidateMap.get(excludeId) : null;
+  let fillerOnlyMode = false;
+  if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
+    const hasSubstantialAlternative = pool.some(c => isSubstantialLunch(c));
+    if (!hasSubstantialAlternative) {
+      // No substantial lunches left in cap-compliant pool — emergency fallback mode
+      fillerOnlyMode = true;
+    } else {
+      // Substantial alternatives exist: HARD-BLOCK filler candidates from this pass
+      const substantialPool = pool.filter(c => isSubstantialLunch(c));
+      pool = substantialPool; // Only allow substantial replacements
+    }
+  }
+
+  // Phase 12C: Budget-Safe Lunch Pool Pre-Filter
+  // If any substantial lunch keeps projected plan within budget, remove breach candidates.
+  if (slot === 'lunch' && excludeRecipe && currentPlanCost !== undefined) {
+    const weeklyBudgetRef = input.profile.weeklyBudgetGBP;
+    const hasBudgetSafeSubstantial = pool.some(c =>
+      isSubstantialLunch(c) && (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef
+    );
+    if (hasBudgetSafeSubstantial) {
+      const budgetSafePool = pool.filter(c =>
+        (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef
+      );
+      if (budgetSafePool.length > 0) pool = budgetSafePool;
+    }
+  }
+
+  // Phase 12C/12D: Slot-Agnostic Pool-Collapse Rescue Pass
+  // 
+  // Triggers when the cap-compliant pool has FULLY COLLAPSED to only expensive options,
+  // meaning all remaining candidates cost more than the original by a significant margin.
+  //
+  // Root cause: budget_workhorse_{lunch|dinner} archetype caps exhaust, leaving only
+  // premium/anchor candidates (e.g. Miso Glazed Salmon £5.50, Chicken Parmesan £4.80)
+  // as the "cheapest" cap-compliant option — which silently causes budget escalation.
+  //
+  // Fix: temporarily ignore archetype caps to find cheaper valid alternatives — but
+  // still enforce: slot suitability, repeat caps, budget safety.
+  let poolCollapseRescueTag: string | null = null;
+  if (
+    excludeRecipe &&
+    currentPlanCost !== undefined &&
+    pool.length > 0 &&
+    pool.every(c => c.estimatedCostGBP > excludeRecipe.estimatedCostGBP + 0.50)
+  ) {
+    const weeklyBudgetRef = input.profile.weeklyBudgetGBP;
+    const rescueCandidates = candidates.filter(c =>
+      c.suitableFor.includes(slot) &&
+      c.id !== excludeId &&
+      c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP + 0.50 && // cheaper or similar cost
+      (repeatCounts.get(c.id) ?? 0) < preferences.maxRecipeRepeatsPerWeek && // repeat cap enforced
+      (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef // budget-safe
+    );
+    if (rescueCandidates.length > 0) {
+      pool = rescueCandidates;
+      poolCollapseRescueTag = slot === 'lunch' ? 'LUNCH_RESCUE' : 'DINNER_RESCUE';
+    }
+  }
+
   if (!pool.length) {
     // Relax caps as last resort to guarantee a meal
     pool = candidates.filter(c => c.suitableFor.includes(slot) && c.id !== excludeId);
+    if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
+      fillerOnlyMode = true; // Still in emergency mode since cap-relaxed pool may not have substantial
+    }
   }
   if (!pool.length) return null;
 
   // 2. Score candidates to find the globally optimal replacement
-  // Weighted as: closeness to calorie+protein targets, with a mild cost penalty
   const targetCals = profile.targetCalories;
   const targetProt = profile.targetProteinG;
   const weeklyBudget = profile.weeklyBudgetGBP;
@@ -494,23 +610,24 @@ function globalRepair(
 
   // Composition logic: boost archetypes that are under target
   const compTargets = input.composition.archetypeCounts as Record<string, number>;
-  const excludeRecipe = (excludeId && candidateMap) ? candidateMap.get(excludeId) : null;
   const excludeFamily = excludeRecipe ? getArchetypeFamily(excludeRecipe.archetype) : null;
+
+  // Phase 12: Count how many substantial lunches remain after this pick
+  const substantialLunchesRemaining = (slot === 'lunch')
+    ? pool.filter(c => isSubstantialLunch(c)).length
+    : 0;
 
   for (const c of pool) {
     const calGap = targetCals - (currentDayCals + c.macros.calories);
     const protGap = targetProt - (currentDayProt + c.macros.protein);
     
-    // Closer to 0 gap is better (undershoot better than overshoot for calories)
-    // Weight calorie undershoot pressure: if day is still under, prefer higher-cal candidates
     const calScore = calGap > 0
-      ? -calGap         // undershot: penalise by gap size (but gentler — we want to fill up)
-      : -Math.abs(calGap) * 0.5;  // overshot: penalise more gently (small overshoot is OK)
+      ? -calGap
+      : -Math.abs(calGap) * 0.5;
     
-    // Strengthen protein penalty to force planner towards high-protein fallbacks
     let score = calScore - Math.abs(protGap * 15);
     
-    // ─── Phase 10 & 11: Explicit Priority Tiers & Guardrails ───
+    // ─── Phase 10, 11 & 12: Explicit Priority Tiers & Guardrails ───
     if (excludeRecipe) {
       const isCheaperOrEqual = c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP;
       const isSameArchetype = c.archetype === excludeRecipe.archetype;
@@ -521,10 +638,17 @@ function globalRepair(
       const protDelta = c.macros.protein - excludeRecipe.macros.protein;
       const similarMacros = Math.abs(calDelta) <= 100 && Math.abs(protDelta) <= 15;
       const majorMacroLoss = calDelta <= -150 || protDelta <= -20;
+      // Phase 12C: tightened to £1.00 max — stops Salmon-tier replacements winning via tier bonuses
       const slightCostIncrease = c.estimatedCostGBP > excludeRecipe.estimatedCostGBP && c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP + 1.00;
 
+      // Phase 12C: Lunch-specific Tier 1L — substantial + equal/cheaper cost
+      // This must outrank everything else to prevent premium escalation being chosen
+      // over a cheaper quality-preserving alternative.
+      if (slot === 'lunch' && isSubstantialLunch(c) && isCheaperOrEqual) {
+        score += 28000;
+      }
       // Tier 1: Same slot + same archetype + equal/lower cost
-      if (isSameArchetype && isCheaperOrEqual) {
+      else if (isSameArchetype && isCheaperOrEqual) {
         score += 25000;
       }
       // Tier 2: Same slot + same family + equal/lower cost
@@ -535,33 +659,39 @@ function globalRepair(
       else if (similarMacros && isCheaperOrEqual) {
         score += 15000;
       }
-      // Tier 4: Same slot + slight cost increase if it avoids major protein/calorie loss
+      // Tier 4a: (Lunch-specific) Substantial lunch + small cost increase ONLY if budget-safe
+      else if (
+        slot === 'lunch' && isSubstantialLunch(c) && slightCostIncrease &&
+        (currentPlanCost === undefined || (currentPlanCost + c.estimatedCostGBP) <= input.profile.weeklyBudgetGBP)
+      ) {
+        score += 12000;
+      }
+      // Tier 4b: Same slot + slight cost increase if it avoids major macro loss
       else if (slightCostIncrease && !majorMacroLoss) {
         score += 10000;
       }
-      // Tier 5: Escalate (happens naturally if nothing above triggers)
-      
+      // Tier 5: Same family + slight cost increase
+      else if (isSameFamily && slightCostIncrease) {
+        score += 5000;
+      }
+      // Tier 6: Filler fallback (only reached if fillerOnlyMode or no substantial pool found)
+
       // Strict Escalation Penalty: Punish upward cost movement unless necessary
       if (!isCheaperOrEqual) {
         const costDiff = c.estimatedCostGBP - excludeRecipe.estimatedCostGBP;
-        score -= (costDiff * 5000); // Massive penalty for increasing cost
+        score -= (costDiff * 5000);
       }
 
-      // 1. Global Macro-Loss Guardrails
+      // Global Macro-Loss Guardrails
       if (calDelta <= -150 && protDelta <= -20) {
         score -= 20000; // Very major penalty
       } else if (calDelta <= -150 || protDelta <= -20) {
         score -= 10000; // Major penalty
       }
 
-      // 2. Lunch Floor
-      if (slot === 'lunch') {
-        const wasSubstantial = excludeRecipe.macros.protein >= 35 || excludeRecipe.macros.calories >= 600;
-        const isSubstantial = c.macros.protein >= 30 && c.macros.calories >= 500;
-        
-        if (wasSubstantial && !isSubstantial) {
-          score -= 15000; // Strongly prefer substantial replacements
-        }
+      // Phase 12: Reinforce filler penalty hard — only in fillerOnlyMode should filler score positively
+      if (slot === 'lunch' && isStrongLunch(excludeRecipe) && isFillerLunch(c)) {
+        score -= 50000; // Massive penalty — this should never win unless fillerOnlyMode forced it in
       }
     } else {
       // General cost penalty if no baseline to compare against
@@ -569,16 +699,57 @@ function globalRepair(
       score -= costFraction * 1600;
     }
 
-    // 3. Early-Week Substantial Lunch Preservation
+    // ─── Phase 12B: Projected Budget Scoring ───
+    if (currentPlanCost !== undefined && excludeRecipe) {
+      const costDelta12b = c.estimatedCostGBP - excludeRecipe.estimatedCostGBP;
+      const projectedCost = currentPlanCost + c.estimatedCostGBP; // currentPlanCost excludes the slot being repaired
+      const planIsOverBudget = currentPlanCost > weeklyBudget;
+      const projectedOverBudget = projectedCost > weeklyBudget;
+      const nearBudgetEdge = currentPlanCost >= weeklyBudget - 2.00; // within £2
+
+      // 1. Very strong penalty if this swap causes a budget breach
+      if (!planIsOverBudget && projectedOverBudget) {
+        score -= 30000;
+      }
+      // 2. Even stronger penalty if plan is already over budget and swap increases cost more
+      if (planIsOverBudget && costDelta12b > 0) {
+        score -= 40000 + (costDelta12b * 10000);
+      }
+      // 3. Bonus if swap helps bring over-budget plan back under budget
+      if (planIsOverBudget && !projectedOverBudget) {
+        score += 25000;
+      } else if (planIsOverBudget && costDelta12b < 0) {
+        // Partial recovery bonus — reducing cost even if not fully fixed
+        score += Math.abs(costDelta12b) * 5000;
+      }
+      // 4. Near-budget protection: block positive-cost repairs unless major nutrition improvement
+      if (nearBudgetEdge && costDelta12b > 0) {
+        const calDeltaForBudget = c.macros.calories - excludeRecipe.macros.calories;
+        const protDeltaForBudget = c.macros.protein - excludeRecipe.macros.protein;
+        const isMajorNutritionImprovement = calDeltaForBudget >= 150 || protDeltaForBudget >= 12;
+        if (!isMajorNutritionImprovement) {
+          score -= 35000; // Block near-budget cost escalation unless genuinely needed
+        }
+      }
+    }
+
+    // Phase 11: Early-Week Substantial Lunch Preservation
     if (slot === 'lunch' && ['Mon', 'Tue', 'Wed', 'Thu'].includes(day)) {
-      const isSubstantial = c.macros.protein >= 30 && c.macros.calories >= 500;
-      if (isSubstantial) {
+      if (isSubstantialLunch(c)) {
         const hitsRecipeCap = (repeatCounts.get(c.id) ?? 0) + 1 >= preferences.maxRecipeRepeatsPerWeek;
         const hitsArchCap = (archetypeCounts.get(c.archetype) ?? 0) + 1 >= (input.composition.archetypeRepeatCaps[c.archetype] ?? 99);
         
         if (hitsRecipeCap || hitsArchCap) {
            score -= 3000; // Small penalty for burning the last charge early
         }
+      }
+    }
+
+    // Phase 12: Future-Slot Preservation Bonus
+    if (slot === 'lunch' && isSubstantialLunch(c)) {
+      // Bonus for keeping some substantial options alive for future slots
+      if (substantialLunchesRemaining <= 2) {
+        score -= 2000; // Gentle nudge to preserve the last few
       }
     }
     
@@ -589,7 +760,6 @@ function globalRepair(
     // Bonus for fulfilling a needed archetype
     const currentArchCount = archetypeCounts.get(c.archetype) ?? 0;
     const targetArchCount = compTargets[c.archetype] ?? 0;
-    // Massive point boost if we *need* this archetype to hit the strategy target
     const compTargetBonus = currentArchCount < targetArchCount ? 5000 : 0;
     score += compTargetBonus;
 
@@ -597,6 +767,20 @@ function globalRepair(
       bestScore = score;
       bestId = c.id;
     }
+  }
+
+  // Phase 12: Tag the result with emergency fallback if we're in filler mode
+  if (fillerOnlyMode && bestId) {
+    const winner = candidates.find(c => c.id === bestId);
+    if (winner && isFillerLunch(winner)) {
+      // Attach marker to the id so the warning-emit code can detect it
+      return `${bestId}::EMERGENCY_FALLBACK`;
+    }
+  }
+
+  // Phase 12D: Tag the result with rescue flag if pool-collapse rescue activated
+  if (poolCollapseRescueTag && bestId) {
+    return `${bestId}::${poolCollapseRescueTag}`;
   }
 
   return bestId;

@@ -300,34 +300,78 @@ export default function PlannerDevScreen() {
 
           {stageBResult.warnings.length > 0 && (
             <View className="mb-4">
+              {/* Phase 12C: Repair summary counters */}
+              {(() => {
+                const repairWarnings = stageBResult.warnings.filter(w => w.startsWith('Repaired '));
+                const premiumCount = repairWarnings.filter(w => w.includes('[PREMIUM ESCALATION]')).length;
+                const emergencyCount = repairWarnings.filter(w => w.includes('[EMERGENCY FALLBACK]')).length;
+                const rescueCount = repairWarnings.filter(w => w.includes('[LUNCH RESCUE]') || w.includes('[DINNER RESCUE]')).length;
+                const budgetEscCount = repairWarnings.filter(w => w.includes('[BUDGET ESCALATION]')).length;
+                const cleanRepairCount = repairWarnings.filter(w =>
+                  !w.includes('[EMERGENCY FALLBACK]') &&
+                  !w.includes('[PREMIUM ESCALATION]') &&
+                  !w.includes('[BUDGET ESCALATION]')
+                ).length;
+                if (repairWarnings.length === 0) return null;
+                return (
+                  <View className="bg-white dark:bg-darkgrey rounded-lg p-3 mb-3 border border-black/5 dark:border-white/5 flex-row flex-wrap gap-x-4 gap-y-1">
+                    <Text className="text-[10px] font-bold uppercase tracking-wider text-gray-400 w-full mb-1">Repair Summary · {repairWarnings.length} total</Text>
+                    {cleanRepairCount > 0 && <Text className="text-xs font-mono text-green-600">✓ Clean: {cleanRepairCount}</Text>}
+                    {rescueCount > 0 && <Text className="text-xs font-mono text-teal-600">↺ Rescue: {rescueCount}</Text>}
+                    {premiumCount > 0 && <Text className="text-xs font-mono text-amber-600">⚠ Premium Esc: {premiumCount}</Text>}
+                    {emergencyCount > 0 && <Text className="text-xs font-mono text-red-500">⚠ Emergency: {emergencyCount}</Text>}
+                    {budgetEscCount > 0 && <Text className="text-xs font-mono text-red-400">↑ Budget Esc: {budgetEscCount}</Text>}
+                  </View>
+                );
+              })()}
+
               {/* Split warnings from explicit repairs */}
               {stageBResult.warnings.map((w, i) => {
                 const isRepair = w.startsWith('Repaired ');
                 
                 if (isRepair) {
-                  const match = w.match(/Repaired (.+?) (.+?) to "(.+?)" \(was "(.+?)"\) \[Cost: (.+?)\] \[Cals: ([+-]?\d+)\] \[Protein: ([+-]?\d+)g\]/);
+                  // Regex matches all optional tags including [LUNCH RESCUE] and [DINNER RESCUE]
+                  const match = w.match(/Repaired (.+?) (.+?) to "(.+?)" \(was "(.+?)"\) \[Cost: (.+?)\] \[Cals: ([+-]?\d+)\] \[Protein: ([+-]?\d+)g\]( \[EMERGENCY FALLBACK\])?( \[PREMIUM ESCALATION\])?( \[(LUNCH RESCUE|DINNER RESCUE)\])?( \[(BUDGET SAVING|BUDGET NEUTRAL|BUDGET ESCALATION)\] \[Proj: (.+?)\])?/);
                   
                   if (match) {
-                    const [_, d, s, newRecipe, oldRecipe, costStr, calStr, protStr] = match;
+                    const [_, d, s, newRecipe, oldRecipe, costStr, calStr, protStr, emergencyTag, premiumTag, rescueMatch, rescueType, _b, budgetType, projCostStr] = match;
                     const calDelta = parseInt(calStr);
                     const protDelta = parseInt(protStr);
+                    const isEmergency = !!emergencyTag;
+                    const isPremiumEscalation = !!premiumTag && !isEmergency;
+                    const isRescue = !!rescueMatch;
                     
-                    const isSevere = calDelta <= -150 && protDelta <= -20;
-                    const isDegraded = calDelta <= -150 || protDelta <= -20;
+                    const isSevere = !isEmergency && !isPremiumEscalation && calDelta <= -150 && protDelta <= -20;
+                    const isDegraded = !isEmergency && !isPremiumEscalation && (calDelta <= -150 || protDelta <= -20);
                     
-                    const bgClass = isSevere 
-                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/50' 
-                      : isDegraded 
-                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50' 
-                        : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/50';
+                    const bgClass = isEmergency
+                      ? 'bg-red-100 dark:bg-red-900/30 border-red-400 dark:border-red-600'
+                      : isPremiumEscalation
+                        ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-600'
+                        : isSevere 
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/50' 
+                          : isDegraded 
+                            ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50' 
+                            : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/50';
                     
-                    const labelClass = isSevere
-                      ? 'text-red-800 dark:text-red-400'
-                      : isDegraded
-                        ? 'text-orange-800 dark:text-orange-400'
-                        : 'text-green-800 dark:text-green-400';
+                    const labelClass = isEmergency
+                      ? 'text-red-900 dark:text-red-300'
+                      : isPremiumEscalation
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : isSevere
+                          ? 'text-red-800 dark:text-red-400'
+                          : isDegraded
+                            ? 'text-orange-800 dark:text-orange-400'
+                            : 'text-green-800 dark:text-green-400';
                         
-                    const labelText = isSevere ? 'Severe Downgrade' : isDegraded ? 'Degraded Repair' : 'Acceptable Repair';
+                    const labelText = isEmergency
+                      ? '⚠ Emergency Fallback'
+                      : isPremiumEscalation
+                        ? '⚠ Premium Escalation'
+                        : isSevere ? 'Severe Downgrade' : isDegraded ? 'Degraded Repair' : 'Acceptable Repair';
+
+                    const budgetColor = budgetType === 'BUDGET SAVING' ? 'text-green-600' : budgetType === 'BUDGET ESCALATION' ? 'text-red-500' : 'text-gray-500';
+                    const budgetIcon = budgetType === 'BUDGET SAVING' ? '↓' : budgetType === 'BUDGET ESCALATION' ? '↑' : '→';
                     
                     return (
                       <View key={i} className={`border rounded-lg p-3 mb-2 ${bgClass}`}>
@@ -335,17 +379,30 @@ export default function PlannerDevScreen() {
                           <Text className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>{labelText}</Text>
                           <Text className="text-gray-500 text-[10px] uppercase font-bold">{d} {s}</Text>
                         </View>
+
+                        {isRescue && (
+                          <View className="flex-row items-center mb-1">
+                            <Text className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider">↺ {rescueType} · Pool-Collapse Rescue</Text>
+                          </View>
+                        )}
                         
                         <View className="mb-2">
                           <Text className="text-gray-500 text-xs line-through">{oldRecipe}</Text>
                           <Text className="text-charcoal dark:text-white text-sm font-semibold">{newRecipe}</Text>
                         </View>
                         
-                        <View className="flex-row gap-3">
+                        <View className="flex-row gap-3 mb-1">
                           <Text className="text-gray-600 dark:text-gray-300 text-xs font-mono">Cost: {costStr}</Text>
                           <Text className={`${calDelta < 0 ? 'text-red-500' : 'text-green-600'} text-xs font-mono`}>Cals: {calStr}</Text>
                           <Text className={`${protDelta < 0 ? 'text-red-500' : 'text-green-600'} text-xs font-mono`}>Prot: {protStr}g</Text>
                         </View>
+
+                        {budgetType && (
+                          <View className="flex-row items-center gap-1 border-t border-black/10 dark:border-white/10 pt-1 mt-1">
+                            <Text className={`text-[10px] font-bold font-mono ${budgetColor}`}>{budgetIcon} {budgetType}</Text>
+                            {projCostStr && <Text className="text-gray-500 text-[10px] font-mono">· Proj total: {projCostStr}</Text>}
+                          </View>
+                        )}
                       </View>
                     );
                   }
