@@ -8,6 +8,7 @@ import { MOCK_RECIPES, MOCK_INGREDIENTS } from './seed';
 import { UserProfile } from './schema';
 import { WeeklyRoutine, DAYS, isPlanned } from './weeklyRoutine';
 import { PlannerInput, PlannerCandidate, PlannerDay, PlannerSlot } from './plannerSchema';
+import { buildWeeklyCompositionTarget, deriveArchetype } from './plannerStrategy';
 
 // ─── Dietary exclusion logic ──────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ function buildPantrySignals(pantry: PantryState): PlannerInput['pantrySignals'] 
 function buildCandidates(
   user: UserProfile,
   pantry: PantryState,
+  routine: WeeklyRoutine,
 ): PlannerCandidate[] {
   const wellStockedIds = new Set(
     MOCK_INGREDIENTS
@@ -73,11 +75,19 @@ function buildCandidates(
       prepTimeMinutes: r.prepTimeMinutes,
       macros: r.macros,
       tags: r.tags,
+      archetype: r.archetype ?? deriveArchetype(r.estimatedCostGBP, r.macros.calories, r.macros.protein, r.suitableFor, user.budgetWeekly / defaultSlotCount(routine)),
       pantryIngredients: r.ingredients
         .filter(ri => wellStockedIds.has(ri.ingredientId))
         .map(ri => ri.ingredientId),
       estimatedCostGBP: r.estimatedCostGBP,
     }));
+}
+
+function defaultSlotCount(routine: WeeklyRoutine) {
+  return DAYS.reduce((acc, day) => 
+    acc + (isPlanned(routine[day].breakfast) ? 1 : 0) + 
+          (isPlanned(routine[day].lunch) ? 1 : 0) + 
+          (isPlanned(routine[day].dinner) ? 1 : 0), 0);
 }
 
 // ─── Slots to fill ────────────────────────────────────────────────────────────
@@ -100,7 +110,7 @@ export function buildPlannerInput(
   routine: WeeklyRoutine,
   pantry: PantryState = {},
 ): PlannerInput {
-  return {
+  const baseInput: Omit<PlannerInput, 'composition'> = {
     profile: {
       dietaryPreference: user.dietaryPreference,
       allergies: user.allergies,
@@ -111,11 +121,18 @@ export function buildPlannerInput(
     },
     slotsToFill: buildSlotsToFill(routine),
     pantrySignals: buildPantrySignals(pantry),
-    candidates: buildCandidates(user, pantry),
+    candidates: buildCandidates(user, pantry, routine),
     preferences: {
       prioritisePantry: true,
       preferVariety: true,
       maxRecipeRepeatsPerWeek: 2,
     },
+  };
+
+  const composition = buildWeeklyCompositionTarget(baseInput as PlannerInput);
+  
+  return {
+    ...baseInput,
+    composition,
   };
 }

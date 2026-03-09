@@ -278,11 +278,11 @@ export function runtimeValidateSchema(raw: unknown): raw is PlannerRawOutput {
 export function validatePlannerOutput(
   raw: PlannerRawOutput,
   input: PlannerInput,
-  effectiveCaps: Record<PlannerSlot, number>,
 ): ValidationResult {
   const warnings: string[]        = [];
   const candidateMap              = new Map(input.candidates.map(c => [c.id, c]));
   const repeatCounts              = new Map<string, number>();
+  const archetypeCounts           = new Map<string, number>();
   const validAssignments: PlannerAssignment[] = [];
   const filledSlots               = new Set<string>();
   const toReassign: { day: PlannerDay; slot: PlannerSlot; originalId?: string }[] = [];
@@ -308,9 +308,20 @@ export function validatePlannerOutput(
     }
 
     const currentCount = repeatCounts.get(a.recipeId) ?? 0;
-    const allowedRepeats = effectiveCaps[a.slot];
+    const allowedRepeats = input.preferences.maxRecipeRepeatsPerWeek;
     if (currentCount >= allowedRepeats) {
-      warnings.push(`"${candidate.title}" exceeded repeat cap for ${a.day} ${a.slot}`);
+      warnings.push(`"${candidate.title}" exceeded hard recipe limit for ${a.day} ${a.slot}`);
+      toReassign.push({ day: a.day, slot: a.slot, originalId: a.recipeId });
+      filledSlots.add(slotKey);
+      continue;
+    }
+
+    const arch = candidate.archetype;
+    const archCount = archetypeCounts.get(arch) ?? 0;
+    const allowedArchRepeats = input.composition.archetypeRepeatCaps[arch] ?? 99;
+    
+    if (archCount >= allowedArchRepeats) {
+      warnings.push(`"${candidate.title}" exceeded archetype [${arch}] cap for ${a.day} ${a.slot}`);
       toReassign.push({ day: a.day, slot: a.slot, originalId: a.recipeId });
       filledSlots.add(slotKey);
       continue;
@@ -319,6 +330,7 @@ export function validatePlannerOutput(
     // Completely valid assignment
     validAssignments.push(a);
     repeatCounts.set(a.recipeId, currentCount + 1);
+    archetypeCounts.set(arch, archCount + 1);
     filledSlots.add(slotKey);
   }
 
@@ -348,8 +360,8 @@ export function validatePlannerOutput(
       r.day, 
       r.slot, 
       input, 
-      repeatCounts, 
-      effectiveCaps[r.slot], 
+      repeatCounts,
+      archetypeCounts,
       currentCals, 
       currentProt, 
       r.originalId
@@ -358,6 +370,9 @@ export function validatePlannerOutput(
     if (repairedId) {
       validAssignments.push({ day: r.day, slot: r.slot, recipeId: repairedId });
       repeatCounts.set(repairedId, (repeatCounts.get(repairedId) ?? 0) + 1);
+      const repArch = candidateMap.get(repairedId)!.archetype;
+      archetypeCounts.set(repArch, (archetypeCounts.get(repArch) ?? 0) + 1);
+      
       if (r.originalId) {
         warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(repairedId)?.title}"`);
       } else {
@@ -369,6 +384,8 @@ export function validatePlannerOutput(
         warnings.push(`Could not find global alternative for ${r.day} ${r.slot} — accepting over-cap recipe "${candidateMap.get(r.originalId)?.title}"`);
         validAssignments.push({ day: r.day, slot: r.slot, recipeId: r.originalId });
         repeatCounts.set(r.originalId, (repeatCounts.get(r.originalId) ?? 0) + 1);
+        const origArch = candidateMap.get(r.originalId)!.archetype;
+        archetypeCounts.set(origArch, (archetypeCounts.get(origArch) ?? 0) + 1);
       } else {
         warnings.push(`Could not fill ${r.day} ${r.slot} — no eligible candidate`);
       }
@@ -414,7 +431,7 @@ function globalRepair(
   slot: PlannerSlot,
   input: PlannerInput,
   repeatCounts: Map<string, number>,
-  slotCap: number,
+  archetypeCounts: Map<string, number>,
   currentDayCals: number,
   currentDayProt: number,
   excludeId?: string,
@@ -425,11 +442,12 @@ function globalRepair(
   let pool = candidates.filter(c =>
     c.suitableFor.includes(slot) &&
     c.id !== excludeId &&
-    (repeatCounts.get(c.id) ?? 0) < slotCap
+    (repeatCounts.get(c.id) ?? 0) < preferences.maxRecipeRepeatsPerWeek &&
+    (archetypeCounts.get(c.archetype) ?? 0) < (input.composition.archetypeRepeatCaps[c.archetype] ?? 99)
   );
 
   if (!pool.length) {
-    // Relax repeat cap as last resort to guarantee a meal
+    // Relax caps as last resort to guarantee a meal
     pool = candidates.filter(c => c.suitableFor.includes(slot) && c.id !== excludeId);
   }
   if (!pool.length) return null;
@@ -442,6 +460,9 @@ function globalRepair(
 
   let bestId = pool[0].id;
   let bestScore = -Infinity;
+
+  // Composition logic: boost archetypes that are under target
+  const compTargets = input.composition.archetypeCounts as Record<string, number>;
 
   for (const c of pool) {
     const calGap = targetCals - (currentDayCals + c.macros.calories);
@@ -462,6 +483,13 @@ function globalRepair(
     // Goal & Pantry tie-breakers
     if (preferences.prioritisePantry && c.pantryIngredients.length > 0) score += 500;
     if (profile.goalTags.some(tag => c.tags.includes(tag))) score += 300;
+
+    // Bonus for fulfilling a needed archetype
+    const currentArchCount = archetypeCounts.get(c.archetype) ?? 0;
+    const targetArchCount = compTargets[c.archetype] ?? 0;
+    // Massive point boost if we *need* this archetype to hit the strategy target
+    const compTargetBonus = currentArchCount < targetArchCount ? 5000 : 0;
+    score += compTargetBonus;
 
     if (score > bestScore) {
       bestScore = score;

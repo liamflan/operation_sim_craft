@@ -1,3 +1,5 @@
+import { RecipeArchetype } from './plannerSchema';
+
 export type MacroTarget = {
   calories: number;
   protein: number;
@@ -34,6 +36,8 @@ export type Recipe = {
   suitableFor: ('breakfast' | 'lunch' | 'dinner')[];
   /** Rough retail cost estimate in GBP */
   estimatedCostGBP: number;
+  /** Planner-facing role, determining how often it can repeat and when it's used */
+  archetype?: RecipeArchetype;
 };
 
 export type UserProfile = {

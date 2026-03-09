@@ -26,6 +26,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 15,
     macros: { calories: 520, protein: 45, carbs: 35, fats: 22 },
     tags: ["High Protein", "Omega-3", "Quick"],
+    archetype: 'variety_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 5.50,
     ingredients: [
@@ -42,6 +43,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 25,
     macros: { calories: 650, protein: 55, carbs: 45, fats: 25 },
     tags: ["High Protein", "Post-Workout"],
+    archetype: 'premium_meal',
     suitableFor: ['dinner'],
     estimatedCostGBP: 7.00,
     ingredients: [
@@ -58,6 +60,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     macros: { calories: 350, protein: 20, carbs: 30, fats: 18 },
     tags: ["Vegetarian", "Quick Breakfast"],
+    archetype: 'budget_breakfast',
     suitableFor: ['breakfast'],
     estimatedCostGBP: 2.50,
     ingredients: [
@@ -73,6 +76,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 20,
     macros: { calories: 480, protein: 50, carbs: 10, fats: 26 },
     tags: ["Low Carb", "High Protein", "Keto"],
+    archetype: 'high_protein_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 4.50,
     ingredients: [
@@ -89,6 +93,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 10,
     macros: { calories: 420, protein: 12, carbs: 58, fats: 18 },
     tags: ["Vegan", "Healthy", "Quick"],
+    archetype: 'variety_anchor',
     suitableFor: ['lunch'],
     estimatedCostGBP: 3.00,
     ingredients: [
@@ -105,6 +110,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 15,
     macros: { calories: 450, protein: 38, carbs: 15, fats: 28 },
     tags: ["High Protein", "Low Carb", "Quick"],
+    archetype: 'variety_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 5.00,
     ingredients: [
@@ -120,6 +126,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 10,
     macros: { calories: 380, protein: 30, carbs: 45, fats: 8 },
     tags: ["Vegetarian", "High Protein", "Breakfast"],
+    archetype: 'protein_breakfast',
     suitableFor: ['breakfast'],
     estimatedCostGBP: 2.00,
     ingredients: [
@@ -134,6 +141,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 20,
     macros: { calories: 490, protein: 15, carbs: 75, fats: 14 },
     tags: ["Vegan", "High Fiber", "Healthy"],
+    archetype: 'variety_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 3.50,
     ingredients: [
@@ -149,6 +157,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     macros: { calories: 400, protein: 18, carbs: 32, fats: 22 },
     tags: ["Vegetarian", "Quick", "Breakfast"],
+    archetype: 'budget_breakfast',
     suitableFor: ['breakfast', 'lunch'],
     estimatedCostGBP: 1.50,
     ingredients: [
@@ -163,6 +172,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     macros: { calories: 350, protein: 22, carbs: 45, fats: 8 },
     tags: ["Vegetarian", "Quick", "Breakfast"],
+    archetype: 'budget_breakfast',
     suitableFor: ['breakfast'],
     estimatedCostGBP: 1.80,
     ingredients: [
@@ -176,6 +186,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 45,
     macros: { calories: 650, protein: 45, carbs: 55, fats: 20 },
     tags: ["High Protein", "Meal Prep", "Dinner"],
+    archetype: 'budget_workhorse',
     suitableFor: ['dinner'],
     estimatedCostGBP: 3.50,
     ingredients: [
@@ -191,6 +202,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 25,
     macros: { calories: 600, protein: 42, carbs: 40, fats: 25 },
     tags: ["High Protein", "Healthy", "Dinner"],
+    archetype: 'variety_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 6.00,
     ingredients: [
@@ -206,6 +218,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 40,
     macros: { calories: 750, protein: 55, carbs: 65, fats: 28 },
     tags: ["High Protein", "Comfort Food", "Dinner"],
+    archetype: 'variety_anchor',
     suitableFor: ['dinner'],
     estimatedCostGBP: 4.50,
     ingredients: [
@@ -221,6 +234,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 60,
     macros: { calories: 550, protein: 20, carbs: 85, fats: 12 },
     tags: ["Vegetarian", "Comfort Food", "Dinner"],
+    archetype: 'budget_workhorse',
     suitableFor: ['dinner'],
     estimatedCostGBP: 2.80,
     ingredients: [
@@ -235,6 +249,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 20,
     macros: { calories: 800, protein: 48, carbs: 70, fats: 32 },
     tags: ["High Protein", "Quick", "Dinner"],
+    archetype: 'high_protein_anchor',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 4.00,
     ingredients: [
@@ -347,6 +362,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 10,
     macros: { calories: 600, protein: 36, carbs: 55, fats: 28 },
     tags: ["Vegetarian", "Quick", "Breakfast", "Budget"],
+    archetype: 'budget_breakfast',
     suitableFor: ['breakfast'],
     estimatedCostGBP: 1.50,
     ingredients: [
@@ -361,6 +377,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 20,
     macros: { calories: 720, protein: 55, carbs: 80, fats: 18 },
     tags: ["High Protein", "Budget", "Meal Prep"],
+    archetype: 'budget_workhorse',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 2.80,
     ingredients: [
@@ -375,6 +392,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     macros: { calories: 450, protein: 22, carbs: 72, fats: 8 },
     tags: ["Vegan", "Budget", "Quick", "Breakfast"],
+    archetype: 'budget_breakfast',
     suitableFor: ['breakfast', 'lunch'],
     estimatedCostGBP: 1.20,
     ingredients: [
@@ -389,6 +407,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 15,
     macros: { calories: 580, protein: 22, carbs: 90, fats: 18 },
     tags: ["Budget", "Vegetarian", "Quick"],
+    archetype: 'budget_workhorse',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 1.80,
     ingredients: [
@@ -404,6 +423,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 20,
     macros: { calories: 680, protein: 50, carbs: 75, fats: 16 },
     tags: ["High Protein", "Budget"],
+    archetype: 'budget_workhorse',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 2.50,
     ingredients: [
@@ -419,6 +439,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 25,
     macros: { calories: 750, protein: 45, carbs: 80, fats: 25 },
     tags: ["High Protein", "Budget", "Dinner"],
+    archetype: 'budget_workhorse',
     suitableFor: ['dinner'],
     estimatedCostGBP: 2.80,
     ingredients: [
@@ -433,6 +454,7 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 5,
     macros: { calories: 420, protein: 32, carbs: 48, fats: 10 },
     tags: ["High Protein", "Budget", "Quick", "Breakfast"],
+    archetype: 'protein_breakfast',
     suitableFor: ['breakfast'],
     estimatedCostGBP: 1.30,
     ingredients: [
@@ -447,11 +469,168 @@ export const MOCK_RECIPES: Recipe[] = [
     prepTimeMinutes: 30,
     macros: { calories: 650, protein: 48, carbs: 75, fats: 14 },
     tags: ["High Protein", "Budget", "Meal Prep"],
+    archetype: 'budget_workhorse',
     suitableFor: ['lunch', 'dinner'],
     estimatedCostGBP: 2.20,
     ingredients: [
       { ingredientId: "i1", amount: 100, unit: "g" },
       { ingredientId: "i7", amount: 150, unit: "g" },
+    ],
+  },
+  {
+    id: "r31",
+    title: "Sausage & Bean Casserole",
+    imageUrl: "https://images.unsplash.com/photo-1548943487-a2e4d43b4859?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 40,
+    macros: { calories: 680, protein: 42, carbs: 55, fats: 32 },
+    tags: ["High Protein", "Budget", "Dinner"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['dinner'],
+    estimatedCostGBP: 2.60,
+    ingredients: [
+      { ingredientId: "i1", amount: 150, unit: "g" },
+      { ingredientId: "i5", amount: 100, unit: "g" },
+      { ingredientId: "i6", amount: 2, unit: "clove" },
+    ],
+  },
+  {
+    id: "r32",
+    title: "Cottage Cheese Protein Pancakes",
+    imageUrl: "https://images.unsplash.com/photo-1506084868730-342b1f894493?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 15,
+    macros: { calories: 550, protein: 45, carbs: 40, fats: 22 },
+    tags: ["High Protein", "Vegetarian", "Breakfast"],
+    archetype: 'protein_breakfast',
+    suitableFor: ['breakfast'],
+    estimatedCostGBP: 2.20,
+    ingredients: [
+      { ingredientId: "i12", amount: 150, unit: "g" }, // Mocks cottage cheese
+      { ingredientId: "i9", amount: 3, unit: "item" },
+    ],
+  },
+  {
+    id: "r33",
+    title: "Lentil & Vegetable Curry",
+    imageUrl: "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 35,
+    macros: { calories: 580, protein: 25, carbs: 80, fats: 16 },
+    tags: ["Vegan", "Budget", "High Fiber"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['lunch', 'dinner'],
+    estimatedCostGBP: 1.90,
+    ingredients: [
+      { ingredientId: "i10", amount: 150, unit: "g" },
+      { ingredientId: "i4", amount: 1, unit: "item" },
+      { ingredientId: "i6", amount: 3, unit: "clove" },
+    ],
+  },
+  {
+    id: "r34",
+    title: "Turkey Smoked Sausage Skillet",
+    imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 20,
+    macros: { calories: 620, protein: 48, carbs: 60, fats: 20 },
+    tags: ["High Protein", "Budget", "Quick"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['lunch', 'dinner'],
+    estimatedCostGBP: 2.90,
+    ingredients: [
+      { ingredientId: "i5", amount: 150, unit: "g" },
+      { ingredientId: "i12", amount: 100, unit: "g" }, // Mocks potatoes
+    ],
+  },
+  {
+    id: "r35",
+    title: "Black Bean & Corn Quesadillas",
+    imageUrl: "https://images.unsplash.com/photo-1618040996337-33ee66b4ed98?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 15,
+    macros: { calories: 700, protein: 32, carbs: 75, fats: 28 },
+    tags: ["Vegetarian", "Budget", "Lunch"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['lunch', 'dinner'],
+    estimatedCostGBP: 2.50,
+    ingredients: [
+      { ingredientId: "i10", amount: 100, unit: "g" },
+      { ingredientId: "i15", amount: 2, unit: "item" }, // Mocks tortillas
+      { ingredientId: "i5", amount: 50, unit: "g" },
+    ],
+  },
+  {
+    id: "r36",
+    title: "Protein Oats with Whey",
+    imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 5,
+    macros: { calories: 520, protein: 40, carbs: 65, fats: 12 },
+    tags: ["High Protein", "Vegetarian", "Breakfast"],
+    archetype: 'protein_breakfast',
+    suitableFor: ['breakfast'],
+    estimatedCostGBP: 1.60,
+    ingredients: [
+      { ingredientId: "i12", amount: 80, unit: "g" },
+      { ingredientId: "i13", amount: 2, unit: "tbsp" }, // Mocks whey powder
+    ],
+  },
+  {
+    id: "r37",
+    title: "Tuna Niçoise Salad",
+    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 15,
+    macros: { calories: 550, protein: 38, carbs: 35, fats: 28 },
+    tags: ["High Protein", "Budget", "Lunch"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['lunch'],
+    estimatedCostGBP: 2.70,
+    ingredients: [
+      { ingredientId: "i1", amount: 100, unit: "g" },
+      { ingredientId: "i9", amount: 2, unit: "item" },
+      { ingredientId: "i4", amount: 0.5, unit: "item" },
+    ],
+  },
+  {
+    id: "r38",
+    title: "Pork Meatball & Pasta Bake",
+    imageUrl: "https://images.unsplash.com/photo-1621996316220-4df1b11ce1f5?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 45,
+    macros: { calories: 800, protein: 50, carbs: 80, fats: 32 },
+    tags: ["High Protein", "Budget", "Dinner"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['dinner'],
+    estimatedCostGBP: 3.10,
+    ingredients: [
+      { ingredientId: "i1", amount: 150, unit: "g" },
+      { ingredientId: "i11", amount: 1, unit: "item" }, // Mocks pasta
+    ],
+  },
+  {
+    id: "r39",
+    title: "Omelette with Cheese & Ham",
+    imageUrl: "https://images.unsplash.com/photo-1510693062121-0eab81aa42d4?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 10,
+    macros: { calories: 580, protein: 45, carbs: 10, fats: 40 },
+    tags: ["High Protein", "Keto", "Breakfast"],
+    archetype: 'protein_breakfast',
+    suitableFor: ['breakfast'],
+    estimatedCostGBP: 2.10,
+    ingredients: [
+      { ingredientId: "i9", amount: 4, unit: "item" },
+      { ingredientId: "i1", amount: 50, unit: "g" },
+      { ingredientId: "i5", amount: 50, unit: "g" },
+    ],
+  },
+  {
+    id: "r40",
+    title: "Budget Beef Chilli Con Carne",
+    imageUrl: "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 40,
+    macros: { calories: 720, protein: 55, carbs: 65, fats: 25 },
+    tags: ["High Protein", "Budget", "Meal Prep"],
+    archetype: 'budget_workhorse',
+    suitableFor: ['lunch', 'dinner'],
+    estimatedCostGBP: 2.80,
+    ingredients: [
+      { ingredientId: "i1", amount: 150, unit: "g" },
+      { ingredientId: "i10", amount: 100, unit: "g" },
+      { ingredientId: "i6", amount: 2, unit: "clove" },
     ],
   }
 ];

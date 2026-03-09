@@ -1,13 +1,28 @@
 // ─── Gemini Planner Contract Types ───────────────────────────────────────────
-//
-// PlannerInput  → what Provision sends to Gemini (structured context)
-// PlannerRawOutput → what Gemini returns (planned-slot assignments only)
-// ResolvedWeeklyPlan → merged, validated, app-ready plan
-//
-// Rule: Gemini never receives raw UI state and never returns the full routine grid.
-// Provision is responsible for all hard constraints, merging, and validation.
 
-// ─── Input ────────────────────────────────────────────────────────────────────
+// ─── Recipe Archetypes ────────────────────────────────────────────────────────
+// Planner-facing roles. Never user-facing directly.
+
+export type RecipeArchetype =
+  | 'budget_breakfast'    // cheap, highly repeatable morning option
+  | 'protein_breakfast'   // targets protein goal at breakfast
+  | 'budget_workhorse'    // cheap lunch/dinner, can repeat most days
+  | 'high_protein_anchor' // high protein, use 1-2× per week max
+  | 'calorie_dense'       // fills calorie gap, use when daily avg is low
+  | 'variety_anchor'      // interesting/premium feel, use 1-2× per week
+  | 'premium_meal'        // expensive, use at most once per week
+  | 'quick_default';      // fast fallback, fills gaps when budget/pool exhausted
+
+// ─── Weekly Composition Target ────────────────────────────────────────────────
+// Computed before the Gemini call. Tells the planner how many of each archetype
+// to use, and what repeat cap applies per archetype.
+
+export type WeeklyCompositionTarget = {
+  archetypeCounts: Partial<Record<RecipeArchetype, number>>;
+  archetypeRepeatCaps: Record<RecipeArchetype, number>;
+};
+
+// ─── Input ────────────────────────────────────────────────────────────────────────────────
 
 export type PlannerInput = {
   profile: {
@@ -44,6 +59,9 @@ export type PlannerInput = {
     preferVariety: boolean;
     maxRecipeRepeatsPerWeek: number;
   };
+
+  /** Weekly composition strategy produced by plannerStrategy.ts */
+  composition: WeeklyCompositionTarget;
 };
 
 export type PlannerCandidate = {
@@ -53,6 +71,7 @@ export type PlannerCandidate = {
   prepTimeMinutes: number;
   macros: { calories: number; protein: number; carbs: number; fats: number };
   tags: string[];
+  archetype: RecipeArchetype;
   /** IDs of ingredients in this recipe that are already well-stocked in the pantry */
   pantryIngredients: string[];
   estimatedCostGBP: number;
