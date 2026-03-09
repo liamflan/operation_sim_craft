@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -6,8 +6,10 @@ import '../global.css';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme as useNavColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeProvider, useTheme } from '../components/ThemeContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,8 +17,24 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+function RootApp() {
+  const colorScheme = useNavColorScheme();
+  const { isDarkMode } = useTheme();
+
+  return (
+    <NavThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <View className={`flex-1 ${isDarkMode ? 'dark' : ''}`}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="calibration" options={{ headerShown: false, animation: 'fade' }} />
+        </Stack>
+      </View>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+    </NavThemeProvider>
+  );
+}
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded, error] = useFonts({
     Outfit_400Regular,
     Outfit_500Medium,
@@ -35,12 +53,8 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
+    <ThemeProvider>
+      <RootApp />
     </ThemeProvider>
   );
 }

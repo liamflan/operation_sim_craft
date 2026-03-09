@@ -11,12 +11,12 @@ function NavItem({ icon, label, isActive, onPress }: { icon: string, label: stri
   return (
     <TouchableOpacity 
       onPress={onPress}
-      className={`flex-row items-center p-4 rounded-2xl mb-2 transition-colors ${isActive ? 'bg-avocado/10' : 'hover:bg-charcoal/5'}`}
+      className={`flex-row items-center p-4 rounded-2xl mb-2 transition-colors ${isActive ? 'bg-avocado/10' : 'hover:bg-charcoal/5 dark:hover:bg-white/5'}`}
     >
       <View className="w-8">
         <FontAwesome5 name={icon} size={20} color={isActive ? '#6DBE75' : '#71717a'} />
       </View>
-      <Text className={`text-lg font-bold ${isActive ? 'text-avocado' : 'text-gray-600'}`}>{label}</Text>
+      <Text className={`text-lg font-bold ${isActive ? 'text-avocado' : 'text-gray-600 dark:text-gray-400'}`}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -30,11 +30,11 @@ export default function TabLayout() {
 
   if (isDesktop) {
     return (
-      <View className="flex-1 flex-row bg-cream">
+      <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
         {/* Persistent Left Sidebar */}
-        <View className="w-64 bg-white border-r border-black/5 pt-12 px-6 pb-8 h-full sticky top-0" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
+        <View className="w-64 bg-white dark:bg-darkgrey border-r border-black/5 dark:border-white/5 pt-12 px-6 pb-8 h-full sticky top-0" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
           <View className="mb-12">
-            <Text className="text-charcoal text-2xl font-extrabold tracking-tight">Provision</Text>
+            <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Provision</Text>
             <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Engine MVP</Text>
           </View>
 
@@ -61,13 +61,13 @@ export default function TabLayout() {
           
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/settings')}
-            className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 transition-colors mt-auto"
+            className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors mt-auto"
           >
-            <View className="w-10 h-10 bg-avocado rounded-full items-center justify-center mr-3 shadow-sm border border-black/5">
+            <View className="w-10 h-10 bg-avocado rounded-full items-center justify-center mr-3 shadow-sm border border-black/5 dark:border-white/10">
               <Text className="text-white font-bold text-sm leading-none">LF</Text>
             </View>
             <View>
-              <Text className="text-charcoal font-bold leading-tight">Liam F.</Text>
+              <Text className="text-charcoal dark:text-darkcharcoal font-bold leading-tight">Liam F.</Text>
               <Text className="text-gray-500 text-xs">Settings</Text>
             </View>
           </TouchableOpacity>

@@ -9,7 +9,10 @@ export type Ingredient = {
   id: string;
   name: string;
   category: "Meat & Fish" | "Fresh Produce" | "Dairy & Eggs" | "Pantry" | "Bakery" | "Frozen";
-  defaultUnit: "g" | "ml" | "item" | "tbsp" | "tsp";
+  defaultUnit: "g" | "ml" | "item" | "tbsp" | "tsp" | "clove" | "slice";
+  isStaple?: boolean;
+  purchaseSize?: number; // e.g., 500 (ml) or 1 (bottle)
+  purchaseUnit?: string; // e.g., "ml" or "bottle"
 };
 
 export type RecipeIngredient = {
@@ -35,6 +38,7 @@ export type UserProfile = {
   budgetWeekly: number;
   dietaryPreference: "Omnivore" | "Pescatarian" | "Vegetarian" | "Vegan";
   allergies: string[];
+  pantry?: Record<string, number>; // Maps ingredient ID to current amount in stock
 };
 
 export type DailyMealPlan = {

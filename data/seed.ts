@@ -7,14 +7,14 @@ export const MOCK_INGREDIENTS: Ingredient[] = [
   { id: "i4", name: "White Onion", category: "Fresh Produce", defaultUnit: "item" },
   { id: "i5", name: "Spinach", category: "Fresh Produce", defaultUnit: "g" },
   { id: "i6", name: "Garlic", category: "Fresh Produce", defaultUnit: "clove" },
-  { id: "i7", name: "Basmati Rice", category: "Pantry", defaultUnit: "g" },
-  { id: "i8", name: "Olive Oil", category: "Pantry", defaultUnit: "tbsp" },
+  { id: "i7", name: "Basmati Rice", category: "Pantry", defaultUnit: "g", isStaple: true, purchaseSize: 1000, purchaseUnit: "g" },
+  { id: "i8", name: "Olive Oil", category: "Pantry", defaultUnit: "tbsp", isStaple: true, purchaseSize: 1, purchaseUnit: "bottle" },
   { id: "i9", name: "Eggs", category: "Dairy & Eggs", defaultUnit: "item" },
   { id: "i10", name: "Sweet Potato", category: "Fresh Produce", defaultUnit: "g" },
   { id: "i11", name: "Avocado", category: "Fresh Produce", defaultUnit: "item" },
   { id: "i12", name: "Cherry Tomatoes", category: "Fresh Produce", defaultUnit: "g" },
-  { id: "i13", name: "Miso Paste", category: "Pantry", defaultUnit: "tbsp" },
-  { id: "i14", name: "Soy Sauce", category: "Pantry", defaultUnit: "tbsp" },
+  { id: "i13", name: "Miso Paste", category: "Pantry", defaultUnit: "tbsp", isStaple: true, purchaseSize: 1, purchaseUnit: "jar" },
+  { id: "i14", name: "Soy Sauce", category: "Pantry", defaultUnit: "tbsp", isStaple: true, purchaseSize: 1, purchaseUnit: "bottle" },
   { id: "i15", name: "Sourdough Bread", category: "Bakery", defaultUnit: "slice" },
 ];
 

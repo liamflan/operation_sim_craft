@@ -19,27 +19,27 @@ export default function TasteProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream">
+    <SafeAreaView className="flex-1 bg-cream dark:bg-darkcream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:px-12 min-h-[90vh]">
           {/* Header Section */}
           <View className="mb-8 md:mb-12 mt-4 md:mt-8">
-            <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight">Taste Profile</Text>
+            <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight">Taste Profile</Text>
             <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2">The DNA of your meal recommendations.</Text>
           </View>
 
           <View className="md:grid md:grid-cols-2 md:gap-8 gap-y-8">
             {/* Left Column: Core Rules */}
             <View className="mb-0 h-fit">
-              <Text className="text-charcoal text-2xl font-bold mb-4 border-b border-black/10 pb-3">
+              <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-bold mb-4 border-b border-black/10 dark:border-white/10 pb-3">
                 Core Rules
               </Text>
               
-              <View className="bg-white/60 rounded-3xl p-6 border border-white shadow-sm mb-6">
+              <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-6 border border-white dark:border-white/5 shadow-sm mb-6">
                 <View className="flex-row justify-between items-center mb-6">
                   <View>
                     <Text className="text-gray-500 font-medium mb-1">Baseline Diet</Text>
-                    <Text className="text-charcoal text-xl font-bold">{diet}</Text>
+                    <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold">{diet}</Text>
                   </View>
                   <View className="w-12 h-12 bg-avocado/20 rounded-full items-center justify-center">
                     <FontAwesome5 name="leaf" size={20} color="#6DBE75" />
@@ -49,7 +49,7 @@ export default function TasteProfileScreen() {
                 <View className="flex-row justify-between items-center mb-6">
                   <View>
                     <Text className="text-gray-500 font-medium mb-1">Weekly Budget</Text>
-                    <Text className="text-charcoal text-xl font-bold">£{budget}</Text>
+                    <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold">£{budget}</Text>
                   </View>
                   <View className="w-12 h-12 bg-tomato/20 rounded-full items-center justify-center">
                     <FontAwesome5 name="pound-sign" size={20} color="#FF6B5A" />
@@ -59,7 +59,7 @@ export default function TasteProfileScreen() {
                 <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 font-medium mb-1">Calorie Ceiling</Text>
-                    <Text className="text-charcoal text-xl font-bold">{calorieGoal} kcal</Text>
+                    <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold">{calorieGoal} kcal</Text>
                   </View>
                   <View className="w-12 h-12 bg-blueberry/20 rounded-full items-center justify-center">
                     <FontAwesome5 name="fire" size={20} color="#4F7FFF" />
@@ -67,7 +67,7 @@ export default function TasteProfileScreen() {
                 </View>
               </View>
 
-              <Text className="text-charcoal text-2xl font-bold mb-4 border-b border-black/10 pb-3 mt-8">
+              <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-bold mb-4 border-b border-black/10 dark:border-white/10 pb-3 mt-8">
                 Vibe Matches
               </Text>
               <Text className="text-gray-500 text-sm mb-4">Recipes you explicitly liked during onboarding.</Text>
@@ -86,12 +86,12 @@ export default function TasteProfileScreen() {
 
             {/* Right Column: Learned Context (Scraped) */}
             <View className="h-fit">
-              <Text className="text-charcoal text-2xl font-bold mb-4 border-b border-black/10 pb-3 flex-row justify-between items-center">
+              <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-bold mb-4 border-b border-black/10 dark:border-white/10 pb-3 flex-row justify-between items-center">
                 Learned Context
               </Text>
               <Text className="text-gray-500 text-sm mb-4">Recipes you've scraped to feed the engine's algorithm.</Text>
               
-              <View className="bg-white/60 rounded-3xl p-4 border border-white shadow-sm">
+              <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-4 border border-white dark:border-white/5 shadow-sm">
                 {scrapedRecipes.length === 0 ? (
                    <View className="p-8 items-center justify-center">
                      <FontAwesome5 name="ghost" size={32} color="#a1a1aa" className="mb-4" />
@@ -99,15 +99,15 @@ export default function TasteProfileScreen() {
                    </View>
                 ) : (
                   scrapedRecipes.map((item, idx) => (
-                    <View key={item.id} className={`p-4 border-b border-black/5 ${idx === scrapedRecipes.length - 1 ? 'border-b-0' : ''}`}>
+                    <View key={item.id} className={`p-4 border-b border-black/5 dark:border-white/5 ${idx === scrapedRecipes.length - 1 ? 'border-b-0' : ''}`}>
                       <View className="flex-row justify-between items-start mb-2">
                         <View className="flex-1 pr-4">
-                          <Text className="text-charcoal font-bold text-lg mb-1">{item.title}</Text>
+                          <Text className="text-charcoal dark:text-darkcharcoal font-bold text-lg mb-1">{item.title}</Text>
                           <Text className="text-gray-500 text-xs font-medium">Pulled from {item.domain} • {item.date}</Text>
                         </View>
                         <TouchableOpacity 
                           onPress={() => deleteRecipe(item.id)}
-                          className="w-8 h-8 bg-black/5 rounded-full items-center justify-center hover:bg-tomato/20"
+                          className="w-8 h-8 bg-black/5 dark:bg-white/10 rounded-full items-center justify-center hover:bg-tomato/20"
                         >
                           <FontAwesome5 name="trash" size={12} color="#FF6B5A" />
                         </TouchableOpacity>

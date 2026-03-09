@@ -87,7 +87,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
               e.stopPropagation(); // Prevent opening the recipe
               onSwipe();
             }}
-            className="absolute top-4 right-4 z-30 bg-white/20 hover:bg-white backdrop-blur-md w-12 h-12 rounded-full items-center justify-center border border-white/30 transition-colors group"
+            className="absolute top-4 right-4 z-30 bg-white/20 hover:bg-white dark:hover:bg-darkgrey backdrop-blur-md w-12 h-12 rounded-full items-center justify-center border border-white/30 dark:border-white/10 transition-colors group"
           >
             <FontAwesome5 name="random" size={16} color="white" className="group-hover:text-avocado" />
           </Pressable>
@@ -98,7 +98,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           style={{ opacity: swipeOverlayOpacity }} 
           className="absolute inset-0 bg-avocado/80 justify-center items-center z-20 pointer-events-none"
         >
-          <View className="bg-white rounded-full p-4 flex-row items-center shadow-lg">
+          <View className="bg-white dark:bg-darkgrey rounded-full p-4 flex-row items-center shadow-lg">
             <FontAwesome5 name="random" size={24} color="#6DBE75" />
             <Text className="text-avocado font-extrabold text-xl ml-3">SWAP MEAL</Text>
           </View>

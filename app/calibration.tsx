@@ -29,7 +29,7 @@ export default function CalibrationScreen() {
 
   const renderStep1 = () => (
     <View className="flex-1 mt-6">
-      <Text className="text-charcoal text-3xl md:text-5xl font-extrabold mb-3 tracking-tight">What's your vibe?</Text>
+      <Text className="text-charcoal dark:text-darkcharcoal text-3xl md:text-5xl font-extrabold mb-3 tracking-tight">What's your vibe?</Text>
       <Text className="text-gray-500 text-lg md:text-xl mb-12">Tap a few meals that make you hungry. We'll learn your taste instantly.</Text>
       
       <View className="flex-row flex-wrap justify-between md:justify-start md:gap-[2%]">
@@ -61,7 +61,7 @@ export default function CalibrationScreen() {
 
   const renderStep2 = () => (
     <View className="flex-1 mt-6 md:mt-12">
-      <Text className="text-charcoal text-3xl md:text-5xl font-extrabold mb-3 tracking-tight">Any rules?</Text>
+      <Text className="text-charcoal dark:text-darkcharcoal text-3xl md:text-5xl font-extrabold mb-3 tracking-tight">Any rules?</Text>
       <Text className="text-gray-500 text-lg md:text-xl mb-12">Select your dietary baseline.</Text>
       
       <View className="md:flex-row md:flex-wrap md:gap-[4%] flex-col mt-4">
@@ -69,9 +69,9 @@ export default function CalibrationScreen() {
           <TouchableOpacity 
             key={option}
             onPress={() => setDiet(option)}
-            className={`p-6 md:p-10 rounded-3xl mb-4 md:mb-8 md:w-[48%] border-2 shadow-sm transition-all active:scale-[0.98] ${diet === option ? 'border-avocado bg-avocado/10' : 'border-black/5 bg-white/60 hover:border-black/10 hover:bg-white/90'}`}
+            className={`p-6 md:p-10 rounded-3xl mb-4 md:mb-8 md:w-[48%] border-2 shadow-sm transition-all active:scale-[0.98] ${diet === option ? 'border-avocado bg-avocado/10' : 'border-black/5 dark:border-white/5 bg-white/60 dark:bg-darkgrey/60 hover:border-black/10 dark:hover:border-white/10 hover:bg-white/90 dark:hover:bg-darkgrey'}`}
           >
-            <Text className={`text-2xl md:text-3xl font-extrabold text-center ${diet === option ? 'text-avocado' : 'text-charcoal'}`}>{option}</Text>
+            <Text className={`text-2xl md:text-3xl font-extrabold text-center ${diet === option ? 'text-avocado' : 'text-charcoal dark:text-darkcharcoal'}`}>{option}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -82,21 +82,21 @@ export default function CalibrationScreen() {
     <View className="flex-1 mt-6 justify-center">
       <View className="items-center mb-10">
         <FontAwesome5 name="magic" size={48} color="#FF6B5A" className="mb-6" />
-        <Text className="text-charcoal text-3xl font-extrabold mb-4 text-center tracking-tight">Building your engine...</Text>
+        <Text className="text-charcoal dark:text-darkcharcoal text-3xl font-extrabold mb-4 text-center tracking-tight">Building your engine...</Text>
         <Text className="text-gray-500 text-lg text-center px-4">Based on your taste profile, we are calculating a £50 weekly budget that hits 160g of protein daily.</Text>
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-cream">
+    <SafeAreaView className="flex-1 bg-cream dark:bg-darkcream">
       {/* Desktop Split Layout */}
       <View className="flex-1 md:flex-row">
         
         {/* Left Sidebar (Desktop Only) / Top Header (Mobile) */}
-        <View className="md:w-1/3 md:min-w-[340px] md:max-w-[420px] md:border-r md:border-black/5 bg-white pt-6 md:pt-16 px-6 md:px-12 flex-col justify-between z-10 shadow-sm md:shadow-none">
+        <View className="md:w-1/3 md:min-w-[340px] md:max-w-[420px] md:border-r md:border-black/5 dark:md:border-white/5 bg-white dark:bg-darkgrey pt-6 md:pt-16 px-6 md:px-12 flex-col justify-between z-10 shadow-sm md:shadow-none">
           <View>
-            <Text className="text-charcoal text-3xl md:text-4xl font-extrabold tracking-tight">Provision</Text>
+            <Text className="text-charcoal dark:text-darkcharcoal text-3xl md:text-4xl font-extrabold tracking-tight">Provision</Text>
             <Text className="text-avocado text-sm md:text-base font-bold uppercase tracking-widest mt-1">Engine Setup</Text>
             
             {/* Progress Indicators (Moved to sidebar on desktop, hidden on mobile here) */}
@@ -105,21 +105,21 @@ export default function CalibrationScreen() {
                 <View className={`w-10 h-10 rounded-full items-center justify-center mr-6 shadow-sm ${step >= 1 ? 'bg-avocado' : 'bg-gray-100'}`}>
                   <Text className={`font-bold text-lg ${step >= 1 ? 'text-white' : 'text-gray-400'}`}>1</Text>
                 </View>
-                <Text className={`font-bold text-xl ${step >= 1 ? 'text-charcoal' : 'text-gray-400'}`}>Taste Profile</Text>
+                <Text className={`font-bold text-xl ${step >= 1 ? 'text-charcoal dark:text-darkcharcoal' : 'text-gray-400 dark:text-gray-500'}`}>Taste Profile</Text>
               </View>
               
               <View className="flex-row items-center mb-10">
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-6 shadow-sm ${step >= 2 ? 'bg-avocado' : 'bg-gray-100'}`}>
+                <View className={`w-10 h-10 rounded-full items-center justify-center mr-6 shadow-sm ${step >= 2 ? 'bg-avocado' : 'bg-gray-100 dark:bg-gray-800'}`}>
                   <Text className={`font-bold text-lg ${step >= 2 ? 'text-white' : 'text-gray-400'}`}>2</Text>
                 </View>
-                <Text className={`font-bold text-xl ${step >= 2 ? 'text-charcoal' : 'text-gray-400'}`}>Dietary Baseline</Text>
+                <Text className={`font-bold text-xl ${step >= 2 ? 'text-charcoal dark:text-darkcharcoal' : 'text-gray-400 dark:text-gray-500'}`}>Dietary Baseline</Text>
               </View>
               
               <View className="flex-row items-center">
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-6 shadow-sm ${step >= 3 ? 'bg-avocado' : 'bg-gray-100'}`}>
+                <View className={`w-10 h-10 rounded-full items-center justify-center mr-6 shadow-sm ${step >= 3 ? 'bg-avocado' : 'bg-gray-100 dark:bg-gray-800'}`}>
                   <Text className={`font-bold text-lg ${step >= 3 ? 'text-white' : 'text-gray-400'}`}>3</Text>
                 </View>
-                <Text className={`font-bold text-xl ${step >= 3 ? 'text-charcoal' : 'text-gray-400'}`}>Engine Calculation</Text>
+                <Text className={`font-bold text-xl ${step >= 3 ? 'text-charcoal dark:text-darkcharcoal' : 'text-gray-400 dark:text-gray-500'}`}>Engine Calculation</Text>
               </View>
             </View>
           </View>
@@ -127,7 +127,7 @@ export default function CalibrationScreen() {
         </View>
 
         {/* Right Content Area (Forms/Selection) */}
-        <View className="flex-1 relative bg-cream">
+        <View className="flex-1 relative bg-cream dark:bg-darkcream">
           <ScrollView 
             className="flex-1" 
             showsVerticalScrollIndicator={false}
@@ -150,7 +150,7 @@ export default function CalibrationScreen() {
           </ScrollView>
 
           {/* Persistent Bottom Action (Locks to bottom of right pane on desktop) */}
-          <View className="p-4 border-t border-black/5 bg-cream/90 md:bg-white/80 md:backdrop-blur-md absolute bottom-0 w-full left-0 z-50">
+          <View className="p-4 border-t border-black/5 dark:border-white/5 bg-cream/90 dark:bg-darkcream/90 md:bg-white/80 dark:md:bg-darkgrey/80 md:backdrop-blur-md absolute bottom-0 w-full left-0 z-50">
             <View className="mx-auto w-full max-w-md md:max-w-none md:flex-row md:justify-end md:px-8">
               <TouchableOpacity 
                 onPress={handleNext}

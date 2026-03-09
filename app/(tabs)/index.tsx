@@ -85,7 +85,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cream">
+    <SafeAreaView className="flex-1 bg-cream dark:bg-darkcream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:flex-row md:pt-12 md:px-12">
           
@@ -95,19 +95,19 @@ export default function DashboardScreen() {
             <View className="flex-row justify-between items-start mb-8 md:mb-12 mt-4 md:mt-0">
               <View>
                 <Text className="text-gray-500 text-lg font-medium">Welcome back,</Text>
-                <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight mt-1">{mockUser.name}</Text>
+                <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight mt-1">{mockUser.name}</Text>
               </View>
             </View>
 
             {/* Taste Profile Quick Add Feature */}
-            <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
+            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-6 mb-8 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
               <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-charcoal text-xl font-bold tracking-tight">Taste Profile</Text>
+                <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Taste Profile</Text>
                 <TouchableOpacity onPress={() => router.push('/taste-profile')}>
                   <Text className="text-avocado font-bold">View full</Text>
                 </TouchableOpacity>
               </View>
-              <Text className="text-gray-600 text-sm mb-4 leading-relaxed">Paste a recipe URL to extract macros and teach the engine your exact preferences.</Text>
+              <Text className="text-gray-600 dark:text-gray-400 text-sm mb-4 leading-relaxed">Paste a recipe URL to extract macros and teach the engine your exact preferences.</Text>
               
               <View className="flex-row h-12 shadow-sm rounded-xl mb-2">
                 <TextInput 
@@ -115,7 +115,7 @@ export default function DashboardScreen() {
                   onChangeText={setRecipeLink}
                   placeholder="https://tasty.co/..."
                   placeholderTextColor="#9ca3af"
-                  className="flex-1 bg-white border border-gray-100 rounded-xl px-4 text-charcoal mr-3 font-medium"
+                  className="flex-1 bg-white dark:bg-black/20 border border-gray-100 dark:border-white/5 rounded-xl px-4 text-charcoal dark:text-darkcharcoal mr-3 font-medium"
                 />
                 <TouchableOpacity 
                   onPress={handleScrape}
@@ -140,15 +140,15 @@ export default function DashboardScreen() {
 
               {/* Recent Scrapes History */}
               {recentScrapes.length > 0 && (
-                <View className="mt-4 border-t border-black/5 pt-4">
+                <View className="mt-4 border-t border-black/5 dark:border-white/5 pt-4">
                   <Text className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Recent Additions</Text>
                   {recentScrapes.map((scrape, idx) => (
                     <View key={idx} className="flex-row items-center mb-2">
-                      <View className="w-8 h-8 rounded-full bg-white items-center justify-center border border-black/5 mr-3">
+                      <View className="w-8 h-8 rounded-full bg-white dark:bg-darkgrey items-center justify-center border border-black/5 dark:border-white/5 mr-3">
                         <FontAwesome5 name="link" size={12} color="#a1a1aa" />
                       </View>
                       <View className="flex-1">
-                        <Text className="text-charcoal font-bold text-sm" numberOfLines={1}>{scrape.title}</Text>
+                        <Text className="text-charcoal dark:text-darkcharcoal font-bold text-sm" numberOfLines={1}>{scrape.title}</Text>
                         <Text className="text-blueberry text-xs font-medium">{scrape.macros}</Text>
                       </View>
                     </View>
@@ -158,8 +158,8 @@ export default function DashboardScreen() {
             </View>
 
             {/* Macro Summary Ring (Mocked) */}
-            <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
-              <Text className="text-charcoal text-xl font-bold mb-6">Today's Fuel</Text>
+            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-6 mb-8 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
+              <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold mb-6">Today's Fuel</Text>
               <View className="flex-row justify-between md:flex-col md:gap-6">
                 <View>
                   <Text className="text-gray-500 text-sm mb-1 font-medium">Calories</Text>
@@ -175,7 +175,7 @@ export default function DashboardScreen() {
 
           {/* Right Column (Desktop) / Bottom Section (Mobile) */}
           <View className="md:w-2/3">
-            <Text className="text-charcoal text-3xl font-extrabold mb-8 tracking-tight capitalize">
+            <Text className="text-charcoal dark:text-darkcharcoal text-3xl font-extrabold mb-8 tracking-tight capitalize">
               {todayPlan.date}, <Text className="text-gray-400 font-medium">March 9</Text>
             </Text>
 
