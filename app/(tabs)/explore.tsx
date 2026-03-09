@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { generateWeeklyPlan } from '../../data/engine';
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
 
-// Utility to generate a compiled shopping list
-function generateShoppingList() {
+// Utility to generate a compiled shopping list with built in traceability
+export type ShoppingListItem = { name: string, amount: number, unit: string, checked: boolean, recipes: string[] };
+export type CategorizedList = Record<string, ShoppingListItem[]>;
+
+function generateShoppingList(): CategorizedList {
   const mockUser = { id: "u1", name: "Liam", targetMacros: { calories: 2400, protein: 160, carbs: 250, fats: 80 }, budgetWeekly: 50, dietaryPreference: "Omnivore" as const, allergies: [] };
   const weeklyPlan = generateWeeklyPlan(mockUser);
   
-  const ingredientMap: Record<string, number> = {};
+  // Track amount and the unique recipes it's used in
+  const ingredientMap: Record<string, { amount: number, recipes: Set<string> }> = {};
   
   // Aggregate all ingredients
   weeklyPlan.forEach(day => {
@@ -18,14 +23,18 @@ function generateShoppingList() {
       const recipe = MOCK_RECIPES.find(r => r.id === recipeId);
       if (recipe) {
         recipe.ingredients.forEach(ing => {
-          ingredientMap[ing.ingredientId] = (ingredientMap[ing.ingredientId] || 0) + ing.amount;
+          if (!ingredientMap[ing.ingredientId]) {
+            ingredientMap[ing.ingredientId] = { amount: 0, recipes: new Set() };
+          }
+          ingredientMap[ing.ingredientId].amount += ing.amount;
+          ingredientMap[ing.ingredientId].recipes.add(recipe.title);
         });
       }
     });
   });
 
   // Group by Category
-  const categorizedList: Record<string, {name: string, amount: number, unit: string, checked: boolean}[]> = {};
+  const categorizedList: CategorizedList = {};
   
   Object.keys(ingredientMap).forEach(ingId => {
     const ingData = MOCK_INGREDIENTS.find(i => i.id === ingId);
@@ -35,9 +44,10 @@ function generateShoppingList() {
       }
       categorizedList[ingData.category].push({
         name: ingData.name,
-        amount: ingredientMap[ingId],
+        amount: ingredientMap[ingId].amount,
         unit: ingData.defaultUnit,
-        checked: false
+        checked: false,
+        recipes: Array.from(ingredientMap[ingId].recipes)
       });
     }
   });
@@ -49,6 +59,7 @@ const initialList = generateShoppingList();
 
 export default function ShoppingListScreen() {
   const [list, setList] = useState(initialList);
+  const [isExporting, setIsExporting] = useState(false);
 
   const toggleItem = (category: string, index: number) => {
     const newList = { ...list };
@@ -56,40 +67,122 @@ export default function ShoppingListScreen() {
     setList(newList);
   };
 
+  const handleCopyText = async () => {
+    let textOut = "PROVISION FUEL LIST\n\n";
+    Object.entries(list).forEach(([category, items]) => {
+      textOut += `--- ${category.toUpperCase()} ---\n`;
+      items.forEach(item => {
+        textOut += `[ ] ${item.amount}${item.unit} ${item.name} (${item.recipes.join(', ')})\n`;
+      });
+      textOut += "\n";
+    });
+    
+    await Clipboard.setStringAsync(textOut);
+    if (Platform.OS === 'web') {
+      window.alert("List copied to clipboard!");
+    } else {
+      Alert.alert("Copied", "Shopping list copied to clipboard.");
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (Platform.OS !== 'web') {
+      Alert.alert("Not Supported", "CSV export is currently only supported on Web.");
+      return;
+    }
+    
+    setIsExporting(true);
+    try {
+      let csvContent = "Aisle,Ingredient,Amount,Unit,Recipes\n";
+      Object.entries(list).forEach(([category, items]) => {
+        items.forEach(item => {
+          // Escape quotes and commas for safe CSV
+          const escapedName = `"${item.name.replace(/"/g, '""')}"`;
+          const escapedRecipes = `"${item.recipes.join(', ').replace(/"/g, '""')}"`;
+          csvContent += `"${category}",${escapedName},${item.amount},"${item.unit}",${escapedRecipes}\n`;
+        });
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "provision_fuel_list.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error(e);
+      window.alert("Failed to export CSV.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-cream">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 px-4 pt-6 pb-20 mx-auto w-full md:max-w-7xl md:px-12 min-h-[90vh]">
+          
           {/* Header Section */}
-          <View className="mb-8 md:mb-12 mt-4 md:mt-8">
-            <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight">The Fuel List</Text>
-            <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2">Generic ingredients for the week.</Text>
+          <View className="mb-8 md:mb-12 mt-4 md:mt-8 flex-col md:flex-row md:items-end justify-between">
+            <View className="mb-6 md:mb-0">
+              <Text className="text-charcoal text-4xl md:text-5xl font-extrabold tracking-tight">The Fuel List</Text>
+              <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2">Aggregated ingredients for the week.</Text>
+            </View>
+            
+            {/* Action Buttons */}
+            <View className="flex-row gap-3">
+              <TouchableOpacity 
+                onPress={handleCopyText}
+                className="bg-white border border-black/5 px-4 py-3 rounded-xl flex-row items-center shadow-sm active:bg-gray-50"
+              >
+                <FontAwesome5 name="copy" size={16} color="#4A4A4A" className="mr-2" />
+                <Text className="text-charcoal font-bold">Copy Text</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={handleExportCSV}
+                disabled={isExporting}
+                className="bg-charcoal px-4 py-3 rounded-xl flex-row items-center shadow-sm active:bg-charcoal/80"
+              >
+                <FontAwesome5 name="file-csv" size={16} color="#FFFFFF" className="mr-2" />
+                <Text className="text-white font-bold">Export CSV</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View className="md:grid md:grid-cols-2 md:gap-8 gap-y-8">
+          <View className="md:grid md:grid-cols-2 md:gap-x-12 md:gap-y-10 gap-y-8 mt-4">
             {Object.entries(list).map(([category, items]) => (
               <View key={category} className="mb-8 md:mb-0 h-fit">
                 <Text className="text-charcoal text-xl md:text-2xl font-bold mb-4 border-b border-black/10 pb-3 flex-row items-center">
-                  {category}
+                  <FontAwesome5 name={category === 'Produce' ? 'carrot' : category === 'Meat & Seafood' ? 'drumstick-bite' : category === 'Dairy & Eggs' ? 'cheese' : 'shopping-basket'} size={18} color="#6DBE75" className="mr-2" />
+                  {' ' + category}
                 </Text>
                 
-                <View className="bg-white/60 rounded-2xl p-2 border border-white shadow-sm">
+                <View className="bg-white/60 rounded-3xl overflow-hidden border border-white shadow-sm">
                   {items.map((item, idx) => (
                     <TouchableOpacity 
                       key={idx} 
                       onPress={() => toggleItem(category, idx)}
-                      className={`flex-row justify-between items-center p-4 border-b border-black/5 last:border-0 hover:bg-white/80 transition-colors ${item.checked ? 'opacity-40' : ''}`}
+                      className={`flex-row justify-between items-center py-3 px-4 border-b border-black/5 last:border-0 hover:bg-white/90 transition-colors ${item.checked ? 'opacity-40 bg-gray-50' : ''}`}
                     >
                       <View className="flex-row items-center flex-1 pr-4">
-                        <View className={`w-6 h-6 rounded-full border-2 mr-4 items-center justify-center flex-shrink-0 ${item.checked ? 'border-avocado bg-avocado' : 'border-gray-400'}`}>
+                        <View className={`w-6 h-6 rounded-full border-2 mr-4 items-center justify-center flex-shrink-0 ${item.checked ? 'border-avocado bg-avocado' : 'border-gray-300'}`}>
                           {item.checked && <FontAwesome5 name="check" size={10} color="white" />}
                         </View>
-                        <Text className={`text-charcoal text-lg font-medium flex-wrap ${item.checked ? 'line-through' : ''}`}>
-                          {item.name}
-                        </Text>
+                        <View className="flex-shrink flex-1">
+                          <Text className={`text-charcoal text-lg font-bold flex-wrap leading-tight ${item.checked ? 'line-through text-gray-500' : ''}`}>
+                            {item.name}
+                          </Text>
+                          {/* Traceability: show which meals this ingredient belongs to */}
+                          <Text className={`text-xs mt-0.5 leading-tight ${item.checked ? 'text-gray-400 line-through' : 'text-gray-400'}`}>
+                            {item.recipes.join(', ')}
+                          </Text>
+                        </View>
                       </View>
-                      <Text className="text-gray-500 font-bold whitespace-nowrap">
-                        {item.amount} <Text className="text-sm font-normal">{item.unit}</Text>
+                      <Text className={`font-extrabold text-right ml-2 ${item.checked ? 'text-gray-400' : 'text-avocado'}`}>
+                        {item.amount} <Text className="text-sm font-bold">{item.unit}</Text>
                       </Text>
                     </TouchableOpacity>
                   ))}
