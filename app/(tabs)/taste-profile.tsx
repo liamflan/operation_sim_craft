@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -42,6 +42,63 @@ const IntelligenceBadge = ({ label, icon, color }: { label: string, icon: string
   </View>
 );
 
+// Core Rule Edit Modal
+const CoreRuleModal = ({ 
+  visible, onClose, title, value, onSave, type, prefix, suffix 
+}: { 
+  visible: boolean, onClose: () => void, title: string, value: string, onSave: (val: string) => void, type: 'diet' | 'number', prefix?: string, suffix?: string 
+}) => {
+  const [tempValue, setTempValue] = useState(value);
+  
+  React.useEffect(() => { if (visible) setTempValue(value) }, [visible, value]);
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent={true}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 justify-center items-center bg-black/40 p-4">
+        <View className="bg-white dark:bg-darkgrey w-full max-w-[320px] rounded-[32px] p-6 shadow-xl border border-black/5 dark:border-white/10">
+          <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight mb-6">{title}</Text>
+          
+          {type === 'diet' ? (
+            <View className="flex-col gap-2">
+              {['Omnivore', 'Pescatarian', 'Vegetarian', 'Vegan'].map(option => (
+                <TouchableOpacity 
+                  key={option}
+                  onPress={() => setTempValue(option)}
+                  className={`py-3.5 px-4 rounded-xl border transition-all ${tempValue === option ? 'bg-avocado border-avocado shadow-sm' : 'bg-gray-50 dark:bg-black/20 border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5'}`}
+                >
+                  <Text className={`font-bold text-base ${tempValue === option ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View className="flex-row items-center justify-center bg-gray-50 dark:bg-black/20 p-4 rounded-2xl border border-black/5 dark:border-white/5">
+              {prefix && <Text className="text-gray-400 dark:text-gray-500 font-extrabold text-3xl mr-1">{prefix}</Text>}
+              <TextInput
+                autoFocus
+                keyboardType="numeric"
+                value={tempValue}
+                onChangeText={setTempValue}
+                className="text-charcoal dark:text-white font-extrabold text-3xl text-center outline-none min-w-[60px]"
+                style={{ outlineWidth: 0 } as any}
+              />
+              {suffix && <Text className="text-gray-400 dark:text-gray-500 font-bold text-xl ml-2">{suffix}</Text>}
+            </View>
+          )}
+
+          <View className="flex-row gap-3 mt-8">
+            <TouchableOpacity onPress={onClose} className="flex-1 py-3.5 rounded-xl border border-black/10 dark:border-white/10 items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+              <Text className="text-gray-500 font-bold">Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { onSave(tempValue); onClose(); }} className="flex-1 bg-avocado py-3.5 rounded-xl items-center justify-center shadow-md hover:scale-[1.02] transition-transform">
+              <Text className="text-white font-bold">Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
 // Reusable Chip Selector for Goals & Restrictions
 const ChipSelector = ({ 
   options, selected, onToggle, 
@@ -60,7 +117,7 @@ const ChipSelector = ({
             key={tag}
             testID={`chip-selector-${tag.replace(/\s+/g, '-').toLowerCase()}`}
             onPress={() => onToggle(tag)}
-            className={`px-4 py-2.5 rounded-2xl border transition-colors ${isSelected ? activeColor : 'bg-transparent border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}
+            className={`px-4 py-2.5 rounded-2xl border transition-all active:scale-95 ${isSelected ? `${activeColor} shadow-sm` : 'bg-white dark:bg-darkgrey border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}`}
           >
             <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
               {tag}
@@ -71,24 +128,25 @@ const ChipSelector = ({
 
       {/* Custom Tag Entry */}
       {isAddingCustom ? (
-        <View className="flex-row items-center bg-white dark:bg-darkgrey border-2 border-avocado rounded-2xl px-3 py-1.5 w-40">
+        <View className="flex-row items-center bg-white dark:bg-darkgrey border-2 border-avocado rounded-2xl px-3 py-1 w-40 shadow-sm">
           <TextInput
             testID="chip-selector-custom-input"
             autoFocus
             value={customText}
             onChangeText={setCustomText}
             onSubmitEditing={onAddCustom}
+            onBlur={() => { if (!customText.trim()) setIsAddingCustom(false); }}
             placeholder="Type..."
             placeholderTextColor="#9ca3af"
             className="flex-1 text-charcoal dark:text-white font-bold text-sm outline-none w-full"
-            style={{ outlineWidth: 0, paddingVertical: 4 } as any}
+            style={{ outlineWidth: 0, paddingVertical: 6 } as any}
           />
         </View>
       ) : (
         <TouchableOpacity
           testID="chip-selector-add-btn"
           onPress={() => setIsAddingCustom(true)}
-          className="px-4 py-2.5 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-darkcharcoal hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-row items-center"
+          className="px-4 py-2.5 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black/20 hover:bg-gray-100 dark:hover:bg-black/40 hover:border-gray-400 dark:hover:border-gray-500 transition-all active:scale-95 flex-row items-center"
         >
           <FontAwesome5 name="plus" size={10} color="#9CA3AF" className="mr-2" />
           <Text className="font-bold text-sm text-gray-500 dark:text-gray-400">Add</Text>
@@ -100,6 +158,7 @@ const ChipSelector = ({
 
 export default function TasteProfileScreen() {
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState<{title: string, value: string, type: 'diet'|'number', onSave: (v:string)=>void, prefix?: string, suffix?: string} | null>(null);
   
   // Mock data for the taste profile
   const [scrapedRecipes, setScrapedRecipes] = useState([
@@ -124,6 +183,52 @@ export default function TasteProfileScreen() {
     setScrapedRecipes(prev => prev.filter(r => r.id !== id));
   };
 
+  // --- Dynamic Intelligence Computation ---
+  const dynamicBadges = React.useMemo(() => {
+    const badges: { label: string, icon: string, color: string }[] = [];
+    
+    // 1. Explicit Goals have highest priority
+    if (selectedGoals.includes('High Protein')) {
+      badges.push({ label: 'High-Protein', icon: 'dumbbell', color: 'bg-blueberry/10 border-blueberry/20 text-blueberry' });
+    }
+    if (selectedGoals.includes('Lower Carb') || selectedGoals.includes('Weight Loss') || selectedGoals.includes('Calorie Deficit')) {
+      badges.push({ label: 'Lean & Light', icon: 'weight', color: 'bg-tangerine/10 border-tangerine/20 text-tangerine' });
+    }
+    if (diet === 'Vegan' || diet === 'Vegetarian') {
+       badges.push({ label: 'Plant-Based', icon: 'leaf', color: 'bg-avocado/10 border-avocado/20 text-avocado' });
+    }
+
+    // 2. Inferred from Recipes (If we need more badges to get to 3)
+    const tagCounts: Record<string, number> = {};
+    scrapedRecipes.forEach(recipe => {
+      recipe.tags?.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+
+    if (tagCounts['Spicy'] > 0 && !badges.find(b => b.label === 'Spicy & Bold')) {
+      badges.push({ label: 'Spicy & Bold', icon: 'pepper-hot', color: 'bg-tomato/10 border-tomato/20 text-tomato' });
+    }
+    if ((tagCounts['Dinner'] > 0 || tagCounts['Quick'] > 0) && !badges.find(b => b.icon === 'bolt')) {
+      badges.push({ label: 'Quick & Balanced', icon: 'bolt', color: 'bg-avocado/10 border-avocado/20 text-avocado' });
+    }
+
+    // Fallbacks if empty
+    if (badges.length === 0) {
+      badges.push({ label: 'Balanced', icon: 'balance-scale', color: 'bg-gray-100 text-gray-500 border-gray-200' });
+    }
+
+    return badges.slice(0, 3);
+  }, [selectedGoals, diet, scrapedRecipes]);
+
+  const dynamicAvoids = React.useMemo(() => {
+    // Broad dietary frameworks shouldn't be listed as duplicate "Avoids"
+    const frameworks = ['Halal', 'Gluten-Free', 'Kosher'];
+    const explicitAvoids = selectedRestrictions.filter(res => !frameworks.includes(res));
+    // Normalize string to just the noun (e.g. "Avoid Pork" -> "Pork", "No Dairy" -> "Dairy")
+    return explicitAvoids.slice(0, 3).map(res => res.replace(/^(Avoid|No)\s+/i, ''));
+  }, [selectedRestrictions]);
+
   return (
     <SafeAreaView testID="taste-profile-screen" className="flex-1 bg-cream dark:bg-darkcream">
       <ScrollView testID="taste-profile-scroll" className="flex-1" showsVerticalScrollIndicator={false}>
@@ -134,7 +239,7 @@ export default function TasteProfileScreen() {
             <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight italic">
               Taste Profile
             </Text>
-            <Text className="text-gray-500 text-lg font-medium mt-1">The DNA of your meal recommendations.</Text>
+            <Text className="text-gray-500 text-lg font-medium mt-1">What shapes your recommendations.</Text>
 
             {/* Synthesized DNA Summary (Intelligence Area) */}
             <View className="mt-8 bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 md:p-8 relative overflow-hidden shadow-sm border border-white dark:border-white/5 backdrop-blur-md">
@@ -142,38 +247,40 @@ export default function TasteProfileScreen() {
                 <View className="flex-1">
                   <View className="flex-row items-center mb-2">
                     <FontAwesome5 name="brain" size={14} color="#6DBE75" className="mr-2" />
-                    <Text className="text-avocado font-bold uppercase tracking-widest text-xs">Engine Intelligence</Text>
+                    <Text className="text-avocado font-bold uppercase tracking-widest text-xs">WHAT WE'RE LEARNING</Text>
                   </View>
                   <Text className="text-charcoal dark:text-darkcharcoal text-2xl md:text-3xl font-extrabold tracking-tight mb-4">
                     Extracted Preferences
                   </Text>
                   <View className="flex-row flex-wrap gap-2 mb-4">
-                    <IntelligenceBadge label="High-Protein" icon="dumbbell" color="bg-blueberry/10 border-blueberry/20 text-blueberry" />
-                    <IntelligenceBadge label="Spicy & Bold" icon="pepper-hot" color="bg-tomato/10 border-tomato/20 text-tomato" />
-                    <IntelligenceBadge label="Quick & Balanced" icon="bolt" color="bg-avocado/10 border-avocado/20 text-avocado" />
+                    {dynamicBadges.map((badge, idx) => (
+                      <IntelligenceBadge key={idx} label={badge.label} icon={badge.icon} color={badge.color} />
+                    ))}
                   </View>
 
                   <View className="border-t border-black/5 dark:border-white/5 pt-4">
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Avoids</Text>
+                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Exclusions</Text>
                     <View className="flex-row flex-wrap gap-2">
-                      <View className="flex-row items-center">
-                        <FontAwesome5 name="times-circle" size={10} color="#FF6B5A" className="mr-1.5" />
-                        <Text className="text-charcoal/60 dark:text-white/60 text-xs font-bold">Low-protein fillers</Text>
-                      </View>
-                      <View className="flex-row items-center ml-2">
-                        <FontAwesome5 name="times-circle" size={10} color="#FF6B5A" className="mr-1.5" />
-                        <Text className="text-charcoal/60 dark:text-white/60 text-xs font-bold">Bland flavor profiles</Text>
-                      </View>
+                       {dynamicAvoids.length === 0 ? (
+                         <Text className="text-charcoal/40 dark:text-white/40 text-xs font-bold italic">No active exclusions</Text>
+                       ) : (
+                         dynamicAvoids.map((avoid, idx) => (
+                           <View key={idx} className="flex-row items-center mr-3 mb-1">
+                             <FontAwesome5 name="times-circle" size={10} color="#FF6B5A" className="mr-1.5" />
+                             <Text className="text-charcoal/60 dark:text-white/60 text-xs font-bold">{avoid}</Text>
+                           </View>
+                         ))
+                       )}
                     </View>
                   </View>
                 </View>
-                <View className="items-end hidden sm:flex">
-                  <View className="w-16 h-16 bg-avocado/10 rounded-full items-center justify-center backdrop-blur-md mb-4 border border-avocado/10">
-                    <FontAwesome5 name="dna" size={24} color="#6DBE75" className="opacity-40" />
+                <View className="items-end justify-start hidden sm:flex">
+                  <View className="bg-avocado/10 px-3 py-1.5 rounded-xl border border-avocado/20 flex-row items-center">
+                    <FontAwesome5 name="bolt" size={10} color="#6DBE75" className="mr-2" />
+                    <Text className="text-avocado font-bold text-[10px] uppercase tracking-wider">
+                      Learned from {scrapedRecipes.length} imports & onboarding
+                    </Text>
                   </View>
-                  <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-bold text-right leading-tight max-w-[100px] uppercase tracking-tighter">
-                    LEARNED FROM: 2 IMPORTS & ONBOARDING
-                  </Text>
                 </View>
               </View>
               {/* Background abstract decoration placeholder */}
@@ -199,7 +306,7 @@ export default function TasteProfileScreen() {
                   value={diet} 
                   icon="leaf" 
                   color="bg-avocado shadow-avocado/30" 
-                  onPress={() => alert("Edit Baseline Diet")} 
+                  onPress={() => setEditingRule({ title: 'Baseline Diet', value: diet, type: 'diet', onSave: setDiet })} 
                 />
                 <InfoRow 
                    testID="taste-profile-budget-row"
@@ -207,7 +314,7 @@ export default function TasteProfileScreen() {
                   value={`£${budget}`} 
                   icon="pound-sign" 
                   color="bg-tomato shadow-tomato/30" 
-                  onPress={() => alert("Edit Weekly Budget")} 
+                  onPress={() => setEditingRule({ title: 'Weekly budget', value: budget.toString(), type: 'number', prefix: '£', onSave: (v) => setBudget(Number(v) || budget) })} 
                 />
                 <InfoRow 
                   testID="taste-profile-calorie-row"
@@ -215,7 +322,7 @@ export default function TasteProfileScreen() {
                   value={`${calorieGoal} kcal`} 
                   icon="fire" 
                   color="bg-blueberry shadow-blueberry/30" 
-                  onPress={() => alert("Edit Calorie Ceiling")} 
+                  onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => setCalorieGoal(Number(v) || calorieGoal) })} 
                 />
               </View>
             </View>
@@ -284,22 +391,47 @@ export default function TasteProfileScreen() {
 
             {/* 2. Learned Context (Live Engine Activity) */}
             <View>
-              <View className="flex-row justify-between items-end mb-6">
+              <View className="flex-row justify-between items-center mb-6">
                 <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Learned Context</Text>
-                  <Text className="text-gray-500 text-sm font-medium">Recipes you've added to teach the engine.</Text>
+                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">What Provision has learned</Text>
+                  <Text className="text-gray-500 text-sm font-medium">Recipes and actions shaping future recommendations.</Text>
                 </View>
                 <TouchableOpacity 
                   testID="taste-profile-add-recipe-btn"
                   onPress={() => setIsImportOpen(true)}
-                  className="bg-charcoal dark:bg-white py-3 rounded-xl flex-row items-center justify-center hover:scale-[1.02] transition-transform shadow-sm"
+                  className="bg-avocado/10 px-4 py-2.5 rounded-xl border border-avocado/20 flex-row items-center justify-center hover:bg-avocado/20 transition-colors shadow-sm ml-4"
                 >
-                  <FontAwesome5 name="plus" size={14} color={true ? 'white' : '#1A1A1A'} className="mr-2 dark:text-charcoal" />
-                  <Text className="text-white dark:text-charcoal font-bold text-sm">Add recipe</Text>
+                  <FontAwesome5 name="plus" size={10} color="#6DBE75" className="mr-2" />
+                  <Text className="text-avocado font-bold text-sm tracking-wide">Import recipe</Text>
                 </TouchableOpacity>
               </View>
 
               <View className="gap-y-4">
+                {/* Behavioral Signals */}
+                {(selectedGoals.length > 0 || diet !== 'Omnivore' || selectedRestrictions.length > 0) && (
+                  <View className="flex-row flex-wrap gap-2 mb-2">
+                    {diet !== 'Omnivore' && (
+                      <View className="bg-avocado/10 border border-avocado/20 px-3 py-1.5 rounded-full flex-row items-center">
+                        <FontAwesome5 name="info-circle" size={10} color="#6DBE75" className="mr-2" />
+                        <Text className="text-avocado text-xs font-bold">Baseline: {diet}</Text>
+                      </View>
+                    )}
+                    {selectedGoals.map(goal => (
+                      <View key={`goal-${goal}`} className="bg-blueberry/10 border border-blueberry/20 px-3 py-1.5 rounded-full flex-row items-center">
+                        <FontAwesome5 name="info-circle" size={10} color="#4F7FFF" className="mr-2" />
+                        <Text className="text-blueberry text-xs font-bold">Goal: {goal}</Text>
+                      </View>
+                    ))}
+                    {selectedRestrictions.map(res => (
+                      <View key={`res-${res}`} className="bg-tomato/10 border border-tomato/20 px-3 py-1.5 rounded-full flex-row items-center">
+                        <FontAwesome5 name="info-circle" size={10} color="#FF6B5A" className="mr-2" />
+                        <Text className="text-tomato text-xs font-bold">Avoid: {res.replace(/^(Avoid|No)\s+/i, '')}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Imported Recipes */}
                 {scrapedRecipes.length === 0 ? (
                   <View className="bg-white/40 dark:bg-darkgrey/40 rounded-[32px] p-10 items-center justify-center border border-dashed border-black/10 dark:border-white/10">
                     <FontAwesome5 name="cloud-download-alt" size={32} color="#6DBE75" className="mb-4" />
@@ -308,28 +440,31 @@ export default function TasteProfileScreen() {
                   </View>
                 ) : (
                   scrapedRecipes.map((item) => (
-                    <View key={item.id} className="bg-white dark:bg-darkgrey rounded-[28px] p-6 shadow-sm border border-black/5 dark:border-white/5">
-                      <View className="flex-row justify-between items-start">
-                        <View className="flex-1 pr-4">
-                          <Text className="text-charcoal dark:text-darkcharcoal font-bold text-xl mb-1 tracking-tight">{item.title}</Text>
-                          <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest">{item.domain} • {item.date}</Text>
+                    <View key={item.id} className="bg-white dark:bg-darkgrey rounded-[28px] p-5 shadow-sm border border-black/5 dark:border-white/5 flex-row justify-between items-start">
+                      <View className="flex-1 pr-6">
+                        <View className="flex-row items-center mb-1.5">
+                          <Text className="text-gray-400 text-[10px] font-extrabold uppercase tracking-widest">{item.domain}</Text>
+                          <View className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-2" />
+                          <Text className="text-gray-400/80 text-[10px] font-bold uppercase tracking-widest">{item.date}</Text>
                         </View>
-                        <TouchableOpacity 
-                          testID={`taste-profile-delete-recipe-${item.id}`}
-                          onPress={() => deleteRecipe(item.id)}
-                          className="w-10 h-10 bg-gray-50 dark:bg-black/20 rounded-full items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
-                        >
-                          <FontAwesome5 name="trash-alt" size={14} color="#FF6B5A" />
-                        </TouchableOpacity>
+                        <Text className="text-charcoal dark:text-darkcharcoal font-extrabold text-xl leading-tight mb-3">{item.title}</Text>
+                        
+                        <View className="flex-row flex-wrap gap-2">
+                          {item.tags?.map(tag => (
+                            <View key={tag} className="bg-charcoal/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-lg">
+                              <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-extrabold uppercase tracking-wider">{tag}</Text>
+                            </View>
+                          ))}
+                        </View>
                       </View>
                       
-                      <View className="flex-row flex-wrap gap-2 mt-4">
-                        {item.tags?.map(tag => (
-                          <View key={tag} className="bg-blueberry/10 px-3 py-1 rounded-full">
-                            <Text className="text-blueberry text-[10px] font-extrabold uppercase tracking-wider">{tag}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      <TouchableOpacity 
+                        testID={`taste-profile-delete-recipe-${item.id}`}
+                        onPress={() => deleteRecipe(item.id)}
+                        className="w-10 h-10 bg-gray-50 dark:bg-black/20 rounded-2xl items-center justify-center border border-black/5 dark:border-white/5 hover:bg-tomato/10 hover:border-tomato/20 transition-colors group"
+                      >
+                        <FontAwesome5 name="trash-alt" size={14} color="#9CA3AF" className="group-hover:text-tomato transition-colors" />
+                      </TouchableOpacity>
                     </View>
                   ))
                 )}
@@ -368,25 +503,32 @@ export default function TasteProfileScreen() {
         visible={isImportOpen} 
         onClose={() => setIsImportOpen(false)} 
         onSave={(payload) => {
-          // In a real app, send payload.tasteProfileUpdates and payload.userFeedback to Gemini/DB
-          
-          // For MVP, visually add the recipe to the "Learned Context" list
           const newRecipe = {
             id: Date.now().toString(),
             title: payload.recipe.title,
             domain: payload.recipe.domain,
             macros: payload.recipe.macros,
             date: 'Just now',
-            tags: payload.recipe.tags.slice(0, 2) // Just take first two for the small badge UI
+            tags: payload.recipe.tags.slice(0, 2)
           };
           
           setScrapedRecipes(prev => [newRecipe, ...prev]);
           setIsImportOpen(false);
-          
-          // Show simulated success feedback
-          alert(`Successfully learned from ${payload.recipe.domain}! Feedback recorded: "${payload.userFeedback}"`);
         }} 
       />
+
+      {editingRule && (
+        <CoreRuleModal 
+          visible={!!editingRule} 
+          onClose={() => setEditingRule(null)} 
+          title={editingRule.title} 
+          value={editingRule.value} 
+          type={editingRule.type} 
+          onSave={editingRule.onSave} 
+          prefix={editingRule.prefix}
+          suffix={editingRule.suffix}
+        />
+      )}
       
     </SafeAreaView>
   );

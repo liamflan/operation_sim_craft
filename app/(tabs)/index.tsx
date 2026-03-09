@@ -291,7 +291,7 @@ export default function DashboardScreen() {
             {/* Next Action — compact, slightly less dominant green */}
             <TouchableOpacity
               testID="dashboard-next-action-card"
-              onPress={() => router.push('/explore')}
+              onPress={() => router.push('/shop')}
               className="bg-avocado/90 rounded-2xl p-4 mb-3 shadow-sm active:opacity-80 hover:opacity-90 transition-opacity"
             >
               <View className="flex-row items-center justify-between">

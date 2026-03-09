@@ -10,9 +10,10 @@ export type Ingredient = {
   name: string;
   category: "Meat & Fish" | "Fresh Produce" | "Dairy & Eggs" | "Pantry" | "Bakery" | "Frozen";
   defaultUnit: "g" | "ml" | "item" | "tbsp" | "tsp" | "clove" | "slice";
-  isStaple?: boolean;
-  purchaseSize?: number; // e.g., 500 (ml) or 1 (bottle)
-  purchaseUnit?: string; // e.g., "ml" or "bottle"
+  isStaple?: boolean; // If true, only add to list if stock < usage
+  isPantryTracked?: boolean; // If true, the user wants to see stock levels
+  purchaseSize?: number; // The retail size (e.g., 1 bottle, 500ml)
+  purchaseUnit?: string; // The retail unit (e.g., "loaf", "bottle", "bulb")
 };
 
 export type RecipeIngredient = {

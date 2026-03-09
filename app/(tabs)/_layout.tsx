@@ -48,8 +48,8 @@ export default function TabLayout() {
             <NavItem 
               icon="list" 
               label="Fuel List" 
-              isActive={pathname === '/explore'} 
-              onPress={() => router.push('/(tabs)/explore')} 
+              isActive={pathname === '/shop'} 
+              onPress={() => router.push('/(tabs)/shop')} 
             />
             <NavItem 
               icon="star" 
@@ -101,7 +101,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="shop"
         options={{
           title: 'List',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,

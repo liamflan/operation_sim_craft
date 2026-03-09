@@ -485,7 +485,7 @@ function ModalContent({
                   shadowRadius: 4,
                 }}
               >
-                <FontAwesome5 name="robot" size={14} color="#6DBE75" />
+                <FontAwesome5 name="leaf" size={14} color="#6DBE75" />
               </View>
             </View>
 

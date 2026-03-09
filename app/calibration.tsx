@@ -211,7 +211,7 @@ export default function CalibrationScreen() {
                   className="absolute bg-white dark:bg-darkgrey rounded-full items-center justify-center shadow-md border border-black/5 dark:border-white/5"
                   style={{ width: 32, height: 32 }}
                 >
-                  <FontAwesome5 name="magic" size={14} color="#6DBE75" />
+                  <FontAwesome5 name="leaf" size={14} color="#6DBE75" />
                 </View>
               </>
             )}
