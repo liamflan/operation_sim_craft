@@ -71,7 +71,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
     >
       <Pressable 
         onPress={onPress}
-        className="w-full h-80 rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-black"
+        className="w-full h-80 md:h-[260px] rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-black"
       >
         <Image 
           source={recipe.imageUrl} 
@@ -87,9 +87,10 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
               e.stopPropagation(); // Prevent opening the recipe
               onSwipe();
             }}
-            className="absolute top-4 right-4 z-30 bg-white/20 hover:bg-white dark:hover:bg-darkgrey backdrop-blur-md w-12 h-12 rounded-full items-center justify-center border border-white/30 dark:border-white/10 transition-colors group"
+            className="absolute top-4 right-4 z-30 bg-black/40 hover:bg-white dark:hover:bg-darkgrey backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 transition-colors group"
           >
-            <FontAwesome5 name="random" size={16} color="white" className="group-hover:text-avocado" />
+            <FontAwesome5 name="random" size={12} color="white" className="group-hover:text-avocado dark:group-hover:text-white mr-2" />
+            <Text className="text-white group-hover:text-charcoal dark:group-hover:text-white font-bold text-sm tracking-wide">Swap</Text>
           </Pressable>
         )}
 
@@ -110,7 +111,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           locations={[0, 0.4, 1]}
           className="absolute inset-0 w-full h-full justify-end p-6 md:p-8 z-10"
         >
-          <Text className="text-white font-bold text-3xl md:text-4xl mb-4 tracking-tight leading-tight shadow-md">
+          <Text className="text-white font-bold text-3xl md:text-4xl mb-3 tracking-tight leading-tight shadow-md">
             {recipe.title}
           </Text>
           
