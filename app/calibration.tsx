@@ -1,9 +1,9 @@
-import { FontAwesome5 } from '@expo/vector-icons';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { MOCK_RECIPES } from '../data/seed';
 
 export default function CalibrationScreen() {
@@ -201,13 +201,19 @@ export default function CalibrationScreen() {
     <View className="flex-1 w-full items-center justify-center">
       <View className="w-full max-w-[560px] items-center">
         <View className="items-center mb-5 md:mb-6">
-          <View className={`w-16 h-16 md:w-20 md:h-20 rounded-full items-center justify-center mb-4 shadow-lg transition-colors duration-500 ${isSetupComplete ? 'bg-avocado' : 'bg-white dark:bg-darkgrey border-4 border-avocado/30'}`}>
+          <View className={`w-20 h-20 md:w-24 md:h-24 rounded-full items-center justify-center mb-5 relative transition-colors duration-500 ${isSetupComplete ? 'bg-avocado shadow-avocado/30' : 'bg-white dark:bg-darkgrey shadow-black/10'}`} style={{ shadowOpacity: 0.15, shadowRadius: 15, shadowOffset: { width: 0, height: 8 } }}>
             {isSetupComplete ? (
-              <FontAwesome5 name="check" size={24} color="white" />
+              <FontAwesome5 name="check" size={30} color="white" />
             ) : (
-              <View style={{ transform: [{ translateY: 0.5 }] }}>
-                <FontAwesome5 name="cog" size={28} color="#6DBE75" className="animate-spin" />
-              </View>
+              <>
+                <ActivityIndicator size="large" color="#6DBE75" />
+                <View 
+                  className="absolute bg-white dark:bg-darkgrey rounded-full items-center justify-center shadow-md border border-black/5 dark:border-white/5"
+                  style={{ width: 32, height: 32 }}
+                >
+                  <FontAwesome5 name="magic" size={14} color="#6DBE75" />
+                </View>
+              </>
             )}
           </View>
 
