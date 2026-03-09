@@ -16,7 +16,8 @@ import { PlannerInput, RecipeArchetype, WeeklyCompositionTarget } from './planne
 const BASE_ARCHETYPE_CAPS: Record<RecipeArchetype, number> = {
   budget_breakfast:    7, // can repeat every day — that's fine
   protein_breakfast:   4, // allow up to 4x
-  budget_workhorse:    4, // the workhorses of lunch/dinner
+  budget_workhorse_lunch:  4, // the workhorses of lunch
+  budget_workhorse_dinner: 4, // the workhorses of dinner
   high_protein_anchor: 2, // 1-2 times per week max
   calorie_dense:       3, // used where daily cals are low
   variety_anchor:      2, // once or twice for interest
@@ -81,7 +82,10 @@ export function buildWeeklyCompositionTarget(input: PlannerInput): WeeklyComposi
     const proteinAnchorCount = Math.min(2, Math.floor(ldCount * 0.25));
     const workhorseCount = ldCount - premiumCount - varietyCount - proteinAnchorCount;
 
-    archetypeCounts.budget_workhorse    = Math.max(0, workhorseCount);
+    // Distribute remaining workhorse slots roughly evenly between lunch and dinner (assuming 50/50 split of the remaining slots)
+    archetypeCounts.budget_workhorse_lunch  = Math.max(0, Math.ceil(workhorseCount / 2));
+    archetypeCounts.budget_workhorse_dinner = Math.max(0, Math.floor(workhorseCount / 2));
+    
     archetypeCounts.high_protein_anchor = proteinAnchorCount;
     archetypeCounts.variety_anchor      = varietyCount;
     archetypeCounts.premium_meal        = premiumCount;
@@ -93,13 +97,15 @@ export function buildWeeklyCompositionTarget(input: PlannerInput): WeeklyComposi
 
   if (tier === 'tight') {
     // Allow more workhorse/budget repetition
-    caps.budget_workhorse    = 5;
+    caps.budget_workhorse_lunch  = 5;
+    caps.budget_workhorse_dinner = 5;
     caps.budget_breakfast    = 7;
     // Lock down expensive archetypes more aggressively
     caps.premium_meal        = 0; // no premium on tight budget
     caps.variety_anchor      = 1;
   } else if (tier === 'moderate') {
-    caps.budget_workhorse    = 4;
+    caps.budget_workhorse_lunch  = 4;
+    caps.budget_workhorse_dinner = 4;
     caps.premium_meal        = 1;
   }
   // On comfortable budget, use BASE_ARCHETYPE_CAPS as-is
@@ -131,11 +137,13 @@ export function deriveArchetype(
     if (cost > perMealBudget * 2.5) return 'premium_meal';
     if (protein >= 45)              return 'high_protein_anchor';
     if (calories >= 700)            return 'calorie_dense';
-    if (cost <= perMealBudget)      return 'budget_workhorse';
+    if (cost <= perMealBudget) {
+      return slots.includes('lunch') ? 'budget_workhorse_lunch' : 'budget_workhorse_dinner';
+    }
     return 'variety_anchor';
   }
 
   // breakfast + lunch/dinner flexible
-  if (cost <= perMealBudget)    return 'budget_workhorse';
+  if (cost <= perMealBudget)    return slots.includes('lunch') ? 'budget_workhorse_lunch' : 'budget_workhorse_dinner';
   return 'variety_anchor';
 }

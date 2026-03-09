@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, ActivityIndicator,
-  TextInput, Platform, Alert,
+  TextInput, Platform, Alert, LayoutAnimation
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { MOCK_RECIPES } from '../../data/seed';
@@ -73,6 +73,7 @@ export default function PlannerDevScreen() {
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState(HARDCODED_API_KEY);
+  const [showRawGemini, setShowRawGemini] = useState(false);
 
   // Derived shortcuts for rendering
   const plannerInput  = diag?.plannerInput   ?? null;
@@ -124,6 +125,11 @@ export default function PlannerDevScreen() {
       setStatus('error');
     }
   }
+
+  const toggleRawGemini = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowRawGemini(!showRawGemini);
+  };
 
   const sourceColor = !resolvedPlan ? 'bg-gray-400' :
     resolvedPlan.meta.source === 'gemini_clean'    ? 'bg-avocado' :
@@ -254,7 +260,19 @@ export default function PlannerDevScreen() {
       {/* 2. Raw Gemini Output */}
       {rawOutput !== null && (
         <Section title="2 · Raw Gemini Output" accent="bg-blueberry/10">
-          <JSONBlock value={rawOutput} />
+          <TouchableOpacity 
+            onPress={toggleRawGemini}
+            className="bg-white dark:bg-darkgrey rounded-xl px-4 py-3 flex-row justify-between items-center mb-2 border border-black/5 dark:border-white/5"
+          >
+            <Text className="text-charcoal dark:text-darkcharcoal font-bold text-sm">
+              {showRawGemini ? 'Hide' : 'Show'} Raw Diagnostic Data
+            </Text>
+            <Text className="text-gray-400 text-xs">{showRawGemini ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+          
+          {showRawGemini && (
+            <JSONBlock value={rawOutput} />
+          )}
         </Section>
       )}
 
@@ -274,18 +292,37 @@ export default function PlannerDevScreen() {
 
       {/* 4. Stage B */}
       {stageBResult && (
-        <Section title="4 · Stage B — Business Validation" accent={stageBResult.valid ? 'bg-avocado/10' : 'bg-yellow-50'}>
+        <Section title="4 · Stage B — Business Validation & Repair" accent={stageBResult.valid ? 'bg-avocado/10' : 'bg-yellow-50'}>
           <View className="flex-row flex-wrap mb-3">
             <Badge label={stageBResult.valid ? 'Valid' : 'Repaired'} color={stageBResult.valid ? 'bg-avocado' : 'bg-yellow-500'} />
             <Badge label={`${stageBResult.warnings.length} warning${stageBResult.warnings.length !== 1 ? 's' : ''}`} color="bg-gray-500" />
           </View>
+
           {stageBResult.warnings.length > 0 && (
-            <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3">
-              {stageBResult.warnings.map((w, i) => (
-                <Text key={i} className="text-yellow-700 text-xs font-mono mb-1">• {w}</Text>
-              ))}
+            <View className="mb-4">
+              {/* Split warnings from explicit repairs */}
+              {stageBResult.warnings.map((w, i) => {
+                const isRepair = w.startsWith('Repaired ');
+                
+                if (isRepair) {
+                  // Example string: "Repaired Monday dinner to "Crispy Tofu & Peanut Noodles" (was "Mince Bolognese & Pasta")"
+                  // Note: we need to update plannerValidation.ts to emit the "(was ...)" part for this regex to work optimally.
+                  // For now, we will render it as a highlighted diff block even if we don't have the "was" string.
+                  return (
+                    <View key={i} className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-2">
+                       <Text className="text-yellow-800 dark:text-yellow-400 text-xs font-bold mb-1 uppercase tracking-wider">Repair Triggered</Text>
+                       <Text className="text-charcoal dark:text-white text-sm">{w}</Text>
+                    </View>
+                  );
+                }
+
+                return (
+                  <Text key={i} className="text-gray-600 dark:text-gray-400 text-xs mb-1">• {w}</Text>
+                );
+              })}
             </View>
           )}
+          
           <JSONBlock value={stageBResult.plan} />
         </Section>
       )}

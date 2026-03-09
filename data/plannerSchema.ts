@@ -4,14 +4,15 @@
 // Planner-facing roles. Never user-facing directly.
 
 export type RecipeArchetype =
-  | 'budget_breakfast'    // cheap, highly repeatable morning option
-  | 'protein_breakfast'   // targets protein goal at breakfast
-  | 'budget_workhorse'    // cheap lunch/dinner, can repeat most days
-  | 'high_protein_anchor' // high protein, use 1-2× per week max
-  | 'calorie_dense'       // fills calorie gap, use when daily avg is low
-  | 'variety_anchor'      // interesting/premium feel, use 1-2× per week
-  | 'premium_meal'        // expensive, use at most once per week
-  | 'quick_default';      // fast fallback, fills gaps when budget/pool exhausted
+  | 'budget_breakfast'          // cheap, highly repeatable morning option
+  | 'protein_breakfast'         // targets protein goal at breakfast
+  | 'budget_workhorse_lunch'    // cheap lunch, can repeat most days
+  | 'budget_workhorse_dinner'   // cheap dinner, can repeat most days
+  | 'high_protein_anchor'       // high protein, use 1-2× per week max
+  | 'calorie_dense'             // fills calorie gap, use when daily avg is low
+  | 'variety_anchor'            // interesting/premium feel, use 1-2× per week
+  | 'premium_meal'              // expensive, use at most once per week
+  | 'quick_default';            // fast fallback, fills gaps when budget/pool exhausted
 
 // ─── Weekly Composition Target ────────────────────────────────────────────────
 // Computed before the Gemini call. Tells the planner how many of each archetype

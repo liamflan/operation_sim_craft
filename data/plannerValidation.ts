@@ -364,7 +364,8 @@ export function validatePlannerOutput(
       archetypeCounts,
       currentCals, 
       currentProt, 
-      r.originalId
+      r.originalId,
+      candidateMap
     );
 
     if (repairedId) {
@@ -374,7 +375,23 @@ export function validatePlannerOutput(
       archetypeCounts.set(repArch, (archetypeCounts.get(repArch) ?? 0) + 1);
       
       if (r.originalId) {
-        warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(repairedId)?.title}"`);
+        const orig = candidateMap.get(r.originalId);
+        const rep = candidateMap.get(repairedId);
+        if (orig && rep) {
+          const costDelta = (rep.estimatedCostGBP - orig.estimatedCostGBP).toFixed(2);
+          const sign = rep.estimatedCostGBP >= orig.estimatedCostGBP ? '+' : '';
+          const calDelta = rep.macros.calories - orig.macros.calories;
+          const calSign = calDelta >= 0 ? '+' : '';
+          const proDelta = rep.macros.protein - orig.macros.protein;
+          const proSign = proDelta >= 0 ? '+' : '';
+          
+          warnings.push(
+            `Repaired ${r.day} ${r.slot} to "${rep.title}" ` +
+            `(was "${orig.title}") [Cost: ${sign}£${costDelta}] [Cals: ${calSign}${calDelta}] [Protein: ${proSign}${proDelta}g]`
+          );
+        } else {
+          warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(repairedId)?.title}"`);
+        }
       } else {
         warnings.push(`Filled missing ${r.day} ${r.slot} with "${candidateMap.get(repairedId)?.title}"`);
       }
@@ -426,6 +443,19 @@ export function validatePlannerOutput(
 
 // ─── Deterministic Global Repair ──────────────────────────────────────────────
 
+const ARCHETYPE_FAMILIES: Record<string, string[]> = {
+  cheap:   ['budget_breakfast', 'budget_workhorse_lunch', 'budget_workhorse_dinner', 'quick_default'],
+  protein: ['protein_breakfast', 'high_protein_anchor'],
+  premium: ['variety_anchor', 'premium_meal', 'calorie_dense'],
+};
+
+function getArchetypeFamily(arch: string): string | null {
+  if (ARCHETYPE_FAMILIES.cheap.includes(arch)) return 'cheap';
+  if (ARCHETYPE_FAMILIES.protein.includes(arch)) return 'protein';
+  if (ARCHETYPE_FAMILIES.premium.includes(arch)) return 'premium';
+  return null;
+}
+
 function globalRepair(
   day: PlannerDay,
   slot: PlannerSlot,
@@ -435,6 +465,7 @@ function globalRepair(
   currentDayCals: number,
   currentDayProt: number,
   excludeId?: string,
+  candidateMap?: Map<string, PlannerCandidate>,
 ): string | null {
   const { candidates, preferences, profile } = input;
 
@@ -463,6 +494,8 @@ function globalRepair(
 
   // Composition logic: boost archetypes that are under target
   const compTargets = input.composition.archetypeCounts as Record<string, number>;
+  const excludeRecipe = (excludeId && candidateMap) ? candidateMap.get(excludeId) : null;
+  const excludeFamily = excludeRecipe ? getArchetypeFamily(excludeRecipe.archetype) : null;
 
   for (const c of pool) {
     const calGap = targetCals - (currentDayCals + c.macros.calories);
@@ -473,12 +506,45 @@ function globalRepair(
     const calScore = calGap > 0
       ? -calGap         // undershot: penalise by gap size (but gentler — we want to fill up)
       : -Math.abs(calGap) * 0.5;  // overshot: penalise more gently (small overshoot is OK)
-    let score = calScore - Math.abs(protGap * 10);
     
-    // Cost penalty: STRONGLY penalise expensive recipes.
-    // £7.50 on a £60 budget = 12.5% share → 200pts penalty (4x stronger than before)
-    const costFraction = weeklyBudget > 0 ? c.estimatedCostGBP / weeklyBudget : 0;
-    score -= costFraction * 1600;
+    // Strengthen protein penalty to force planner towards high-protein fallbacks
+    let score = calScore - Math.abs(protGap * 15);
+    
+    // ─── Phase 10: Explicit Priority Tiers ───
+    if (excludeRecipe) {
+      const isCheaperOrEqual = c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP;
+      const isSameArchetype = c.archetype === excludeRecipe.archetype;
+      const family = getArchetypeFamily(c.archetype);
+      const isSameFamily = family !== null && family === excludeFamily;
+
+      // Tier 1: Same slot + same archetype + equal/lower cost
+      if (isSameArchetype && isCheaperOrEqual) {
+        score += 20000;
+      }
+      // Tier 2: Same slot + same family + equal/lower cost
+      else if (isSameFamily && isCheaperOrEqual) {
+        score += 15000;
+      }
+      // Tier 3: Same slot + nearby archetype (different family, but cheap/equal)
+      else if (isCheaperOrEqual) {
+        score += 10000;
+      }
+      // Tier 4: Same slot + same family + slight cost increase
+      else if (isSameFamily) {
+        score += 5000;
+      }
+      // Tier 5: Escalate (happens naturally if nothing above triggers and nutritional needs are dire)
+      
+      // Strict Escalation Penalty: Punish upward cost movement unless necessary
+      if (!isCheaperOrEqual) {
+        const costDiff = c.estimatedCostGBP - excludeRecipe.estimatedCostGBP;
+        score -= (costDiff * 5000); // Massive penalty for increasing cost
+      }
+    } else {
+      // General cost penalty if no baseline to compare against
+      const costFraction = weeklyBudget > 0 ? c.estimatedCostGBP / weeklyBudget : 0;
+      score -= costFraction * 1600;
+    }
     
     // Goal & Pantry tie-breakers
     if (preferences.prioritisePantry && c.pantryIngredients.length > 0) score += 500;
