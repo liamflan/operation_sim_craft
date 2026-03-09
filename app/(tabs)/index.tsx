@@ -65,33 +65,48 @@ export default function DashboardScreen() {
           {/* Left Column (Desktop) / Top Section (Mobile) */}
           <View className="md:w-1/3 md:min-w-[340px] md:pr-12 md:sticky md:top-12 h-fit">
             {/* Header Section (Compacted) */}
-            <View className="flex-row justify-between items-end mb-6 mt-4 md:mt-0 pb-4 border-b border-black/5 dark:border-white/5">
+            <View className="flex-row justify-between items-end mb-4 md:mt-0 pb-3 border-b border-black/5 dark:border-white/5">
               <View>
-                <Text className="text-gray-500 text-sm font-bold uppercase tracking-widest">Welcome back</Text>
-                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight mt-1">{mockUser.name}</Text>
+                <Text className="text-gray-500 text-xs font-bold uppercase tracking-widest">Welcome back,</Text>
+                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight mt-0.5">{mockUser.name}</Text>
               </View>
             </View>
 
             {/* Daily Progress Card */}
-            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-5 mb-5 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
-              <View className="flex-row justify-between items-end mb-4">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Today</Text>
-                  <Text className="text-gray-500 text-sm font-medium">Daily Progress</Text>
-                </View>
-                <Text className="text-avocado font-bold text-sm">0 / 3 Meals</Text>
+            <View className="bg-white/60 dark:bg-darkgrey/60 rounded-3xl p-5 mb-4 border border-white dark:border-white/5 shadow-sm backdrop-blur-md">
+              <View className="mb-4">
+                <Text className="text-charcoal dark:text-darkcharcoal text-xl font-bold tracking-tight">Today</Text>
+                <Text className="text-gray-500 text-sm font-medium">Daily Progress</Text>
               </View>
 
-              <View className="flex-row justify-between gap-4">
-                <View className="flex-1 bg-gray-50 dark:bg-black/20 p-4 rounded-2xl">
-                  <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Calories</Text>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-xl font-extrabold">0<Text className="text-sm font-medium text-gray-400"> / {mockUser.targetMacros.calories}</Text></Text>
-                  <Text className="text-avocado text-xs font-bold mt-1">{mockUser.targetMacros.calories} left</Text>
+              <View className="space-y-4">
+                <View>
+                  <View className="flex-row justify-between items-end mb-1">
+                    <Text className="text-charcoal dark:text-gray-300 font-bold">Calories: 0 <Text className="text-gray-400 font-normal">/ {mockUser.targetMacros.calories}</Text></Text>
+                    <Text className="text-avocado text-xs font-bold">{mockUser.targetMacros.calories} left</Text>
+                  </View>
+                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
+                    <View className="h-full bg-avocado rounded-full" style={{ width: '0%' }}></View>
+                  </View>
                 </View>
-                <View className="flex-1 bg-gray-50 dark:bg-black/20 p-4 rounded-2xl">
-                  <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Protein</Text>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-xl font-extrabold">0g<Text className="text-sm font-medium text-gray-400"> / {mockUser.targetMacros.protein}g</Text></Text>
-                  <Text className="text-avocado text-xs font-bold mt-1">{mockUser.targetMacros.protein}g left</Text>
+                
+                <View className="mt-3">
+                  <View className="flex-row justify-between items-end mb-1">
+                    <Text className="text-charcoal dark:text-gray-300 font-bold">Protein: 0g <Text className="text-gray-400 font-normal">/ {mockUser.targetMacros.protein}g</Text></Text>
+                    <Text className="text-blueberry text-xs font-bold">{mockUser.targetMacros.protein}g left</Text>
+                  </View>
+                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
+                    <View className="h-full bg-blueberry rounded-full" style={{ width: '0%' }}></View>
+                  </View>
+                </View>
+
+                <View className="mt-3">
+                  <View className="flex-row justify-between items-end mb-1">
+                    <Text className="text-charcoal dark:text-gray-300 font-bold">Meals: 0 <Text className="text-gray-400 font-normal">/ 3 completed</Text></Text>
+                  </View>
+                  <View className="h-2 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
+                    <View className="h-full bg-tomato rounded-full" style={{ width: '0%' }}></View>
+                  </View>
                 </View>
               </View>
             </View>
@@ -116,14 +131,20 @@ export default function DashboardScreen() {
             {/* Next Action Widget */}
             <TouchableOpacity 
               onPress={() => router.push('/explore')}
-              className="bg-avocado rounded-3xl p-5 mb-5 shadow-sm flex-row items-center justify-between active:opacity-80 transition-opacity hover:opacity-90"
+              className="bg-avocado rounded-3xl p-5 mb-5 shadow-sm active:opacity-80 transition-opacity hover:opacity-90"
             >
-              <View className="flex-1 mr-4">
-                <Text className="text-white/80 text-xs font-bold uppercase tracking-widest mb-1">Next Action</Text>
-                <Text className="text-white text-lg font-bold leading-tight">12 ingredients needed for this week's plan</Text>
+              <View className="flex-row items-start justify-between mb-3">
+                <View className="flex-1 mr-4">
+                  <Text className="text-white/80 text-xs font-bold uppercase tracking-widest mb-1">Next Action</Text>
+                  <Text className="text-white text-lg font-bold leading-tight">12 ingredients needed for this week's plan</Text>
+                </View>
+                <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
+                  <FontAwesome5 name="shopping-basket" size={16} color="white" />
+                </View>
               </View>
-              <View className="w-10 h-10 bg-white/20 rounded-full items-center justify-center">
-                <FontAwesome5 name="shopping-basket" size={16} color="white" />
+              <View className="bg-white/20 self-start px-4 py-2 rounded-full flex-row items-center border border-white/30">
+                <Text className="text-white font-bold text-sm mr-2">Open Fuel List</Text>
+                <FontAwesome5 name="arrow-right" size={10} color="white" />
               </View>
             </TouchableOpacity>
 
@@ -158,7 +179,7 @@ export default function DashboardScreen() {
                 className="bg-gray-100 dark:bg-black/20 hover:bg-gray-200 dark:hover:bg-black/40 py-3 rounded-xl flex-row items-center justify-center border border-black/5 dark:border-white/5 transition-colors"
               >
                 <FontAwesome5 name="plus" size={12} color="#9CA3AF" className="mr-2" />
-                <Text className="text-gray-600 dark:text-gray-300 font-bold text-sm">Add Recipe to Learn Mode</Text>
+                <Text className="text-gray-600 dark:text-gray-300 font-bold text-sm">Add recipe</Text>
               </TouchableOpacity>
             </View>
           </View>

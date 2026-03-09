@@ -63,7 +63,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r4",
     title: "Garlic Butter Chicken & Spinach",
-    imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=800&auto=format&fit=crop",
+    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop", // Replaced potentially broken link
     prepTimeMinutes: 20,
     macros: { calories: 480, protein: 50, carbs: 10, fats: 26 },
     tags: ["Low Carb", "High Protein", "Keto"],

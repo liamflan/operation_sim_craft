@@ -71,7 +71,7 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
     >
       <Pressable 
         onPress={onPress}
-        className="w-full h-80 md:h-[260px] rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-black"
+        className="w-full h-80 md:h-56 rounded-[32px] overflow-hidden active:opacity-90 hover:opacity-95 md:hover:scale-[1.02] transition-all duration-300 relative shadow-2xl bg-gray-200 dark:bg-darkgrey"
       >
         <Image 
           source={recipe.imageUrl} 
@@ -105,31 +105,37 @@ export default function RecipeCard({ recipe, onPress, onSwipe }: Props) {
           </View>
         </Animated.View>
 
-        {/* Seamless Soft Bottom Gradient for Text Readability */}
         <LinearGradient
-          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.9)']}
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.9)']}
           locations={[0, 0.4, 1]}
-          className="absolute inset-0 w-full h-full justify-end p-6 md:p-8 z-10"
+          className="absolute inset-0 w-full h-full justify-end p-6 z-10"
         >
-          <Text className="text-white font-bold text-3xl md:text-4xl mb-3 tracking-tight leading-tight shadow-md">
+          <Text className="text-white font-bold text-3xl md:text-4xl mb-2 tracking-tight leading-tight shadow-md">
             {recipe.title}
           </Text>
           
           {/* Glassmorphism Pills area */}
-          <View className="flex-row flex-wrap gap-2 mt-1">
-            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-              <FontAwesome5 name="clock" size={12} color="#6DBE75" />
-              <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
-            </View>
-            
-            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-              <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
-              <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row flex-wrap gap-2">
+              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+                <FontAwesome5 name="clock" size={12} color="#6DBE75" />
+                <Text className="text-white text-xs font-semibold ml-2">{recipe.prepTimeMinutes} Mins</Text>
+              </View>
+              
+              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
+                <FontAwesome5 name="fire" size={12} color="#FF6B5A" />
+                <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.calories} kcal</Text>
+              </View>
+
+              <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md hidden sm:flex">
+                <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
+                <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
+              </View>
             </View>
 
-            <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/20 backdrop-blur-md">
-              <FontAwesome5 name="dumbbell" size={12} color="#4F7FFF" />
-              <Text className="text-white text-xs font-semibold ml-1">{recipe.macros.protein}g P</Text>
+            <View className="flex-row items-center opacity-80 pl-2">
+              <Text className="text-white font-semibold text-xs mr-1 hidden sm:flex">View Recipe</Text>
+              <FontAwesome5 name="chevron-right" size={10} color="white" />
             </View>
           </View>
         </LinearGradient>
