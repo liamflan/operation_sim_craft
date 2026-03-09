@@ -1,18 +1,36 @@
-import React from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Modal } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const router = useRouter();
 
-  const [diet, setDiet] = React.useState('Omnivore');
-  const [budget, setBudget] = React.useState('50');
-  const [calories, setCalories] = React.useState('2400');
+  const [diet, setDiet] = useState('Omnivore');
+  const [budget, setBudget] = useState('50');
+  const [calories, setCalories] = useState('2400');
   
-  const [darkMode, setDarkMode] = React.useState(false);
-  const [notifications, setNotifications] = React.useState(true);
-  const [autoDeplete, setAutoDeplete] = React.useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [autoDeplete, setAutoDeplete] = useState(false);
+
+  // Edit State Modals
+  const [editingDiet, setEditingDiet] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [editingCalories, setEditingCalories] = useState(false);
+  
+  const [tempBudget, setTempBudget] = useState(budget);
+  const [tempCalories, setTempCalories] = useState(calories);
+
+  const saveBudget = () => {
+    setBudget(tempBudget);
+    setEditingBudget(false);
+  }
+
+  const saveCalories = () => {
+    setCalories(tempCalories);
+    setEditingCalories(false);
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-cream">
@@ -40,36 +58,47 @@ export default function SettingsScreen() {
               
               <View className="bg-white/60 rounded-3xl p-6 mb-8 border border-white shadow-sm backdrop-blur-md">
                 
-                {/* Setting Item */}
+                {/* Dietary Baseline */}
                 <View className="flex-row justify-between items-center mb-6 border-b border-black/5 pb-6">
-                  <View>
+                  <View className="flex-1 mr-4">
                     <Text className="text-charcoal font-bold text-lg">Dietary Baseline</Text>
-                    <Text className="text-gray-500 text-sm">Your primary eating style</Text>
+                    <Text className="text-gray-500 text-sm flex-wrap">Your primary eating style</Text>
                   </View>
-                  <TouchableOpacity className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors">
+                  <TouchableOpacity 
+                    onPress={() => setEditingDiet(true)}
+                    className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors"
+                  >
                     <Text className="text-avocado font-bold">{diet}</Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Setting Item */}
+                {/* Weekly Budget */}
                 <View className="flex-row justify-between items-center mb-6 border-b border-black/5 pb-6">
-                  <View>
+                  <View className="flex-1 mr-4">
                     <Text className="text-charcoal font-bold text-lg">Weekly Budget</Text>
-                    <Text className="text-gray-500 text-sm">Hard limit for grocery generation</Text>
+                    <Text className="text-gray-500 text-sm flex-wrap">Hard limit for grocery generation</Text>
                   </View>
-                  <TouchableOpacity className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors">
-                    <Text className="text-avocado font-bold">£{budget}</Text>
+                  <TouchableOpacity 
+                    onPress={() => { setTempBudget(budget); setEditingBudget(true); }}
+                    className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors flex-row items-center"
+                  >
+                    <Text className="text-avocado font-bold mr-2">£{budget}</Text>
+                    <FontAwesome5 name="pen" size={10} color="#6DBE75" />
                   </TouchableOpacity>
                 </View>
 
-                {/* Setting Item */}
+                {/* Daily Calories */}
                 <View className="flex-row justify-between items-center">
-                  <View>
+                  <View className="flex-1 mr-4">
                     <Text className="text-charcoal font-bold text-lg">Daily Calories</Text>
-                    <Text className="text-gray-500 text-sm">Target ceiling for meal math</Text>
+                    <Text className="text-gray-500 text-sm flex-wrap">Target ceiling for meal math</Text>
                   </View>
-                  <TouchableOpacity className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors">
-                    <Text className="text-avocado font-bold">{calories} kcal</Text>
+                  <TouchableOpacity 
+                    onPress={() => { setTempCalories(calories); setEditingCalories(true); }}
+                    className="bg-charcoal/5 px-4 py-2 rounded-xl active:bg-charcoal/10 transition-colors flex-row items-center"
+                  >
+                    <Text className="text-avocado font-bold mr-2">{calories} kcal</Text>
+                    <FontAwesome5 name="pen" size={10} color="#6DBE75" />
                   </TouchableOpacity>
                 </View>
 
@@ -141,6 +170,92 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* -- Modals for Editing Values -- */}
+
+      {/* Diet Selection Modal */}
+      <Modal visible={editingDiet} transparent={true} animationType="fade">
+        <View className="flex-1 bg-black/40 justify-center items-center p-4">
+          <View className="bg-cream w-full max-w-sm rounded-3xl p-6 shadow-xl border border-white/50">
+            <Text className="text-charcoal text-2xl font-extrabold mb-6">Select Diet</Text>
+            {['Omnivore', 'Pescatarian', 'Vegetarian', 'Vegan'].map(option => (
+              <TouchableOpacity 
+                key={option}
+                onPress={() => { setDiet(option); setEditingDiet(false); }}
+                className={`p-4 rounded-xl border-2 mb-3 ${diet === option ? 'border-avocado bg-avocado/10' : 'border-black/5 bg-white'}`}
+              >
+                <Text className={`text-center font-bold text-lg ${diet === option ? 'text-avocado' : 'text-charcoal'}`}>{option}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setEditingDiet(false)} className="mt-4 py-3">
+              <Text className="text-center font-bold text-gray-400">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Budget Input Modal */}
+      <Modal visible={editingBudget} transparent={true} animationType="fade">
+        <View className="flex-1 bg-black/40 justify-center items-center p-4">
+          <View className="bg-cream w-full max-w-sm rounded-3xl p-6 shadow-xl border border-white/50">
+            <Text className="text-charcoal text-2xl font-extrabold mb-2">Weekly Budget</Text>
+            <Text className="text-gray-500 mb-6 font-medium">Set the hard limit for generating groceries (in £).</Text>
+            
+            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6">
+              <Text className="text-charcoal text-xl font-bold mr-2">£</Text>
+              <TextInput 
+                autoFocus
+                keyboardType="numeric"
+                value={tempBudget}
+                onChangeText={setTempBudget}
+                className="flex-1 text-charcoal text-xl font-bold outline-none"
+                style={{ outlineWidth: 0 } as any}
+              />
+            </View>
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity onPress={() => setEditingBudget(false)} className="flex-1 bg-gray-200 p-4 rounded-xl items-center">
+                <Text className="text-gray-500 font-bold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={saveBudget} className="flex-1 bg-charcoal p-4 rounded-xl items-center">
+                <Text className="text-white font-bold">Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Calories Input Modal */}
+      <Modal visible={editingCalories} transparent={true} animationType="fade">
+        <View className="flex-1 bg-black/40 justify-center items-center p-4">
+          <View className="bg-cream w-full max-w-sm rounded-3xl p-6 shadow-xl border border-white/50">
+            <Text className="text-charcoal text-2xl font-extrabold mb-2">Daily Calories</Text>
+            <Text className="text-gray-500 mb-6 font-medium">Target ceiling for engine algorithm calculation.</Text>
+            
+            <View className="flex-row items-center bg-white border-2 border-avocado rounded-2xl px-4 py-3 mb-6">
+              <TextInput 
+                autoFocus
+                keyboardType="numeric"
+                value={tempCalories}
+                onChangeText={setTempCalories}
+                className="flex-1 text-charcoal text-xl font-bold text-right outline-none"
+                style={{ outlineWidth: 0 } as any}
+              />
+              <Text className="text-gray-400 text-lg font-bold ml-2">kcal</Text>
+            </View>
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity onPress={() => setEditingCalories(false)} className="flex-1 bg-gray-200 p-4 rounded-xl items-center">
+                <Text className="text-gray-500 font-bold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={saveCalories} className="flex-1 bg-charcoal p-4 rounded-xl items-center">
+                <Text className="text-white font-bold">Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
