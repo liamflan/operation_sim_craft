@@ -6,7 +6,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MOCK_RECIPES } from '../data/seed';
 
-export default function OnboardingScreen() {
+export default function CalibrationScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
@@ -22,7 +22,7 @@ export default function OnboardingScreen() {
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // Finish onboarding
+      // Finish calibration
       router.replace('/(tabs)');
     }
   };
@@ -124,18 +124,6 @@ export default function OnboardingScreen() {
             </View>
           </View>
 
-          {/* Mock Settings / Profile (Desktop Only) - Disabled during onboarding */}
-          <View className="hidden md:flex pb-10 mt-auto">
-            <View className="flex-row items-center p-4 -ml-4 rounded-2xl group opacity-80 cursor-not-allowed">
-              <View className="w-12 h-12 bg-avocado rounded-full items-center justify-center mr-4 shadow-sm border border-black/5">
-                <Text className="text-white font-bold text-sm leading-none">LF</Text>
-              </View>
-              <View>
-                <Text className="text-charcoal font-bold text-lg leading-tight mb-1">Liam F.</Text>
-                <Text className="text-gray-400 text-sm font-medium">Settings</Text>
-              </View>
-            </View>
-          </View>
         </View>
 
         {/* Right Content Area (Forms/Selection) */}

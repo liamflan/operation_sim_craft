@@ -129,10 +129,10 @@ export default function SettingsScreen() {
               <View className="mt-8">
                 <Text className="text-tomato font-bold tracking-wider uppercase text-sm mb-3 ml-2">Danger Zone</Text>
                 <TouchableOpacity 
-                  onPress={() => router.replace('/onboarding')}
+                  onPress={() => router.replace('/calibration')}
                   className="bg-white border-2 border-tomato/20 p-4 rounded-2xl items-center active:bg-tomato/5 transition-colors"
                 >
-                  <Text className="text-tomato font-bold text-lg">Reset Engine (Restart Onboarding)</Text>
+                  <Text className="text-tomato font-bold text-lg">Reset Engine (Restart Calibration)</Text>
                 </TouchableOpacity>
               </View>
 
