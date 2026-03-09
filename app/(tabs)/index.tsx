@@ -4,7 +4,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
-import { generateWeeklyPlan, calculateDailyMacros } from '../../data/engine';
+import { calculateDailyMacros } from '../../data/engine';
 import { MOCK_RECIPES } from '../../data/seed';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 import { DAYS, slotLabel, isPlanned } from '../../data/weeklyRoutine';
@@ -19,7 +19,17 @@ const mockUser = {
   allergies: [],
 };
 
-const weeklyPlan = generateWeeklyPlan(mockUser);
+// Static seed plan — recipe assignments to display while Gemini plan loads.
+// These are overridden by swappedMeals on user interaction.
+const weeklyPlan = [
+  { date: 'Mon', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
+  { date: 'Tue', breakfast: 'r7', lunch: 'r6', dinner: 'r4' },
+  { date: 'Wed', breakfast: 'r3', lunch: 'r1', dinner: 'r2' },
+  { date: 'Thu', breakfast: 'r7', lunch: 'r4', dinner: 'r6' },
+  { date: 'Fri', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
+  { date: 'Sat', breakfast: 'r7', lunch: 'r8', dinner: 'r2' },
+  { date: 'Sun', breakfast: 'r3', lunch: 'r6', dinner: 'r4' },
+];
 
 export default function DashboardScreen() {
   const router = useRouter();

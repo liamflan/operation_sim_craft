@@ -67,6 +67,12 @@ export default function TabLayout() {
               isActive={pathname === '/pantry'} 
               onPress={() => router.push('/(tabs)/pantry')} 
             />
+            <NavItem 
+              icon="flask" 
+              label="Planner Dev" 
+              isActive={pathname === '/planner-dev'} 
+              onPress={() => router.push('/(tabs)/planner-dev')} 
+            />
           </View>
           
           <TouchableOpacity 
@@ -139,7 +145,14 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          href: null, // Hide from mobile bottom tab bar explicitly
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="planner-dev"
+        options={{
+          title: 'Planner Dev',
+          href: null,
         }}
       />
     </Tabs>

@@ -28,8 +28,12 @@ export type Recipe = {
   imageUrl: string;
   prepTimeMinutes: number;
   macros: MacroTarget;
-  tags: string[]; // e.g., ["High Protein", "Low Carb", "Vegan"]
+  tags: string[];
   ingredients: RecipeIngredient[];
+  /** Which meal slots this recipe is appropriate for */
+  suitableFor: ('breakfast' | 'lunch' | 'dinner')[];
+  /** Rough retail cost estimate in GBP */
+  estimatedCostGBP: number;
 };
 
 export type UserProfile = {

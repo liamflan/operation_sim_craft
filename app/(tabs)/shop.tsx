@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { generateWeeklyPlan } from '../../data/engine';
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
 import { UserProfile } from '../../data/schema';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
@@ -151,10 +150,19 @@ function generateShoppingList(routine?: WeeklyRoutine): CategorizedList {
       "i7": 2000,
     }
   };
-  const weeklyPlan = generateWeeklyPlan(mockUser);
-  
+  // Static seed plan — mirrors the Dashboard seed until planWeek() is wired in.
+  const weeklyPlan = [
+    { date: 'Mon', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
+    { date: 'Tue', breakfast: 'r7', lunch: 'r6', dinner: 'r4' },
+    { date: 'Wed', breakfast: 'r3', lunch: 'r1', dinner: 'r2' },
+    { date: 'Thu', breakfast: 'r7', lunch: 'r4', dinner: 'r6' },
+    { date: 'Fri', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
+    { date: 'Sat', breakfast: 'r7', lunch: 'r8', dinner: 'r2' },
+    { date: 'Sun', breakfast: 'r3', lunch: 'r6', dinner: 'r4' },
+  ];
+
   const ingredientMap: Record<string, { amount: number, recipes: Set<string> }> = {};
-  weeklyPlan.forEach((day, idx) => {
+  weeklyPlan.forEach((day, idx: number) => {
     const dayKey = DAYS[idx % DAYS.length];
     const slots: Array<{ id: string | undefined; slot: 'breakfast'|'lunch'|'dinner' }> = [
       { id: day.breakfast, slot: 'breakfast' },

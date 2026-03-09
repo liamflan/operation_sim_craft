@@ -1,57 +1,252 @@
-import { MOCK_RECIPES, Recipe } from "./seed";
-import { DailyMealPlan, MacroTarget, UserProfile } from "./schema";
+import { MOCK_RECIPES } from './seed';
+import { DailyMealPlan, MacroTarget, UserProfile, Recipe } from './schema';
+import { WeeklyRoutine, DAYS, isPlanned } from './weeklyRoutine';
+import { buildPlannerInput } from './plannerInputBuilder';
+import { callGeminiPlanner, PLANNER_MODEL_VERSION } from './geminiPlanner';
+import { runtimeValidateSchema, validatePlannerOutput, checkCandidateSufficiency, computeFeasibilityBounds, FeasibilityBounds } from './plannerValidation';
+import {
+  ResolvedWeeklyPlan,
+  ResolvedDayPlan,
+  PlanMetadata,
+  PlannerDay,
+} from './plannerSchema';
 
-/**
- * MOCK SUBTRACTION ENGINE
- * This is the MVP logic for generating a meal plan that fits a user's macro target.
- * In a real backend, this would use a graph DB and complex weighting.
- */
-export function generateWeeklyPlan(user: UserProfile): DailyMealPlan[] {
-  const weeklyPlan: DailyMealPlan[] = [];
-  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// ─── Routine merge ─────────────────────────────────────────────────────────────
 
-  // Filter recipes based on dietary preference (Mock simple filter)
-  let availableRecipes = MOCK_RECIPES;
-  if (user.dietaryPreference === "Vegetarian") {
-    availableRecipes = availableRecipes.filter(r => r.tags.includes("Vegetarian"));
+function mergePlanWithRoutine(
+  assignments: { day: PlannerDay; slot: 'breakfast' | 'lunch' | 'dinner'; recipeId: string }[],
+  routine: WeeklyRoutine,
+  meta: PlanMetadata,
+  summary?: ResolvedWeeklyPlan['summary'],
+): ResolvedWeeklyPlan {
+  const assignMap = new Map(assignments.map(a => [`${a.day}:${a.slot}`, a.recipeId]));
+
+  const days: ResolvedDayPlan[] = DAYS.map(day => {
+    const dr = routine[day];
+    return {
+      day: day as PlannerDay,
+      breakfast: assignMap.has(`${day}:breakfast`)
+        ? { recipeId: assignMap.get(`${day}:breakfast`)! }
+        : { mode: dr.breakfast as 'skip' | 'quick' },
+      lunch: assignMap.has(`${day}:lunch`)
+        ? { recipeId: assignMap.get(`${day}:lunch`)! }
+        : { mode: dr.lunch as 'skip' | 'leftovers' | 'out' },
+      dinner: assignMap.has(`${day}:dinner`)
+        ? { recipeId: assignMap.get(`${day}:dinner`)! }
+        : { mode: dr.dinner as 'quick' | 'takeaway' | 'out' },
+    };
+  });
+
+  if (process.env.NODE_ENV === 'development') {
+    for (const a of assignments) {
+      const dayPlan = days.find(d => d.day === a.day);
+      const finalizedSlot = dayPlan?.[a.slot];
+      if (!finalizedSlot || typeof finalizedSlot !== 'object' || !('recipeId' in finalizedSlot) || finalizedSlot.recipeId !== a.recipeId) {
+        console.error(`[Merge Integrity Error] Original assignment ${a.day} ${a.slot} -> ${a.recipeId} was lost in merge!`);
+      }
+    }
   }
 
-  // Generate 7 days
-  for (let i = 0; i < 7; i++) {
-    // For MVP, we'll just randomly select to reach roughly the calorie goal.
-    // In reality, this would be a knapsack algorithm.
-    const breakfast = availableRecipes.find(r => r.tags.includes("Quick Breakfast")) || availableRecipes[0];
-    const lunch = availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
-    const dinner = availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
-
-    weeklyPlan.push({
-      date: days[i],
-      breakfast: breakfast.id,
-      lunch: lunch.id,
-      dinner: dinner.id,
-      snacks: []
-    });
-  }
-
-  return weeklyPlan;
+  return { days, summary, meta };
 }
 
-/**
- * Calculates the total macros for a given daily plan to display in the UI progress rings
- */
+// ─── Mock fallback (deterministic) ────────────────────────────────────────────
+
+function mockFallbackPlan(
+  user: UserProfile,
+  routine: WeeklyRoutine,
+  warnings: string[],
+): ResolvedWeeklyPlan {
+  let pool = MOCK_RECIPES.filter(r => {
+    if (user.dietaryPreference === 'Vegetarian') return r.tags.includes('Vegetarian') || r.tags.includes('Vegan');
+    if (user.dietaryPreference === 'Vegan') return r.tags.includes('Vegan');
+    return true;
+  });
+  if (!pool.length) pool = MOCK_RECIPES;
+
+  const breakfast = pool.find(r => r.suitableFor.includes('breakfast')) ?? pool[0];
+  const lunch     = pool.find(r => r.suitableFor.includes('lunch'))     ?? pool[0];
+  const dinner    = pool.find(r => r.suitableFor.includes('dinner'))    ?? pool[pool.length - 1];
+
+  const assignments = ([...DAYS] as PlannerDay[]).flatMap(day => {
+    const dr = routine[day];
+    const result: { day: PlannerDay; slot: 'breakfast' | 'lunch' | 'dinner'; recipeId: string }[] = [];
+    if (isPlanned(dr.breakfast)) result.push({ day, slot: 'breakfast', recipeId: breakfast.id });
+    if (isPlanned(dr.lunch))     result.push({ day, slot: 'lunch',     recipeId: lunch.id });
+    if (isPlanned(dr.dinner))    result.push({ day, slot: 'dinner',    recipeId: dinner.id });
+    return result;
+  });
+
+  const meta: PlanMetadata = {
+    generatedAt: new Date().toISOString(),
+    plannerVersion: 'mock',
+    source: 'fallback_mock',
+    warnings,
+  };
+
+  return mergePlanWithRoutine(assignments, routine, meta);
+}
+
+// ─── Diagnostic type (for dev screen) ─────────────────────────────────────────
+
+export type PlannerDiagnostics = {
+  plannerInput: ReturnType<typeof buildPlannerInput>;
+  rawOutput: unknown;
+  stageAResult: boolean;
+  suffResult: ReturnType<typeof checkCandidateSufficiency> | null;
+  feasBounds: FeasibilityBounds | null;
+  stageBResult: ReturnType<typeof validatePlannerOutput> | null;
+  resolvedPlan: ResolvedWeeklyPlan;
+  errorMsg: string | null;
+};
+
+export async function planWeekWithDiagnostics(
+  user: Parameters<typeof planWeek>[0],
+  routine: Parameters<typeof planWeek>[1],
+  pantry: Parameters<typeof planWeek>[2] = {},
+): Promise<PlannerDiagnostics> {
+  const warnings: string[] = [];
+  const input = buildPlannerInput(user, routine, pantry ?? {});
+
+  try {
+    const suffResult = checkCandidateSufficiency(input);
+    warnings.push(...suffResult.warnings);
+
+    const feasBounds = computeFeasibilityBounds(input, suffResult.effectiveCaps);
+    warnings.push(...feasBounds.warnings);
+
+    if (input.slotsToFill.length === 0) {
+      const meta: PlanMetadata = {
+        generatedAt: new Date().toISOString(),
+        plannerVersion: PLANNER_MODEL_VERSION,
+        source: 'gemini_clean',
+        warnings: ['No plan slots in routine — skipped Gemini call'],
+      };
+      const resolvedPlan = mergePlanWithRoutine([], routine, meta);
+      return { plannerInput: input, rawOutput: null, stageAResult: true, suffResult, feasBounds, stageBResult: null, resolvedPlan, errorMsg: null };
+    }
+
+    const raw = await callGeminiPlanner(input);
+    const stageAResult = runtimeValidateSchema(raw);
+
+    if (!stageAResult) {
+      warnings.push('Stage A: schema validation failed');
+      const meta: PlanMetadata = { generatedAt: new Date().toISOString(), plannerVersion: PLANNER_MODEL_VERSION, source: 'fallback_mock', warnings };
+      const resolvedPlan = mockFallbackPlan(user, routine, warnings);
+      return { plannerInput: input, rawOutput: raw, stageAResult: false, suffResult, feasBounds, stageBResult: null, resolvedPlan, errorMsg: null };
+    }
+
+    const stageBResult = validatePlannerOutput(raw, input, suffResult.effectiveCaps);
+    const allWarnings = [...warnings, ...stageBResult.warnings];
+    // Distinguish: repaired (assignments changed), warned (only notes/warnings), clean (nothing)
+    const wasRepaired = stageBResult.warnings.some(w =>
+      w.startsWith('Repaired') || w.startsWith('Filled missing') || w.startsWith('Could not')
+    );
+    const source: PlanMetadata['source'] = wasRepaired
+      ? 'gemini_repaired'
+      : allWarnings.length > 0
+        ? 'gemini_warned'
+        : 'gemini_clean';
+
+    const meta: PlanMetadata = {
+      generatedAt: new Date().toISOString(),
+      plannerVersion: PLANNER_MODEL_VERSION,
+      source,
+      warnings: allWarnings,
+    };
+
+    const resolvedPlan = mergePlanWithRoutine(stageBResult.plan.assignments, routine, meta, stageBResult.plan.summary);
+    return { plannerInput: input, rawOutput: raw, stageAResult, suffResult, feasBounds, stageBResult, resolvedPlan, errorMsg: null };
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const resolvedPlan = mockFallbackPlan(user, routine, [...warnings, `Error: ${msg}`]);
+    return { plannerInput: input, rawOutput: null, stageAResult: false, suffResult: null, feasBounds: null, stageBResult: null, resolvedPlan, errorMsg: msg };
+  }
+}
+
+// ─── Main planner entry point ─────────────────────────────────────────────────
+
+export async function planWeek(
+  user: UserProfile,
+  routine: WeeklyRoutine,
+  pantry: Record<string, number> = {},
+  previousPlan?: ResolvedWeeklyPlan,
+): Promise<ResolvedWeeklyPlan> {
+  const warnings: string[] = [];
+
+  try {
+    const input = buildPlannerInput(user, routine, pantry);
+
+    const sufficiency = checkCandidateSufficiency(input);
+    warnings.push(...sufficiency.warnings);
+
+    // No plan slots — skip the Gemini call entirely
+    if (input.slotsToFill.length === 0) {
+      const meta: PlanMetadata = {
+        generatedAt: new Date().toISOString(),
+        plannerVersion: PLANNER_MODEL_VERSION,
+        source: 'gemini_clean',
+        warnings: ['No plan slots in routine — skipped Gemini call'],
+      };
+      return mergePlanWithRoutine([], routine, meta);
+    }
+
+    const raw = await callGeminiPlanner(input);
+
+    // Stage A: runtime schema check
+    if (!runtimeValidateSchema(raw)) {
+      warnings.push('Stage A: schema validation failed');
+      return previousPlan
+        ? { ...previousPlan, meta: { ...previousPlan.meta, source: 'previous', warnings } }
+        : mockFallbackPlan(user, routine, warnings);
+    }
+
+    // Stage B: business validation + deterministic repair
+    const result = validatePlannerOutput(raw, input, sufficiency.effectiveCaps);
+    const allWarnings = [...warnings, ...result.warnings];
+    const wasRepaired = result.warnings.some(w =>
+      w.startsWith('Repaired') || w.startsWith('Filled missing') || w.startsWith('Could not')
+    );
+    const source: PlanMetadata['source'] = wasRepaired
+      ? 'gemini_repaired'
+      : allWarnings.length > 0
+        ? 'gemini_warned'
+        : 'gemini_clean';
+
+    const meta: PlanMetadata = {
+      generatedAt: new Date().toISOString(),
+      plannerVersion: PLANNER_MODEL_VERSION,
+      source,
+      warnings: allWarnings,
+    };
+
+    // We no longer abort the plan if some slots were unresolvable.
+    // The good assignments are preserved; only completely failed ones fall back to their default routine mode inline.
+    return mergePlanWithRoutine(result.plan.assignments, routine, meta, result.plan.summary);
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    warnings.push(`Gemini call failed: ${msg}`);
+    return previousPlan
+      ? { ...previousPlan, meta: { ...previousPlan.meta, source: 'previous', warnings } }
+      : mockFallbackPlan(user, routine, warnings);
+  }
+}
+
+// ─── Macro calculator (unchanged, used across the app) ────────────────────────
+
 export function calculateDailyMacros(plan: DailyMealPlan, recipes: Recipe[]): MacroTarget {
-  let total: MacroTarget = { calories: 0, protein: 0, carbs: 0, fats: 0 };
-  
+  const total: MacroTarget = { calories: 0, protein: 0, carbs: 0, fats: 0 };
   [plan.breakfast, plan.lunch, plan.dinner].forEach(recipeId => {
     if (!recipeId) return;
     const recipe = recipes.find(r => r.id === recipeId);
     if (recipe) {
       total.calories += recipe.macros.calories;
-      total.protein += recipe.macros.protein;
-      total.carbs += recipe.macros.carbs;
-      total.fats += recipe.macros.fats;
+      total.protein  += recipe.macros.protein;
+      total.carbs    += recipe.macros.carbs;
+      total.fats     += recipe.macros.fats;
     }
   });
-
   return total;
 }
