@@ -510,40 +510,76 @@ function globalRepair(
     // Strengthen protein penalty to force planner towards high-protein fallbacks
     let score = calScore - Math.abs(protGap * 15);
     
-    // ─── Phase 10: Explicit Priority Tiers ───
+    // ─── Phase 10 & 11: Explicit Priority Tiers & Guardrails ───
     if (excludeRecipe) {
       const isCheaperOrEqual = c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP;
       const isSameArchetype = c.archetype === excludeRecipe.archetype;
       const family = getArchetypeFamily(c.archetype);
       const isSameFamily = family !== null && family === excludeFamily;
 
+      const calDelta = c.macros.calories - excludeRecipe.macros.calories;
+      const protDelta = c.macros.protein - excludeRecipe.macros.protein;
+      const similarMacros = Math.abs(calDelta) <= 100 && Math.abs(protDelta) <= 15;
+      const majorMacroLoss = calDelta <= -150 || protDelta <= -20;
+      const slightCostIncrease = c.estimatedCostGBP > excludeRecipe.estimatedCostGBP && c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP + 1.00;
+
       // Tier 1: Same slot + same archetype + equal/lower cost
       if (isSameArchetype && isCheaperOrEqual) {
-        score += 20000;
+        score += 25000;
       }
       // Tier 2: Same slot + same family + equal/lower cost
       else if (isSameFamily && isCheaperOrEqual) {
+        score += 20000;
+      }
+      // Tier 3: Same slot + similar macro profile + equal/lower cost
+      else if (similarMacros && isCheaperOrEqual) {
         score += 15000;
       }
-      // Tier 3: Same slot + nearby archetype (different family, but cheap/equal)
-      else if (isCheaperOrEqual) {
+      // Tier 4: Same slot + slight cost increase if it avoids major protein/calorie loss
+      else if (slightCostIncrease && !majorMacroLoss) {
         score += 10000;
       }
-      // Tier 4: Same slot + same family + slight cost increase
-      else if (isSameFamily) {
-        score += 5000;
-      }
-      // Tier 5: Escalate (happens naturally if nothing above triggers and nutritional needs are dire)
+      // Tier 5: Escalate (happens naturally if nothing above triggers)
       
       // Strict Escalation Penalty: Punish upward cost movement unless necessary
       if (!isCheaperOrEqual) {
         const costDiff = c.estimatedCostGBP - excludeRecipe.estimatedCostGBP;
         score -= (costDiff * 5000); // Massive penalty for increasing cost
       }
+
+      // 1. Global Macro-Loss Guardrails
+      if (calDelta <= -150 && protDelta <= -20) {
+        score -= 20000; // Very major penalty
+      } else if (calDelta <= -150 || protDelta <= -20) {
+        score -= 10000; // Major penalty
+      }
+
+      // 2. Lunch Floor
+      if (slot === 'lunch') {
+        const wasSubstantial = excludeRecipe.macros.protein >= 35 || excludeRecipe.macros.calories >= 600;
+        const isSubstantial = c.macros.protein >= 30 && c.macros.calories >= 500;
+        
+        if (wasSubstantial && !isSubstantial) {
+          score -= 15000; // Strongly prefer substantial replacements
+        }
+      }
     } else {
       // General cost penalty if no baseline to compare against
       const costFraction = weeklyBudget > 0 ? c.estimatedCostGBP / weeklyBudget : 0;
       score -= costFraction * 1600;
+    }
+
+    // 3. Early-Week Substantial Lunch Preservation
+    if (slot === 'lunch' && ['Mon', 'Tue', 'Wed', 'Thu'].includes(day)) {
+      const isSubstantial = c.macros.protein >= 30 && c.macros.calories >= 500;
+      if (isSubstantial) {
+        const hitsRecipeCap = (repeatCounts.get(c.id) ?? 0) + 1 >= preferences.maxRecipeRepeatsPerWeek;
+        const hitsArchCap = (archetypeCounts.get(c.archetype) ?? 0) + 1 >= (input.composition.archetypeRepeatCaps[c.archetype] ?? 99);
+        
+        if (hitsRecipeCap || hitsArchCap) {
+           score -= 3000; // Small penalty for burning the last charge early
+        }
+      }
     }
     
     // Goal & Pantry tie-breakers

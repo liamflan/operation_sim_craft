@@ -305,9 +305,52 @@ export default function PlannerDevScreen() {
                 const isRepair = w.startsWith('Repaired ');
                 
                 if (isRepair) {
-                  // Example string: "Repaired Monday dinner to "Crispy Tofu & Peanut Noodles" (was "Mince Bolognese & Pasta")"
-                  // Note: we need to update plannerValidation.ts to emit the "(was ...)" part for this regex to work optimally.
-                  // For now, we will render it as a highlighted diff block even if we don't have the "was" string.
+                  const match = w.match(/Repaired (.+?) (.+?) to "(.+?)" \(was "(.+?)"\) \[Cost: (.+?)\] \[Cals: ([+-]?\d+)\] \[Protein: ([+-]?\d+)g\]/);
+                  
+                  if (match) {
+                    const [_, d, s, newRecipe, oldRecipe, costStr, calStr, protStr] = match;
+                    const calDelta = parseInt(calStr);
+                    const protDelta = parseInt(protStr);
+                    
+                    const isSevere = calDelta <= -150 && protDelta <= -20;
+                    const isDegraded = calDelta <= -150 || protDelta <= -20;
+                    
+                    const bgClass = isSevere 
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/50' 
+                      : isDegraded 
+                        ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/50' 
+                        : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/50';
+                    
+                    const labelClass = isSevere
+                      ? 'text-red-800 dark:text-red-400'
+                      : isDegraded
+                        ? 'text-orange-800 dark:text-orange-400'
+                        : 'text-green-800 dark:text-green-400';
+                        
+                    const labelText = isSevere ? 'Severe Downgrade' : isDegraded ? 'Degraded Repair' : 'Acceptable Repair';
+                    
+                    return (
+                      <View key={i} className={`border rounded-lg p-3 mb-2 ${bgClass}`}>
+                        <View className="flex-row justify-between items-center mb-1">
+                          <Text className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>{labelText}</Text>
+                          <Text className="text-gray-500 text-[10px] uppercase font-bold">{d} {s}</Text>
+                        </View>
+                        
+                        <View className="mb-2">
+                          <Text className="text-gray-500 text-xs line-through">{oldRecipe}</Text>
+                          <Text className="text-charcoal dark:text-white text-sm font-semibold">{newRecipe}</Text>
+                        </View>
+                        
+                        <View className="flex-row gap-3">
+                          <Text className="text-gray-600 dark:text-gray-300 text-xs font-mono">Cost: {costStr}</Text>
+                          <Text className={`${calDelta < 0 ? 'text-red-500' : 'text-green-600'} text-xs font-mono`}>Cals: {calStr}</Text>
+                          <Text className={`${protDelta < 0 ? 'text-red-500' : 'text-green-600'} text-xs font-mono`}>Prot: {protStr}g</Text>
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  // Fallback if regex fails but it's still a repair string
                   return (
                     <View key={i} className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-lg p-3 mb-2">
                        <Text className="text-yellow-800 dark:text-yellow-400 text-xs font-bold mb-1 uppercase tracking-wider">Repair Triggered</Text>
