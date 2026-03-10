@@ -183,7 +183,7 @@ export default function PlannerDevScreen() {
             <View className="mt-2 bg-white/50 p-2 rounded border border-red-100">
               <Text className="text-[10px] font-bold uppercase text-red-400 mb-1">Local Dev Tip</Text>
               <Text className="text-red-800 text-[10px]">
-                Generation on localhost requires <Text className="font-bold">npx vercel dev</Text> or a configured <Text className="font-bold">EXPO_PUBLIC_API_BASE_URL</Text>.
+                Generation on localhost requires <Text className="font-bold">npx vercel dev</Text> OR setting <Text className="font-bold">EXPO_PUBLIC_API_BASE_URL</Text> to your production URL in <Text className="font-bold">.env</Text>.
               </Text>
             </View>
           )}
