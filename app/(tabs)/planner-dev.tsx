@@ -171,8 +171,22 @@ export default function PlannerDevScreen() {
       {/* Error */}
       {status === 'error' && (
         <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-          <Text className="text-red-600 font-bold text-sm mb-1">Pipeline error</Text>
-          <Text className="text-red-500 text-xs font-mono">{errorMsg}</Text>
+          <View className="flex-row items-center gap-2 mb-2">
+            <View className="w-5 h-5 bg-red-500 rounded-full items-center justify-center">
+              <Text className="text-white text-[10px] font-bold">!</Text>
+            </View>
+            <Text className="text-red-600 font-bold text-sm">Pipeline error</Text>
+          </View>
+          <Text className="text-red-500 text-xs font-mono mb-2" selectable>{errorMsg}</Text>
+          
+          {(errorMsg?.includes('404') || errorMsg?.includes('vercel dev')) && (
+            <View className="mt-2 bg-white/50 p-2 rounded border border-red-100">
+              <Text className="text-[10px] font-bold uppercase text-red-400 mb-1">Local Dev Tip</Text>
+              <Text className="text-red-800 text-[10px]">
+                Generation on localhost requires <Text className="font-bold">npx vercel dev</Text> or a configured <Text className="font-bold">EXPO_PUBLIC_API_BASE_URL</Text>.
+              </Text>
+            </View>
+          )}
         </View>
       )}
 

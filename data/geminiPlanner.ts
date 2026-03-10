@@ -123,7 +123,18 @@ export async function callGeminiPlanner(input: PlannerInput): Promise<PlannerRaw
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Generation failed: ${response.status}`);
+    const status = response.status;
+    const isLocal404 = status === 404 && !API_BASE;
+    
+    let msg = errorData.error || `Generation failed: ${status}`;
+    if (isLocal404) {
+      msg = `API 404 on localhost. Ensure you are running with 'vercel dev' or have set EXPO_PUBLIC_API_BASE_URL.`;
+    }
+    
+    const error = new Error(msg);
+    (error as any).status = status;
+    (error as any).code = errorData.code;
+    throw error;
   }
 
   // Validated JSON return directly from proxy

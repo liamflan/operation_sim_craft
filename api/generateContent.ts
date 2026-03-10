@@ -63,14 +63,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     // 5. Response Shaping
-    const text = result.response.text();
+    const text = (result as any).text; 
     if (!text) throw new Error('Empty AI response');
     
     return res.status(200).json(JSON.parse(text));
 
   } catch (error: any) {
-    console.error('[API ERROR]', error.message);
-    // Generic error to avoid leaking prompts/secrets
-    return res.status(500).json({ error: 'Failed to generate meal plan' });
+    const status = error.status || 500;
+    const message = error.message || 'Internal Server Error';
+    
+    console.error(`[API ERROR] ${status}: ${message}`);
+    
+    // Narrow down a "safe" message for the client
+    let safeMessage = 'Failed to generate meal plan';
+    if (status === 429) safeMessage = 'Rate limit exceeded. Please try again in 1 minute.';
+    if (status === 400) safeMessage = 'The request was invalid. Try simplifying your prompt.';
+    if (status === 403) safeMessage = 'API key error. Please check server configuration.';
+    
+    return res.status(status).json({ 
+      error: safeMessage,
+      code: error.code || 'UNKNOWN_ERROR',
+      upstreamMessage: message.substring(0, 100) // Truncate for safety
+    });
   }
 }
