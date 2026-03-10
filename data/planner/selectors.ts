@@ -29,6 +29,8 @@ export interface MealCardViewModel {
   isRescue: boolean;
   isGenerating: boolean;
   isSkipped: boolean;
+  pantryTransferStatus: 'transferred' | null;
+  
   
   // Rescue / Autofill Diagnostics
   autofillActor: string | null;
@@ -64,6 +66,7 @@ export function getMealCardViewModel(
     isRescue,
     isGenerating,
     isSkipped: assignment.state === 'skipped',
+    pantryTransferStatus: assignment.pantryTransferStatus || null,
     
     autofillActor: assignment.metrics.autoFilledBy || null,
     rescueTiersTriggered: assignment.rescueData?.tierTriggered || null

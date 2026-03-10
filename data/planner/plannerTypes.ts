@@ -164,6 +164,7 @@ export type RescueFailureReason =
   | 'not_planner_usable'
   | 'archetype_cap_exhausted' 
   | 'repeat_cap_exhausted' 
+  | 'same_day_duplicate'
   | 'budget_delta_exceeded' 
   | 'no_slot_match' 
   | 'taste_pool_collapse' 
@@ -213,4 +214,5 @@ export interface PlannedMealAssignment {
   };
   
   rescueData?: RescueMetadata;
+  pantryTransferStatus?: 'transferred';
 }

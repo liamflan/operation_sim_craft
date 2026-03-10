@@ -46,8 +46,8 @@ export async function runActivePlan(
       a.slotType === vibe.slotType
     );
     if (idx !== -1) {
-      console.log(`[runActivePlan] Merging vibe ${vibe.recipeId} into slot ${vibe.dayIndex}/${vibe.slotType}`);
-      finalAssignments[idx] = { ...vibe, state: 'locked' };
+      console.log(`[runActivePlan] Merging preservation for slot ${vibe.dayIndex}/${vibe.slotType}`);
+      finalAssignments[idx] = { ...vibe, state: vibe.state ?? 'locked' };
     } else {
       console.warn(`[runActivePlan] Could not find slot for vibe ${vibe.recipeId} at day ${vibe.dayIndex} slot ${vibe.slotType}`);
       // If the engine didn't have a contract but it's a vibe, we should arguably add it anyway

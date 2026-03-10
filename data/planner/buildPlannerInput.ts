@@ -64,7 +64,7 @@ function buildVibeAssignments(
 /**
  * Builds a week of SlotContracts based on user routine and goals.
  */
-function buildSlotContracts(
+export function buildSlotContracts(
   planId: string,
   routine: WeeklyRoutine,
   payload: CalibrationPayload

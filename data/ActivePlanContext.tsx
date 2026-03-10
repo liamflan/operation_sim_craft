@@ -7,11 +7,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { OrchestratorOutput } from './planner/orchestrator';
 import { PlannerInput } from './plannerSchema';
-import { buildPlannerSetup, CalibrationPayload } from './planner/buildPlannerInput';
+import { buildPlannerSetup, buildSlotContracts, CalibrationPayload } from './planner/buildPlannerInput';
 import { runActivePlan } from './planner/runActivePlan';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
 import { usePantry } from './PantryContext';
-import { NormalizedRecipe } from './planner/plannerTypes';
+import { NormalizedRecipe, SlotType } from './planner/plannerTypes';
 
 export interface ActiveWorkspace {
   id: string | null;
@@ -28,7 +28,11 @@ interface ActivePlanContextType {
   regenerateWorkspace: (payload: CalibrationPayload) => Promise<void>;
   clearWorkspace: () => void;
   skipAssignment: (assignmentId: string) => void;
+  unskipAssignment: (assignmentId: string) => void;
   skipAndKeepIngredients: (assignmentId: string, recipe: NormalizedRecipe) => void;
+  replaceSlot: (dayIndex: number, slotType: SlotType) => Promise<void>;
+  regenerateDay: (dayIndex: number) => Promise<void>;
+  regenerateWeek: () => Promise<void>;
 }
 
 const STORAGE_KEY = 'provision_active_workspace_v1';
@@ -137,9 +141,35 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const unskipAssignment = (assignmentId: string) => {
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            a.id === assignmentId ? { ...a, state: 'locked' } : a
+          )
+        }
+      };
+    });
+  };
+
   const skipAndKeepIngredients = (assignmentId: string, recipe: NormalizedRecipe) => {
-    // 1. Mark assignment as skipped
-    skipAssignment(assignmentId);
+    // 1. Mark assignment as skipped and note the transfer
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            a.id === assignmentId ? { ...a, state: 'skipped', pantryTransferStatus: 'transferred' } : a
+          )
+        }
+      };
+    });
     
     // 2. Transfer ingredients to pantry
     if (recipe && recipe.ingredients) {
@@ -151,13 +181,153 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const replaceSlot = async (dayIndex: number, slotType: SlotType) => {
+    if (workspace.status === 'generating') return;
+    if (!workspace.output || !workspace.input) return;
+
+    const previousWorkspace = { ...workspace };
+
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        status: 'generating', // In-flight interaction guard
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            (a.dayIndex === dayIndex && a.slotType === slotType) 
+              ? { ...a, state: 'generating' } 
+              : a
+          )
+        }
+      };
+    });
+
+    try {
+      const { routine, payload } = workspace.input;
+      const contracts = buildSlotContracts(workspace.id!, routine, payload);
+      
+      const preservedAssignments = previousWorkspace.output!.assignments.filter(
+        a => !(a.dayIndex === dayIndex && a.slotType === slotType)
+      );
+
+      const output = await runActivePlan(contracts, preservedAssignments);
+
+      setWorkspace(prev => ({
+        ...prev,
+        status: 'ready',
+        output,
+        generatedAt: new Date().toISOString(),
+      }));
+
+    } catch (err) {
+      console.error('[ActivePlanContext] Replace failed, rolling back.', err);
+      setWorkspace(previousWorkspace); // Failure recovery
+    }
+  };
+
+  const regenerateDay = async (dayIndex: number) => {
+    if (workspace.status === 'generating') return;
+    if (!workspace.output || !workspace.input) return;
+
+    const previousWorkspace = { ...workspace };
+
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        status: 'generating',
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            (a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped') 
+              ? { ...a, state: 'generating' } 
+              : a
+          )
+        }
+      };
+    });
+
+    try {
+      const { routine, payload } = workspace.input;
+      const contracts = buildSlotContracts(workspace.id!, routine, payload);
+      
+      // Preserve all except non-locked/non-skipped on target day
+      const preservedAssignments = previousWorkspace.output!.assignments.filter(
+        a => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
+      );
+
+      const output = await runActivePlan(contracts, preservedAssignments);
+
+      setWorkspace(prev => ({
+        ...prev,
+        status: 'ready',
+        output,
+        generatedAt: new Date().toISOString(),
+      }));
+
+    } catch (err) {
+      console.error('[ActivePlanContext] Regenerate day failed, rolling back.', err);
+      setWorkspace(previousWorkspace);
+    }
+  };
+
+  const regenerateWeek = async () => {
+    if (workspace.status === 'generating') return;
+    if (!workspace.output || !workspace.input) return;
+
+    const previousWorkspace = { ...workspace };
+
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        status: 'generating',
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            (a.state !== 'locked' && a.state !== 'skipped') 
+              ? { ...a, state: 'generating' } 
+              : a
+          )
+        }
+      };
+    });
+
+    try {
+      const { routine, payload } = workspace.input;
+      const contracts = buildSlotContracts(workspace.id!, routine, payload);
+      
+      const preservedAssignments = previousWorkspace.output!.assignments.filter(
+        a => a.state === 'locked' || a.state === 'skipped'
+      );
+
+      const output = await runActivePlan(contracts, preservedAssignments);
+
+      setWorkspace(prev => ({
+        ...prev,
+        status: 'ready',
+        output,
+        generatedAt: new Date().toISOString(),
+      }));
+
+    } catch (err) {
+      console.error('[ActivePlanContext] Regenerate week failed, rolling back.', err);
+      setWorkspace(previousWorkspace);
+    }
+  };
+
   return (
     <ActivePlanContext.Provider value={{ 
       workspace, 
       regenerateWorkspace, 
       clearWorkspace,
       skipAssignment,
-      skipAndKeepIngredients
+      unskipAssignment,
+      skipAndKeepIngredients,
+      replaceSlot,
+      regenerateDay,
+      regenerateWeek
     }}>
       {children}
     </ActivePlanContext.Provider>

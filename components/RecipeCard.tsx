@@ -20,13 +20,16 @@ type Props = {
   slotLabel?: string;
   /** Day string forwarded as query param, e.g. 'Monday' */
   day?: string;
-  /** Slot string forwarded as query param, e.g. 'Dinner' */
   slot?: string;
   isSkipped?: boolean;
+  isGenerating?: boolean;
+  pantryTransferStatus?: 'transferred' | null;
   onPress?: () => void;
   onSwipe?: () => void;
   onSkip?: () => void;
   onSkipAndKeep?: () => void;
+  onUnskip?: () => void;
+  onReplace?: () => void;
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -115,7 +118,10 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
   );
 }
 
-export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, onPress, onSwipe, onSkip, onSkipAndKeep }: Props) {
+export default function RecipeCard({ 
+  recipe, slotLabel, day, slot, isSkipped, isGenerating, pantryTransferStatus, 
+  onPress, onSwipe, onSkip, onSkipAndKeep, onUnskip, onReplace 
+}: Props) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   // Track whether the remote image has failed so we can suppress the broken-img UI entirely
@@ -183,8 +189,8 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, on
     >
       <Pressable
         testID="recipe-card-pressable"
-        onPress={isSkipped ? undefined : onPress}
-        className={`w-full h-56 md:h-[220px] rounded-3xl overflow-hidden transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder ${isSkipped ? 'opacity-50 grayscale' : 'active:scale-[0.99]'}`}
+        onPress={isSkipped || isGenerating ? undefined : onPress}
+        className={`w-full h-56 md:h-[220px] rounded-3xl overflow-hidden transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder ${isSkipped ? 'opacity-50 grayscale' : 'active:scale-[0.99]'} transition-all duration-300`}
       >
         {/* Premium fallback — always renders first, image crossfades over it once loaded */}
         <FallbackCard recipe={recipe} isDark={isDarkMode} />
@@ -239,11 +245,50 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, on
               )}
             </View>
           )}
+
+          {isSkipped && (
+            <View className="flex-row items-center gap-2 pointer-events-auto">
+              {onReplace && (
+                <Pressable
+                  testID="recipe-card-replace-btn"
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onReplace();
+                  }}
+                  className="bg-black/20 hover:bg-black/30 dark:bg-black/40 dark:hover:bg-black/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
+                >
+                  <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
+                  <Text className="text-white font-medium text-[13px] tracking-wide">Replace</Text>
+                </Pressable>
+              )}
+              
+              {onUnskip && (
+                <Pressable
+                  testID="recipe-card-unskip-btn"
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onUnskip();
+                  }}
+                  className="bg-primary/20 hover:bg-primary/30 dark:bg-darksageTint/40 dark:hover:bg-darksageTint/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
+                >
+                  <FontAwesome5 name="undo" size={12} color="white" className="mr-2" />
+                  <Text className="text-white font-medium text-[13px] tracking-wide">Restore</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
           
           {isSkipped && (
-            <View className="bg-red-500/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
+            <View className="absolute top-16 right-4 sm:static sm:top-auto sm:right-auto bg-red-500/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
                <FontAwesome5 name="ban" size={10} color="white" className="mr-2" />
                <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Skipped</Text>
+            </View>
+          )}
+
+          {isGenerating && (
+            <View className="absolute top-16 right-4 sm:static sm:top-auto sm:right-auto bg-primary/80 dark:bg-darksageTint/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
+               <FontAwesome5 name="spinner" size={10} color="white" className="mr-2 animate-spin" />
+               <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Generating</Text>
             </View>
           )}
         </View>
@@ -302,7 +347,7 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, on
               </Pressable>
             )}
             
-            {isSkipped && onSkipAndKeep && (
+            {isSkipped && pantryTransferStatus !== 'transferred' && onSkipAndKeep && (
               <Pressable
                 testID="recipe-card-keep-ingredients-btn"
                 onPress={(e) => { e.stopPropagation(); onSkipAndKeep(); }}
@@ -311,6 +356,15 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, on
                 <FontAwesome5 name="box-open" size={10} color="#9DCD8B" className="mr-2" />
                 <Text className="text-[#9DCD8B] font-medium text-[13px]">Add Groceries to Pantry</Text>
               </Pressable>
+            )}
+
+            {isSkipped && pantryTransferStatus === 'transferred' && (
+              <View
+                className="flex-row items-center opacity-90 bg-[#9DCD8B] backdrop-blur-sm px-4 py-2 rounded-full border border-[#9DCD8B] pointer-events-auto"
+              >
+                <FontAwesome5 name="check" size={10} color="#1A1F1B" className="mr-2" />
+                <Text className="text-[#1A1F1B] font-bold tracking-tight text-[13px]">Pantry Updated</Text>
+              </View>
             )}
           </View>
         </LinearGradient>

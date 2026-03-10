@@ -19,7 +19,8 @@ export function checkHardEligibility(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
   currentArchetypeCounts: Record<string, number>,
-  repeatCount: number
+  repeatCount: number,
+  assignedRecipeIdsToday: Set<string> = new Set()
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
@@ -59,6 +60,9 @@ export function checkHardEligibility(
   }
   if (repeatCount >= contract.repeatCap) {
     failures.push('repeat_cap_exhausted');
+  }
+  if (assignedRecipeIdsToday.has(recipe.id)) {
+    failures.push('same_day_duplicate');
   }
 
   // Leftovers / Batch Cook Rules
@@ -177,10 +181,11 @@ export function evaluateCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
   currentArchetypeCounts: Record<string, number> = {},
-  repeatCount: number = 0
+  repeatCount: number = 0,
+  assignedRecipeIdsToday: Set<string> = new Set()
 ): { candidate: PlannerCandidate | null, failureReasons: RescueFailureReason[] } {
   
-  const failures = checkHardEligibility(recipe, contract, currentArchetypeCounts, repeatCount);
+  const failures = checkHardEligibility(recipe, contract, currentArchetypeCounts, repeatCount, assignedRecipeIdsToday);
   if (failures.length > 0) return { candidate: null, failureReasons: failures }; // Complete rejection
 
   const { scores, penalties } = scoreCandidate(recipe, contract, currentArchetypeCounts, repeatCount);
@@ -215,7 +220,9 @@ export function analyzePoolCollapse(
   const failureCounts: Partial<Record<RescueFailureReason, number>> = {};
   
   recipes.forEach(r => {
-    const failures = checkHardEligibility(r, contract, currentArchetypeCounts, 0); // Repeat count simplified for pool analysis
+    // We pass an empty set for today's assignments during collapse analysis because
+    // it's an aggregate summary, and 'same_day_duplicate' shouldn't mask real hard failures
+    const failures = checkHardEligibility(r, contract, currentArchetypeCounts, 0, new Set()); // Repeat count simplified for pool analysis
     failures.forEach(f => {
       failureCounts[f] = (failureCounts[f] || 0) + 1;
     });

@@ -20,7 +20,7 @@ export default function DashboardScreen() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
   const [importModalVisible, setImportModalVisible] = useState(false);
-  const { workspace, skipAssignment, skipAndKeepIngredients } = useActivePlan();
+  const { workspace, skipAssignment, unskipAssignment, skipAndKeepIngredients, replaceSlot, regenerateDay, regenerateWeek } = useActivePlan();
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
@@ -92,6 +92,16 @@ export default function DashboardScreen() {
     skipAssignment(assignmentId);
   };
 
+  const handleUnskip = (assignmentId: string) => {
+    unskipAssignment(assignmentId);
+  };
+
+  const handleReplace = (type: string) => {
+    // Determine the exact slot dynamically based on current selected day index
+    // Note: If type is 'breakfast' etc. we can pass the day index directly
+    replaceSlot(displayedDayIndex, type as any);
+  };
+
   const handleSkipAndKeep = (assignmentId: string, recipeId?: string) => {
     if (!recipeId) return;
     const recipe = FULL_RECIPE_CATALOG[recipeId];
@@ -126,6 +136,17 @@ export default function DashboardScreen() {
 
     return (
       <View testID="week-selector-container">
+        <View className="flex-row items-center justify-between mb-3">
+           <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium tracking-widest uppercase ml-1">This Week</Text>
+           <TouchableOpacity 
+              onPress={() => regenerateWeek()}
+              disabled={workspace.status === 'generating'}
+              className="flex-row items-center opacity-70 hover:opacity-100 active:scale-95 transition-all"
+            >
+              <FontAwesome5 name="sync-alt" size={10} className={workspace.status === 'generating' ? 'animate-spin mr-2 text-textMain dark:text-white' : 'mr-2 text-textMain dark:text-white'} />
+              <Text className="text-textMain dark:text-darktextMain font-bold text-[10px] uppercase tracking-widest">Regenerate Week</Text>
+            </TouchableOpacity>
+        </View>
         {/* Day pills — Row of 7 rounded day capsules/cards */}
         <View testID="week-selector-pills" className="flex-row gap-1.5 mb-5">
           {DAYS.map((day, idx) => {
@@ -171,13 +192,23 @@ export default function DashboardScreen() {
             </Text>
           </View>
           {/* Day Summary Chips */}
-          <View className="flex-row gap-2">
-            <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
-              <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-peach dark:text-[#C48F5D]">●</Text> {Math.round(activeMacros.calories)} kcal</Text>
+          <View className="flex-col items-end">
+            <View className="flex-row gap-2">
+              <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
+                <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-peach dark:text-[#C48F5D]">●</Text> {Math.round(activeMacros.calories)} kcal</Text>
+              </View>
+              <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
+                <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-lime dark:text-[#A9B86D]">●</Text> {Math.round(activeMacros.protein)}g pro</Text>
+              </View>
             </View>
-            <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
-              <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-lime dark:text-[#A9B86D]">●</Text> {Math.round(activeMacros.protein)}g pro</Text>
-            </View>
+            <TouchableOpacity 
+              onPress={() => regenerateDay(displayedDayIndex)}
+              disabled={workspace.status === 'generating'}
+              className="flex-row items-center mt-3 opacity-70 hover:opacity-100 active:scale-95 transition-all"
+            >
+              <FontAwesome5 name="sync-alt" size={10} className={workspace.status === 'generating' ? 'animate-spin mr-2 text-textSec dark:text-darktextSec' : 'mr-2 text-textSec dark:text-darktextSec'} />
+              <Text className="text-textSec dark:text-darktextSec font-bold text-[10px] uppercase tracking-widest">Regenerate Day</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -317,9 +348,13 @@ export default function DashboardScreen() {
                       day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
                       slot={vm.slotType}
                       isSkipped={vm.isSkipped}
-                      onSwipe={() => handleSwap(vm.slotType)}
+                      isGenerating={vm.isGenerating}
+                      pantryTransferStatus={vm.pantryTransferStatus}
+                      onSwipe={() => handleReplace(vm.slotType)}
                       onSkip={() => handleSkip(vm.assignmentId)}
                       onSkipAndKeep={() => handleSkipAndKeep(vm.assignmentId, vm.recipeId || undefined)}
+                      onUnskip={() => handleUnskip(vm.assignmentId)}
+                      onReplace={() => handleReplace(vm.slotType)}
                     />
                   </View>
                 );

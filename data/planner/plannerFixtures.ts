@@ -58,8 +58,8 @@ export const curatedRoast: NormalizedRecipe = {
   imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 90, prepTimeMinutes: 15, difficulty: 'Medium', servings: 4,
   
-  estimatedCostTotalGBP: 12.00,
-  estimatedCostPerServingGBP: 3.00, 
+  estimatedCostTotalGBP: 6.00,
+  estimatedCostPerServingGBP: 1.50, 
   macrosTotal: { calories: 2400, protein: 160, carbs: 120, fats: 100 },
   macrosPerServing: { calories: 600, protein: 40, carbs: 30, fats: 25 },
   
@@ -82,8 +82,8 @@ export const curatedPasta: NormalizedRecipe = {
   imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
   
-  estimatedCostTotalGBP: 3.00,
-  estimatedCostPerServingGBP: 1.50, // Very cheap
+  estimatedCostTotalGBP: 2.00,
+  estimatedCostPerServingGBP: 1.00, // Very cheap
   macrosTotal: { calories: 800, protein: 24, carbs: 140, fats: 16 },
   macrosPerServing: { calories: 400, protein: 12, carbs: 70, fats: 8 }, // Low protein
   
@@ -106,8 +106,8 @@ export const generatedLentilStew: NormalizedRecipe = {
   imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 25, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
   
-  estimatedCostTotalGBP: 2.50,
-  estimatedCostPerServingGBP: 1.25, // Extremely cheap
+  estimatedCostTotalGBP: 1.00,
+  estimatedCostPerServingGBP: 0.50, // Extremely cheap
   macrosTotal: { calories: 900, protein: 72, carbs: 110, fats: 10 },
   macrosPerServing: { calories: 450, protein: 36, carbs: 55, fats: 5 }, // Hits 35g requirement easily
   
