@@ -11,7 +11,6 @@ import {
   TextInput, Platform, Alert, LayoutAnimation
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { MOCK_RECIPES } from '../../data/seed';
 import { buildPlannerInput } from '../../data/plannerInputBuilder';
 
 import { planWeekWithDiagnostics, PlannerDiagnostics } from '../../data/engine';
@@ -19,7 +18,7 @@ import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 import { useActivePlan } from '../../data/ActivePlanContext';
 import { DietaryBaseline } from '../../data/planner/plannerTypes';
 import { isRecipeAllowedForBaselineDiet } from '../../data/planner/dietRules';
-import { FULL_RECIPE_LIST } from '../../data/planner/recipeRegistry';
+import { FULL_RECIPE_LIST, FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -764,7 +763,7 @@ export default function PlannerDevScreen() {
               {(['breakfast', 'lunch', 'dinner'] as const).map(slot => {
                 const val = day[slot];
                 if ('recipeId' in val) {
-                  const recipe = MOCK_RECIPES.find(r => r.id === val.recipeId);
+                  const recipe = FULL_RECIPE_CATALOG[val.recipeId];
                   return (
                     <View key={slot} className="flex-row items-center mb-1">
                       <Text className="text-gray-400 text-xs w-20 capitalize">{slot}</Text>

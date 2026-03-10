@@ -81,7 +81,7 @@ ${pantryList}
 
 INSTRUCTIONS:
 1. Assign exactly one recipe from the candidates list to each slot in SLOTS TO FILL
-2. Use only the recipe IDs provided above — do not invent or modify IDs
+2. Use only the recipe IDs provided above — DO NOT invent IDs by adding prefixes/suffixes. Use only exact recipe IDs from the candidates list.
 3. BUDGET CONSTRAINT (HIGHEST PRIORITY): The sum of all recipe costs MUST stay at or below £${input.profile.weeklyBudgetGBP.toFixed(2)}. Recipes marked with a high % of weekly budget should be used sparingly or avoided if cheaper alternatives are nutritionally adequate
 4. COMPOSITION TARGET: Select recipes whose [archetype] tags match the counts requested in the WEEKLY COMPOSITION STRATEGY section
 5. REPETITION: Absolutely do not exceed the max repeats defined in the PER-ARCHETYPE REPEAT CAPS section

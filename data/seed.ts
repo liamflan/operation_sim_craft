@@ -970,5 +970,20 @@ export const MOCK_RECIPES: Recipe[] = [
       { ingredientId: "i15", amount: 2, unit: "item" }, // Mocks bread
       { ingredientId: "i1", amount: 50, unit: "g" } // Mocks ham
     ],
+  },
+  {
+    id: "r51",
+    title: "Vegan Smashed Avocado Toast",
+    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
+    prepTimeMinutes: 10,
+    macros: { calories: 380, protein: 12, carbs: 40, fats: 20 },
+    tags: ["Vegan", "Breakfast", "Budget"],
+    archetype: 'budget_breakfast',
+    suitableFor: ['breakfast'],
+    estimatedCostGBP: 2.20,
+    ingredients: [
+      { ingredientId: "i11", amount: 1, unit: "item" },
+      { ingredientId: "i15", amount: 2, unit: "item" }
+    ],
   }
 ];

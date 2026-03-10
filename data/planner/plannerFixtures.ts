@@ -115,6 +115,86 @@ export const generatedLentilStew: NormalizedRecipe = {
   archetype: 'Staple', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner', 'lunch'],
 };
 
+export const highProteinSeitan: NormalizedRecipe = {
+  id: 'rec_vegan_steak_01',
+  sourceId: 'src_sys_hp_01',
+  status: 'approved',
+  plannerUsable: true,
+  libraryVisible: true,
+  macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
+  normalizationWarnings: [],
+  title: 'Seitan "Steak" & Garlic Mash',
+  description: 'Ultra-high protein vegan dinner using vital wheat gluten seitan.',
+  imageUrl: 'https://images.unsplash.com/photo-1628198642732-eafbe99eb0a2?q=80&w=800&auto=format&fit=crop',
+  totalTimeMinutes: 40, prepTimeMinutes: 10, difficulty: 'Medium', servings: 1,
+  estimatedCostTotalGBP: 2.50,
+  estimatedCostPerServingGBP: 2.50,
+  macrosTotal: { calories: 650, protein: 52, carbs: 45, fats: 18 },
+  macrosPerServing: { calories: 650, protein: 52, carbs: 45, fats: 18 },
+  ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
+  archetype: 'Staple', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['dinner'],
+};
+
+export const highProteinTempeh: NormalizedRecipe = {
+  id: 'rec_vegan_tempeh_01',
+  sourceId: 'src_sys_hp_02',
+  status: 'approved',
+  plannerUsable: true,
+  libraryVisible: true,
+  macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
+  normalizationWarnings: [],
+  title: 'Smoky Tempeh & Peanut Stir-fry',
+  description: 'A nutty, high-protein vegan lunch or dinner.',
+  imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
+  totalTimeMinutes: 20, prepTimeMinutes: 10, difficulty: 'Easy', servings: 1,
+  estimatedCostTotalGBP: 2.20,
+  estimatedCostPerServingGBP: 2.20,
+  macrosTotal: { calories: 580, protein: 41, carbs: 35, fats: 32 },
+  macrosPerServing: { calories: 580, protein: 41, carbs: 35, fats: 32 },
+  ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
+  archetype: 'Staple', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['lunch', 'dinner'],
+};
+
+export const highProteinHalloumi: NormalizedRecipe = {
+  id: 'rec_veggie_halloumi_01',
+  sourceId: 'src_sys_hp_03',
+  status: 'approved',
+  plannerUsable: true,
+  libraryVisible: true,
+  macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
+  normalizationWarnings: [],
+  title: 'Baked Halloumi & Mediterranean Veg',
+  description: 'Crispy halloumi with roasted peppers and zucchini.',
+  imageUrl: 'https://images.unsplash.com/photo-1594970544699-c88f38bb67cc?q=80&w=800&auto=format&fit=crop',
+  totalTimeMinutes: 30, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
+  estimatedCostTotalGBP: 3.50,
+  estimatedCostPerServingGBP: 3.50,
+  macrosTotal: { calories: 620, protein: 38, carbs: 15, fats: 48 },
+  macrosPerServing: { calories: 620, protein: 38, carbs: 15, fats: 48 },
+  ingredients: [], method: [], tags: ['Vegetarian', 'High-Protein'],
+  archetype: 'Staple', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['dinner'],
+};
+
+export const highProteinTofuScramble: NormalizedRecipe = {
+  id: 'rec_vegan_scramble_01',
+  sourceId: 'src_sys_hp_04',
+  status: 'approved',
+  plannerUsable: true,
+  libraryVisible: true,
+  macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
+  normalizationWarnings: [],
+  title: 'Smoky Tofu Scramble',
+  description: 'The ultimate high-protein vegan breakfast.',
+  imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop',
+  totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
+  estimatedCostTotalGBP: 1.80,
+  estimatedCostPerServingGBP: 1.80,
+  macrosTotal: { calories: 420, protein: 32, carbs: 12, fats: 28 },
+  macrosPerServing: { calories: 420, protein: 32, carbs: 12, fats: 28 },
+  ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
+  archetype: 'Staple', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['breakfast'],
+};
+
 
 // --- 3. HARD SLOT CONTRACTS ---
 
@@ -125,6 +205,7 @@ export const typicalDinnerContract: SlotContract = {
     protein: { min: 25, ideal: 35 }
   },
   budgetEnvelopeGBP: 4.00, // Reasonable budget
+  dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 1, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
   leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0
 };
@@ -136,6 +217,7 @@ export const exhaustedBudgetDinnerContract: SlotContract = {
     protein: { min: 35, ideal: 40 } // Hard requirement for 35g min
   },
   budgetEnvelopeGBP: 1.50, // Almost no money left in the weekly envelope!
+  dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 0, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
   leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0
 };

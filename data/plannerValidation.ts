@@ -309,8 +309,8 @@ export function validatePlannerOutput(
 
     const candidate = candidateMap.get(a.recipeId);
     if (!candidate) {
-      warnings.push(`Invalid recipeId "${a.recipeId}" for ${a.day} ${a.slot}`);
-      toReassign.push({ day: a.day, slot: a.slot, originalId: a.recipeId });
+      warnings.push(`Invalid recipeId "${a.recipeId}" for ${a.day} ${a.slot} - treating as missing`);
+      toReassign.push({ day: a.day, slot: a.slot, originalId: undefined }); // originalId is undefined because it was invalid
       filledSlots.add(slotKey);
       continue;
     }
@@ -361,6 +361,9 @@ export function validatePlannerOutput(
     }
   }
 
+  const sufficiency = checkCandidateSufficiency(input);
+  const effectiveCaps = sufficiency.effectiveCaps;
+
   // 3. Global Reassignment
   // Sort missing slots: constraint priority (breakfast often most constrained)
   toReassign.sort((a, b) => {
@@ -388,20 +391,15 @@ export function validatePlannerOutput(
       candidateMap,
       currentPlanCost,
       assignedIdsByDay[r.day],
+      effectiveCaps,
     );
 
     if (repairedId) {
-      // Phase 12: Parse EMERGENCY_FALLBACK tag from the returned id
+      // Tier C relaxation tag
       const isEmergencyFallback = repairedId.endsWith('::EMERGENCY_FALLBACK');
-      // Phase 12D: Parse LUNCH_RESCUE / DINNER_RESCUE tags
-      const isLunchRescue = repairedId.endsWith('::LUNCH_RESCUE');
-      const isDinnerRescue = repairedId.endsWith('::DINNER_RESCUE');
-      const hasRescueTag = isLunchRescue || isDinnerRescue;
 
       const cleanRepairedId = repairedId
-        .replace('::EMERGENCY_FALLBACK', '')
-        .replace('::LUNCH_RESCUE', '')
-        .replace('::DINNER_RESCUE', '');
+        .replace('::EMERGENCY_FALLBACK', '');
 
       validAssignments.push({ day: r.day, slot: r.slot, recipeId: cleanRepairedId });
       repeatCounts.set(cleanRepairedId, (repeatCounts.get(cleanRepairedId) ?? 0) + 1);
@@ -433,12 +431,9 @@ export function validatePlannerOutput(
           // Phase 12C/12D: Premium escalation flag for any slot repair costing more than £1.00 extra
           const premiumEscalationTag = netCostDelta > 1.00 ? ' [PREMIUM ESCALATION]' : '';
 
-          // Phase 12D: Pool-collapse rescue diagnostic tag
-          const rescueTag = isLunchRescue ? ' [LUNCH RESCUE]' : isDinnerRescue ? ' [DINNER RESCUE]' : '';
-
           warnings.push(
             `Repaired ${r.day} ${r.slot} to "${rep.title}" ` +
-            `(was "${orig.title}") [Cost: ${sign}£${costDelta}] [Cals: ${calSign}${calDelta}] [Protein: ${proSign}${proDelta}g]${emergencyTag}${premiumEscalationTag}${rescueTag}${budgetTag}`
+            `(was "${orig.title}") [Cost: ${sign}£${costDelta}] [Cals: ${calSign}${calDelta}] [Protein: ${proSign}${proDelta}g]${emergencyTag}${premiumEscalationTag}${budgetTag}`
           );
         } else {
           warnings.push(`Repaired ${r.day} ${r.slot} to "${candidateMap.get(cleanRepairedId)?.title}"`);
@@ -487,14 +482,12 @@ export function validatePlannerOutput(
   let effectiveRepeatCapsPassed = true;
   let nominalRepeatCapsPassed = true;
 
-  const sufficiency = checkCandidateSufficiency(input);
-  const effectiveCap = sufficiency.effectiveCaps;
   const nominalCap = input.preferences.maxRecipeRepeatsPerWeek;
 
   for (const [id, count] of finalRepeatCounts.entries()) {
     if (count > nominalCap) nominalRepeatCapsPassed = false;
     const representativeSlot = validAssignments.find(a => a.recipeId === id)?.slot || 'lunch';
-    if (count > (effectiveCap[representativeSlot] ?? 99)) effectiveRepeatCapsPassed = false;
+    if (count > (effectiveCaps[representativeSlot] ?? 99)) effectiveRepeatCapsPassed = false;
   }
 
   const dietCompliancePassed = validAssignments.every(a => {
@@ -591,10 +584,13 @@ export function globalRepair(
   candidateMap?: Map<string, PlannerCandidate>,
   currentPlanCost?: number,
   assignedRecipeIdsToday: Set<string> = new Set(),
+  effectiveCaps: Record<PlannerSlot, number> = { breakfast: 2, lunch: 2, dinner: 2 },
 ): string | null {
   const { candidates, preferences, profile } = input;
 
-  // 1. Filter to correct slot type and within caps AND respect same-day variety
+  // 1. Tiered Pool Filtering
+  
+  // Tier A: Strictly compliant with NOMINAL caps
   let pool = candidates.filter(c =>
     c.suitableFor.includes(slot) &&
     c.id !== excludeId &&
@@ -603,76 +599,44 @@ export function globalRepair(
     (archetypeCounts.get(c.archetype) ?? 0) < (input.composition.archetypeRepeatCaps[c.archetype] ?? 99)
   );
 
-  // Phase 12: Viable-Alternative Gate
-  // Before allowing a filler lunch to replace a strong lunch, check if ANY
-  // substantial alternative exists in the current cap-compliant pool.
+  // Phase 12: Viable-Alternative Gate (Substantial lunch check)
   const excludeRecipe = (excludeId && candidateMap) ? candidateMap.get(excludeId) : null;
   let fillerOnlyMode = false;
-  if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
+  if (pool.length > 0 && slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
     const hasSubstantialAlternative = pool.some(c => isSubstantialLunch(c));
     if (!hasSubstantialAlternative) {
-      // No substantial lunches left in cap-compliant pool — emergency fallback mode
       fillerOnlyMode = true;
     } else {
-      // Substantial alternatives exist: HARD-BLOCK filler candidates from this pass
-      const substantialPool = pool.filter(c => isSubstantialLunch(c));
-      pool = substantialPool; // Only allow substantial replacements
+      pool = pool.filter(c => isSubstantialLunch(c));
     }
   }
 
-  // Phase 12C: Budget-Safe Lunch Pool Pre-Filter
-  // If any substantial lunch keeps projected plan within budget, remove breach candidates.
-  if (slot === 'lunch' && excludeRecipe && currentPlanCost !== undefined) {
-    const weeklyBudgetRef = input.profile.weeklyBudgetGBP;
-    const hasBudgetSafeSubstantial = pool.some(c =>
-      isSubstantialLunch(c) && (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef
-    );
-    if (hasBudgetSafeSubstantial) {
-      const budgetSafePool = pool.filter(c =>
-        (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef
-      );
-      if (budgetSafePool.length > 0) pool = budgetSafePool;
-    }
-  }
-
-  // Phase 12C/12D: Slot-Agnostic Pool-Collapse Rescue Pass
-  // 
-  // Triggers when the cap-compliant pool has FULLY COLLAPSED to only expensive options,
-  // meaning all remaining candidates cost more than the original by a significant margin.
-  //
-  // Root cause: budget_workhorse_{lunch|dinner} archetype caps exhaust, leaving only
-  // premium/anchor candidates (e.g. Miso Glazed Salmon £5.50, Chicken Parmesan £4.80)
-  // as the "cheapest" cap-compliant option — which silently causes budget escalation.
-  //
-  // Fix: temporarily ignore archetype caps to find cheaper valid alternatives — but
-  // still enforce: slot suitability, repeat caps, budget safety.
-  let poolCollapseRescueTag: string | null = null;
-  if (
-    excludeRecipe &&
-    currentPlanCost !== undefined &&
-    pool.length > 0 &&
-    pool.every(c => c.estimatedCostGBP > excludeRecipe.estimatedCostGBP + 0.50)
-  ) {
-    const weeklyBudgetRef = input.profile.weeklyBudgetGBP;
-    const rescueCandidates = candidates.filter(c =>
+  // Tier B: Relax to EFFECTIVE caps (Pool was empty at nominal caps)
+  if (pool.length === 0) {
+    const slotEffCap = effectiveCaps[slot];
+    pool = candidates.filter(c =>
       c.suitableFor.includes(slot) &&
       c.id !== excludeId &&
       !assignedRecipeIdsToday.has(c.id) &&
-      c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP + 0.50 && // cheaper or similar cost
-      (repeatCounts.get(c.id) ?? 0) < preferences.maxRecipeRepeatsPerWeek && // repeat cap enforced
-      (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef // budget-safe
+      (repeatCounts.get(c.id) ?? 0) < slotEffCap
+      // We also relax archetype caps here because if pool is empty, variety is the bottleneck
     );
-    if (rescueCandidates.length > 0) {
-      pool = rescueCandidates;
-      poolCollapseRescueTag = slot === 'lunch' ? 'LUNCH_RESCUE' : 'DINNER_RESCUE';
+    if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
+      fillerOnlyMode = true; 
     }
   }
 
-  if (!pool.length) {
-    // Relax caps as last resort to guarantee a meal — BUT still respect same-day variety
-    pool = candidates.filter(c => c.suitableFor.includes(slot) && c.id !== excludeId && !assignedRecipeIdsToday.has(c.id));
+  // Tier C: Emergency Fallback (Relax caps entirely, but keep variety)
+  let isEmergency = false;
+  if (pool.length === 0) {
+    pool = candidates.filter(c => 
+      c.suitableFor.includes(slot) && 
+      c.id !== excludeId && 
+      !assignedRecipeIdsToday.has(c.id)
+    );
+    isEmergency = true;
     if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
-      fillerOnlyMode = true; // Still in emergency mode since cap-relaxed pool may not have substantial
+      fillerOnlyMode = true;
     }
   }
   if (!pool.length) return null;
@@ -846,18 +810,16 @@ export function globalRepair(
     }
   }
 
-  // Phase 12: Tag the result with emergency fallback if we're in filler mode
-  if (fillerOnlyMode && bestId) {
-    const winner = candidates.find(c => c.id === bestId);
-    if (winner && isFillerLunch(winner)) {
-      // Attach marker to the id so the warning-emit code can detect it
-      return `${bestId}::EMERGENCY_FALLBACK`;
+  // Tag the result if we hit emergency fallback or filler mode
+  if (bestId) {
+    if (isEmergency) return `${bestId}::EMERGENCY_FALLBACK`;
+    
+    if (fillerOnlyMode) {
+      const winner = candidates.find(c => c.id === bestId);
+      if (winner && isFillerLunch(winner)) {
+        return `${bestId}::EMERGENCY_FALLBACK`;
+      }
     }
-  }
-
-  // Phase 12D: Tag the result with rescue flag if pool-collapse rescue activated
-  if (poolCollapseRescueTag && bestId) {
-    return `${bestId}::${poolCollapseRescueTag}`;
   }
 
   return bestId;

@@ -7,7 +7,15 @@
 import { NormalizedRecipe, RecipeValidationStatus } from './plannerTypes';
 import { Recipe } from '../schema';
 import { MOCK_RECIPES } from '../seed';
-import { curatedRoast, curatedPasta, generatedLentilStew } from './plannerFixtures';
+import { 
+  curatedRoast, 
+  curatedPasta, 
+  generatedLentilStew,
+  highProteinSeitan,
+  highProteinTempeh,
+  highProteinHalloumi,
+  highProteinTofuScramble 
+} from './plannerFixtures';
 import { auditRecipeImage } from './RecipeImageAuditor';
 
 /**
@@ -81,7 +89,11 @@ const normalizedLegacy = MOCK_RECIPES.map(normalizeLegacyRecipe);
 const fixtures = [
   curatedRoast,
   curatedPasta,
-  generatedLentilStew
+  generatedLentilStew,
+  highProteinSeitan,
+  highProteinTempeh,
+  highProteinHalloumi,
+  highProteinTofuScramble
 ];
 
 /**
