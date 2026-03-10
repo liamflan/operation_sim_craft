@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { generatePlan } from '../data/planner/orchestrator';
+import { generatePlan } from '../../data/planner/orchestrator';
 import { 
   curatedRoast, 
   curatedPasta,
   generatedLentilStew, 
   typicalDinnerContract
-} from '../data/planner/plannerFixtures';
-import { SlotContract } from '../data/planner/plannerTypes';
-import { getMealCardViewModel } from '../data/planner/selectors';
+} from '../../data/planner/plannerFixtures';
+import { SlotContract } from '../../data/planner/plannerTypes';
+import { getMealCardViewModel } from '../../data/planner/selectors';
 
 const MOCK_RECIPES = [curatedRoast, curatedPasta, generatedLentilStew];
 const DAY_CONTRACTS: SlotContract[] = [

@@ -85,6 +85,12 @@ export default function TabLayout() {
               isActive={pathname === '/planner-dev'} 
               onPress={() => router.push('/(tabs)/planner-dev')} 
             />
+            <NavItem 
+              icon="vial" 
+              label="Planner Sandbox" 
+              isActive={pathname === '/planner-sandbox'} 
+              onPress={() => router.push('/(tabs)/planner-sandbox')} 
+            />
           </View>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/settings')}
@@ -163,6 +169,13 @@ export default function TabLayout() {
         name="planner-dev"
         options={{
           title: 'Planner Dev',
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="planner-sandbox"
+        options={{
+          title: 'Planner Sandbox',
           href: null,
         }}
       />
