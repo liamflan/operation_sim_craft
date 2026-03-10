@@ -201,30 +201,36 @@ export default function CalibrationScreen() {
     <View className="flex-1 w-full items-center justify-center">
       <View className="w-full max-w-[600px]">
         {/* Generation Header */}
-        <View className="items-center mb-8">
-          <View className="relative mb-6 items-center justify-center">
-            {/* Main Visual: Spinner + Check */}
-            <View className={`w-28 h-28 rounded-full items-center justify-center relative transition-colors duration-700 ${isSetupComplete ? 'bg-primary shadow-[0_8px_32px_rgba(157,205,139,0.35)] dark:shadow-none' : 'bg-surface dark:bg-darkgrey shadow-[0_4px_24px_rgba(157,205,139,0.15)] dark:shadow-none border border-black/[0.05] dark:border-white/5'}`}>
+        <View className="items-center mb-10">
+          <View className="relative mb-5 items-center justify-center">
+            {/* Main Visual: Compact, premium disc */}
+            <View 
+              style={{ width: isSetupComplete ? 96 : 80, height: isSetupComplete ? 96 : 80 }}
+              className={`rounded-full items-center justify-center relative transition-all duration-700 ${
+                isSetupComplete 
+                  ? 'bg-primary shadow-[0_4px_12px_rgba(157,205,139,0.25)] dark:shadow-none' 
+                  : 'bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/10'
+              }`}
+            >
               {isSetupComplete ? (
-                <FontAwesome5 name="check" size={36} color="white" />
+                <FontAwesome5 name="check" size={32} color="white" />
               ) : (
                 <>
-                  {/* Activity spinner exactly like Import Recipe */}
-                  <ActivityIndicator size="large" color="#9DCD8B" style={{ transform: [{ scale: 1.5 }] }} />
-                  {/* Leaf icon in center */}
-                  <View className="absolute w-12 h-12 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
-                    <FontAwesome5 name="leaf" size={16} color="#9DCD8B" />
+                  <ActivityIndicator size="small" color="#9DCD8B" style={{ transform: [{ scale: 1.2 }] }} />
+                  {/* Leaf icon in center stays subtle */}
+                  <View className="absolute w-9 h-9 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
+                    <FontAwesome5 name="leaf" size={12} color="#9DCD8B" />
                   </View>
                 </>
               )}
             </View>
           </View>
 
-          <Text className="text-[28px] md:text-[36px] font-bold text-textMain dark:text-darktextMain tracking-tight mb-3 text-center">
+          <Text className="text-[28px] md:text-[34px] font-bold text-textMain dark:text-darktextMain tracking-tight mb-4 text-center">
             {isSetupComplete ? 'Your plan is ready.' : 'Shaping your week...'}
           </Text>
-          <View className="min-h-[36px] justify-center mb-0 px-6 bg-black/[0.03] dark:bg-white/[0.04] rounded-full border border-black/[0.04] dark:border-white/5 mx-auto">
-            <Text className={`font-semibold text-[14px] text-center transition-colors duration-300 ${isSetupComplete ? 'text-primary dark:text-[#85B674]' : 'text-textMain/80 dark:text-darktextMain/80'}`}>
+          <View className="min-h-[32px] justify-center mb-0 px-5 bg-black/[0.03] dark:bg-white/[0.04] rounded-full border border-black/[0.04] dark:border-white/5 mx-auto">
+            <Text className={`font-semibold text-[13px] text-center transition-colors duration-300 ${isSetupComplete ? 'text-primary dark:text-[#85B674]' : 'text-textMain/70 dark:text-darktextMain/70'}`}>
               {loadingMessages[loadingStage]}
             </Text>
           </View>
