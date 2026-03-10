@@ -48,14 +48,17 @@ export default function DashboardScreen() {
   const switchDay = (idx: number) => {
     if (idx === displayedDayIndex) return; // no-op if same day
     pendingDayIndex.current = idx;
-    setCurrentDayIndex(idx);
+    // We do NOT update currentDayIndex instantly here anymore,
+    // to keep the heading in sync with the fading content.
+    
     // Fade out the current content
     Animated.timing(mealFadeAnim, {
       toValue: 0,
       duration: 160,
       useNativeDriver: true,
     }).start(() => {
-      // Swap the rendered content only after fade-out is done
+      // Swap BOTH heading and rendered cards only after fade-out is done
+      setCurrentDayIndex(pendingDayIndex.current);
       setDisplayedDayIndex(pendingDayIndex.current);
       // Then fade back in
       Animated.timing(mealFadeAnim, {
@@ -245,7 +248,7 @@ export default function DashboardScreen() {
               {/* Breakfast */}
               {isPlanned(routine[currentDayKey].breakfast)
                 ? getRecipe(getActiveMealId('breakfast')) && (
-                    <View className="mb-6">
+                    <View key={`breakfast-${displayedDayIndex}`} className="mb-6">
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('breakfast'))!}
                         slotLabel="Breakfast"
@@ -256,7 +259,7 @@ export default function DashboardScreen() {
                     </View>
                   )
                 : (
-                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                  <View key={`breakfast-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
                     <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
                       <FontAwesome5 name="coffee" size={16} color="#9DCD8B" />
                     </View>
@@ -271,7 +274,7 @@ export default function DashboardScreen() {
               {/* Lunch */}
               {isPlanned(routine[currentDayKey].lunch)
                 ? getRecipe(getActiveMealId('lunch')) && (
-                    <View className="mb-6">
+                    <View key={`lunch-${displayedDayIndex}`} className="mb-6">
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('lunch'))!}
                         slotLabel="Lunch"
@@ -282,7 +285,7 @@ export default function DashboardScreen() {
                     </View>
                   )
                 : (
-                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                  <View key={`lunch-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
                     <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
                       <FontAwesome5 name="utensils" size={16} color="#9DCD8B" />
                     </View>
@@ -297,7 +300,7 @@ export default function DashboardScreen() {
               {/* Dinner */}
               {isPlanned(routine[currentDayKey].dinner)
                 ? getRecipe(getActiveMealId('dinner')) && (
-                    <View className="mb-6">
+                    <View key={`dinner-${displayedDayIndex}`} className="mb-6">
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('dinner'))!}
                         slotLabel="Dinner"
@@ -308,7 +311,7 @@ export default function DashboardScreen() {
                     </View>
                   )
                 : (
-                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                  <View key={`dinner-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
                     <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
                       <FontAwesome5 name="moon" size={16} color="#9DCD8B" />
                     </View>
