@@ -11,7 +11,7 @@ import { buildPlannerSetup, buildSlotContracts, CalibrationPayload } from './pla
 import { runActivePlan } from './planner/runActivePlan';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
 import { usePantry } from './PantryContext';
-import { NormalizedRecipe, SlotType } from './planner/plannerTypes';
+import { NormalizedRecipe, SlotType, DietaryBaseline } from './planner/plannerTypes';
 
 export interface ActiveWorkspace {
   id: string | null;
@@ -21,11 +21,15 @@ export interface ActiveWorkspace {
   error: string | null;
   generatedAt: string | null;
   version: string;
+  userDiet: DietaryBaseline;
 }
 
 interface ActivePlanContextType {
   workspace: ActiveWorkspace;
   regenerateWorkspace: (payload: CalibrationPayload) => Promise<void>;
+  updateUserDiet: (diet: DietaryBaseline) => void;
+  updateBudget: (budget: number) => void;
+  updateCalories: (calories: number) => void;
   clearWorkspace: () => void;
   skipAssignment: (assignmentId: string) => void;
   unskipAssignment: (assignmentId: string) => void;
@@ -46,6 +50,7 @@ const INITIAL_WORKSPACE: ActiveWorkspace = {
   error: null,
   generatedAt: null,
   version: PLANNER_VERSION,
+  userDiet: 'Omnivore',
 };
 
 const ActivePlanContext = createContext<ActivePlanContextType | undefined>(undefined);
@@ -96,14 +101,16 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     try {
       // 1. Build the setup (Contracts + Initial Vibe Assignments)
       console.log('[ActivePlanContext] Regenerating with routine:', Object.keys(routine));
+      console.log('[ActivePlanContext] Payload Diet:', payload.diet);
       const { planId, contracts, vibeAssignments } = buildPlannerSetup(routine, payload);
-      console.log('[ActivePlanContext] Contracts built:', contracts.length);
+      console.log('[ActivePlanContext] Contracts built:', contracts.length, 'Example diet:', contracts[0]?.dietaryBaseline);
 
       // 2. Run the plan execution
       const output = await runActivePlan(contracts, vibeAssignments);
 
       // 3. Update status
-      setWorkspace({
+      setWorkspace(prev => ({
+        ...prev,
         id: planId,
         input: { routine, payload },
         output,
@@ -111,7 +118,9 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         error: null,
         generatedAt: new Date().toISOString(),
         version: PLANNER_VERSION,
-      });
+        // userDiet is preserved from the previous state automatically by ...prev
+      }));
+      console.log('[ActivePlanContext] Generation Complete. State userDiet:', workspace.userDiet); // Note: still might show stale in this log
     } catch (err) {
       setWorkspace(prev => ({ 
         ...prev, 
@@ -119,6 +128,33 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         error: err instanceof Error ? err.message : 'Unknown generation failure' 
       }));
     }
+  };
+  
+  const updateUserDiet = (diet: DietaryBaseline) => {
+    setWorkspace(prev => ({
+      ...prev,
+      userDiet: diet
+    }));
+  };
+
+  const updateBudget = (budget: number) => {
+    setWorkspace(prev => ({
+      ...prev,
+      input: prev.input ? {
+        ...prev.input,
+        payload: { ...prev.input.payload, budgetWeekly: budget }
+      } : prev.input
+    }));
+  };
+
+  const updateCalories = (calories: number) => {
+    setWorkspace(prev => ({
+      ...prev,
+      input: prev.input ? {
+        ...prev.input,
+        payload: { ...prev.input.payload, targetCalories: calories }
+      } : prev.input
+    }));
   };
 
   const clearWorkspace = () => {
@@ -321,6 +357,9 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     <ActivePlanContext.Provider value={{ 
       workspace, 
       regenerateWorkspace, 
+      updateUserDiet,
+      updateBudget,
+      updateCalories,
       clearWorkspace,
       skipAssignment,
       unskipAssignment,

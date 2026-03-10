@@ -6,14 +6,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { MOCK_RECIPES } from '../data/seed';
 import { useActivePlan } from '../data/ActivePlanContext';
+import { DietaryBaseline } from '../data/planner/plannerTypes';
 
 export default function CalibrationScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
-  const [diet, setDiet] = useState<string | null>(null);
+  const [diet, setDietLocal] = useState<DietaryBaseline | null>(null);
   const [loadingStage, setLoadingStage] = useState(0);
-  const { regenerateWorkspace, workspace } = useActivePlan();
+  const { regenerateWorkspace, workspace, updateUserDiet } = useActivePlan();
 
   const loadingMessages = [
     'Learning your taste profile...',
@@ -27,9 +28,11 @@ export default function CalibrationScreen() {
   // Trigger generation when entering step 3
   useEffect(() => {
     if (step === 3 && workspace.status === 'idle') {
+      const finalDiet = diet || 'Omnivore';
+      updateUserDiet(finalDiet);
       regenerateWorkspace({
         selectedVibes,
-        diet: diet || 'Omnivore'
+        diet: finalDiet
       });
     }
   }, [step]);
@@ -64,7 +67,9 @@ export default function CalibrationScreen() {
 
   const handleDebugSkip = () => {
     setSelectedVibes([MOCK_RECIPES[0].id, MOCK_RECIPES[1].id, MOCK_RECIPES[2].id]);
-    setDiet('Omnivore');
+    const skipDiet = 'Omnivore';
+    setDietLocal(skipDiet);
+    updateUserDiet(skipDiet);
     router.replace('/(tabs)');
   };
 
@@ -165,7 +170,7 @@ export default function CalibrationScreen() {
                 <TouchableOpacity
                   key={option.label}
                   testID={`calibration-diet-card-${option.label.toLowerCase()}`}
-                  onPress={() => setDiet(option.label)}
+                  onPress={() => setDietLocal(option.label as DietaryBaseline)}
                   activeOpacity={0.8}
                   className={`p-6 md:p-7 rounded-[28px] w-full md:w-[48.5%] transition-all border ${
                     isActive

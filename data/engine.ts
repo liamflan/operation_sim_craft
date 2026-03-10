@@ -4,6 +4,7 @@ import { WeeklyRoutine, DAYS, isPlanned } from './weeklyRoutine';
 import { buildPlannerInput } from './plannerInputBuilder';
 import { callGeminiPlanner, PLANNER_MODEL_VERSION } from './geminiPlanner';
 import { runtimeValidateSchema, validatePlannerOutput, checkCandidateSufficiency, computeFeasibilityBounds, FeasibilityBounds } from './plannerValidation';
+import { isRecipeAllowedForBaselineDiet } from './planner/dietRules';
 import {
   ResolvedWeeklyPlan,
   ResolvedDayPlan,
@@ -57,11 +58,7 @@ function mockFallbackPlan(
   routine: WeeklyRoutine,
   warnings: string[],
 ): ResolvedWeeklyPlan {
-  let pool = MOCK_RECIPES.filter(r => {
-    if (user.dietaryPreference === 'Vegetarian') return r.tags.includes('Vegetarian') || r.tags.includes('Vegan');
-    if (user.dietaryPreference === 'Vegan') return r.tags.includes('Vegan');
-    return true;
-  });
+  let pool = MOCK_RECIPES.filter(r => isRecipeAllowedForBaselineDiet(r as any, user.dietaryPreference as any));
   if (!pool.length) pool = MOCK_RECIPES;
 
   const breakfast = pool.find(r => r.suitableFor.includes('breakfast')) ?? pool[0];

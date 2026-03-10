@@ -9,13 +9,14 @@ import {
   SlotType, 
   PlannedMealAssignment, 
   RecipeArchetype,
-  ActorType
+  ActorType,
+  DietaryBaseline
 } from './plannerTypes';
 import { WeeklyRoutine, DAYS, isPlanned } from '../weeklyRoutine';
 
 export interface CalibrationPayload {
   selectedVibes: string[]; // Recipe IDs
-  diet: string;
+  diet: DietaryBaseline;
   budgetWeekly?: number;
   targetProtein?: number;
   targetCalories?: number;
@@ -117,7 +118,8 @@ export function buildSlotContracts(
           },
           leftoverPreference: 'accept_leftover',
           batchCookPreference: 'allowed',
-          rescueThresholdScore: 60
+          rescueThresholdScore: 60,
+          dietaryBaseline: payload.diet
         });
       }
     });

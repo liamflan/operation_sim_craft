@@ -7,6 +7,8 @@ import { MOCK_RECIPES } from '../../data/seed';
 import { FontAwesome5 } from '@expo/vector-icons';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
+import { useActivePlan } from '../../data/ActivePlanContext';
+import { DietaryBaseline } from '../../data/planner/plannerTypes';
 import {
   DAYS, Day, MealSlot, MealMode,
   BREAKFAST_OPTIONS, LUNCH_OPTIONS, DINNER_OPTIONS,
@@ -313,9 +315,11 @@ export default function TasteProfileScreen() {
     { id: '2', title: 'Spicy Black Bean Burger', domain: 'bbcgoodfood.com', macros: '+18g Protein, Vegan', date: 'Yesterday', tags: ['Spicy', 'Vegan', 'Dinner'] },
   ]);
 
-  const [diet, setDiet] = useState('Omnivore');
-  const [budget, setBudget] = useState(50);
-  const [calorieGoal, setCalorieGoal] = useState(2400);
+  const { workspace, updateUserDiet, updateBudget, updateCalories } = useActivePlan();
+  
+  const diet = workspace.userDiet;
+  const budget = workspace.input?.payload.budgetWeekly ?? 50;
+  const calorieGoal = workspace.input?.payload.targetCalories ?? 2400;
 
   // New Dietary Goals & Restrictions state
   const [selectedGoals, setSelectedGoals] = useState<string[]>(['High Protein']);
@@ -463,7 +467,7 @@ export default function TasteProfileScreen() {
                     value={diet} 
                     icon="leaf" 
                     color="bg-primary" 
-                    onPress={() => setEditingRule({ title: 'Baseline Diet', value: diet, type: 'diet', onSave: setDiet })} 
+                    onPress={() => setEditingRule({ title: 'Baseline Diet', value: diet, type: 'diet', onSave: (v) => updateUserDiet(v as DietaryBaseline) })} 
                   />
                   <InfoRow 
                     testID="taste-profile-budget-row"
@@ -471,7 +475,7 @@ export default function TasteProfileScreen() {
                     value={`£${budget}`} 
                     icon="pound-sign" 
                     color="bg-peach" 
-                    onPress={() => setEditingRule({ title: 'Weekly budget', value: budget.toString(), type: 'number', prefix: '£', onSave: (v) => setBudget(Number(v) || budget) })} 
+                    onPress={() => setEditingRule({ title: 'Weekly budget', value: budget.toString(), type: 'number', prefix: '£', onSave: (v) => updateBudget(Number(v) || budget) })} 
                   />
                   <InfoRow 
                     testID="taste-profile-calorie-row"
@@ -479,7 +483,7 @@ export default function TasteProfileScreen() {
                     value={`${calorieGoal} kcal`} 
                     icon="fire" 
                     color="bg-danger" 
-                    onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => setCalorieGoal(Number(v) || calorieGoal) })} 
+                    onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => updateCalories(Number(v) || calorieGoal) })} 
                   />
                 </View>
               </View>

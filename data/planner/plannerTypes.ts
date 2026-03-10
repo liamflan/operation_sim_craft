@@ -15,6 +15,8 @@ export type ActorType =
   | 'background_enrichment' 
   | 'admin_seed';
 
+export type DietaryBaseline = 'Omnivore' | 'Pescatarian' | 'Vegetarian' | 'Vegan';
+
 export type RawPayload = 
   | { type: 'url'; url: string; scrapedHtml?: string }
   | { type: 'text'; content: string }
@@ -149,6 +151,7 @@ export interface SlotContract {
     protein: { min: number; ideal: number };
   };
   budgetEnvelopeGBP: number;
+  dietaryBaseline: DietaryBaseline;
   
   // Planner Constraints
   repeatCap: number; // Max occurrences of same recipe in plan
@@ -206,7 +209,8 @@ export type RescueFailureReason =
   | 'calorie_minimum_failed'
   | 'calorie_maximum_exceeded'
   | 'batch_cook_mismatch'
-  | 'leftover_mismatch';
+  | 'leftover_mismatch'
+  | 'dietary_mismatch';
 
 export interface RescueMetadata {
   tierTriggered: 1 | 2 | 3; 

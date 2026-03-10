@@ -9,6 +9,8 @@ import { UserProfile } from './schema';
 import { WeeklyRoutine, DAYS, isPlanned } from './weeklyRoutine';
 import { PlannerInput, PlannerCandidate, PlannerDay, PlannerSlot } from './plannerSchema';
 import { buildWeeklyCompositionTarget, deriveArchetype } from './plannerStrategy';
+import { isRecipeAllowedForBaselineDiet } from './planner/dietRules';
+import { DietaryBaseline } from './planner/plannerTypes';
 
 // ─── Dietary exclusion logic ──────────────────────────────────────────────────
 
@@ -16,14 +18,7 @@ const MEAT_TAGS = ['Beef', 'Chicken', 'Pork', 'Turkey', 'Lamb'];
 const FISH_TAGS = ['Fish', 'Salmon', 'Seafood', 'Omega-3'];
 
 function isSafeForDiet(recipe: typeof MOCK_RECIPES[number], diet: UserProfile['dietaryPreference']): boolean {
-  if (diet === 'Omnivore') return true;
-  if (diet === 'Vegan') return recipe.tags.includes('Vegan');
-  if (diet === 'Vegetarian') return recipe.tags.includes('Vegetarian') || recipe.tags.includes('Vegan');
-  if (diet === 'Pescatarian') {
-    const hasMeat = MEAT_TAGS.some(t => recipe.tags.includes(t));
-    return !hasMeat;
-  }
-  return true;
+  return isRecipeAllowedForBaselineDiet(recipe as any, diet as DietaryBaseline);
 }
 
 function containsAllergen(recipe: typeof MOCK_RECIPES[number], allergies: string[]): boolean {

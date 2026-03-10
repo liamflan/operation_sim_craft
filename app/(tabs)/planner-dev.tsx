@@ -12,20 +12,14 @@ import {
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { MOCK_RECIPES } from '../../data/seed';
+import { buildPlannerInput } from '../../data/plannerInputBuilder';
 
 import { planWeekWithDiagnostics, PlannerDiagnostics } from '../../data/engine';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const mockUser = {
-  id: 'dev-user',
-  name: 'Dev User',
-  targetMacros: { calories: 2200, protein: 160, carbs: 220, fats: 80 },
-  budgetWeekly: 60,
-  dietaryPreference: 'Omnivore' as const,
-  allergies: [],
-};
+import { useActivePlan } from '../../data/ActivePlanContext';
+import { DietaryBaseline } from '../../data/planner/plannerTypes';
+import { isRecipeAllowedForBaselineDiet } from '../../data/planner/dietRules';
+import { FULL_RECIPE_LIST } from '../../data/planner/recipeRegistry';
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 
@@ -66,11 +60,15 @@ function Badge({ label, color }: { label: string; color: string }) {
 
 export default function PlannerDevScreen() {
   const { routine } = useWeeklyRoutine();
+  const { workspace } = useActivePlan();
 
   const [diag, setDiag] = useState<PlannerDiagnostics | null>(null);
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showRawGemini, setShowRawGemini] = useState(false);
+  const [showRawState, setShowRawState] = useState(false);
+
+  const toggleRawState = () => setShowRawState(!showRawState);
 
   // Derived shortcuts for rendering
   const plannerInput  = diag?.plannerInput   ?? null;
@@ -102,9 +100,23 @@ export default function PlannerDevScreen() {
     setDiag(null);
     setErrorMsg(null);
 
+    // Derive live user profile
+    const user = {
+      id: 'live-user',
+      name: 'Live User',
+      targetMacros: { 
+        calories: workspace.input?.payload.targetCalories ?? 2200, 
+        protein: 160, // Default for now, ideally sourced from payload/settings
+        carbs: 220, 
+        fats: 80 
+      },
+      budgetWeekly: workspace.input?.payload.budgetWeekly ?? 60,
+      dietaryPreference: workspace.userDiet as any,
+      allergies: [],
+    };
+
     try {
-      // Single pipeline call — all diagnostic states come from the same Gemini response
-      const result = await planWeekWithDiagnostics(mockUser, routine);
+      const result = await planWeekWithDiagnostics(user, routine);
       setDiag(result);
 
       if (result.errorMsg) {
@@ -143,6 +155,168 @@ export default function PlannerDevScreen() {
         <Text className="text-charcoal dark:text-darkcharcoal text-3xl font-extrabold tracking-tight">Planner Dev</Text>
         <Text className="text-gray-400 text-sm mt-1">Inspect the Gemini planning pipeline end-to-end.</Text>
       </View>
+
+      {/* 0. NEW: Data Audit & Filtering Funnel */}
+      <Section title="0 · Candidate Lifecycle Audit" accent="bg-blueberry/5">
+        <View className="bg-white dark:bg-darkgrey rounded-xl p-5 border border-blueberry/10 mb-2">
+          <View className="flex-row justify-between mb-4 border-b border-black/5 dark:border-white/5 pb-4">
+            <View>
+              <Text className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Dietary Context</Text>
+              <Text className="text-charcoal dark:text-white font-bold text-lg">{workspace.userDiet}</Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Protein Target</Text>
+              <Text className="text-charcoal dark:text-white font-bold text-lg">160g/day</Text>
+            </View>
+          </View>
+
+          {(() => {
+            const total = FULL_RECIPE_LIST.length;
+            const classified = FULL_RECIPE_LIST.filter(r => (r.tags || []).some(t => ['vegan', 'vegetarian', 'pescatarian'].includes(t.toLowerCase()))).length;
+            
+            const currentDiet = workspace.userDiet as DietaryBaseline;
+            const postDiet = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, currentDiet));
+            
+            // Heuristic for "post-protein" audit on dev screen
+            const proteinTarget = 160 / 3; // Approx per meal
+            const postProtein = postDiet.filter(r => r.macrosPerServing.protein >= proteinTarget);
+
+            const veganCount = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Vegan')).length;
+            const veggieCount = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Vegetarian')).length;
+            const pesciCount = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Pescatarian')).length;
+
+            return (
+              <View className="gap-y-3">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-500 text-xs">Total Recipes in Registry</Text>
+                  <Text className="text-charcoal dark:text-white font-mono font-bold text-xs">{total}</Text>
+                </View>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-gray-500 text-xs">Diet-Classified Recipes</Text>
+                  <Text className="text-charcoal dark:text-white font-mono font-bold text-xs">{classified}</Text>
+                </View>
+                <View className="h-[1px] bg-black/5 dark:bg-white/5 my-1" />
+                <View className="flex-row gap-x-4 mb-2">
+                   <Text className="text-[10px] font-bold text-avocado uppercase">Vegan: {veganCount}</Text>
+                   <Text className="text-[10px] font-bold text-orange-400 uppercase">Veggie: {veggieCount}</Text>
+                   <Text className="text-[10px] font-bold text-blue-400 uppercase">Pesci: {pesciCount}</Text>
+                </View>
+                
+                <View className="bg-blueberry/5 p-4 rounded-xl border border-blueberry/10">
+                  <Text className="text-blueberry font-bold text-[10px] uppercase tracking-widest mb-3">Filtering Funnel for {currentDiet}</Text>
+                  
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-gray-500 text-xs italic">1. Total Candidates</Text>
+                    <Text className="text-charcoal dark:text-white font-mono font-bold text-xs">{total}</Text>
+                  </View>
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-gray-500 text-xs italic">2. After Diet Filter ({currentDiet})</Text>
+                    <Text className={`${postDiet.length === 0 ? 'text-red-500' : 'text-charcoal dark:text-white'} font-mono font-bold text-xs`}>{postDiet.length}</Text>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-gray-500 text-xs italic">3. After Protein Filter ({Math.round(proteinTarget)}g+)</Text>
+                    <Text className={`${postProtein.length < 10 ? 'text-red-500' : 'text-charcoal dark:text-white'} font-mono font-bold text-xs`}>{postProtein.length}</Text>
+                  </View>
+                </View>
+
+                {postDiet.length === 0 && (
+                   <View className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 flex-row items-center gap-3">
+                     <Text className="text-red-600 font-bold text-xs">⚠ Critical: No recipes classified for {currentDiet}.</Text>
+                   </View>
+                )}
+                {postDiet.length > 0 && postProtein.length < 5 && (
+                   <View className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 flex-row items-center gap-3">
+                     <Text className="text-red-600 font-bold text-xs">⚠ Warning: Insufficient {currentDiet} recipes meet protein target.</Text>
+                   </View>
+                )}
+              </View>
+            );
+          })()}
+        </View>
+      </Section>
+
+      {/* 0.5 State Comparison */}
+      <Section title="0.5 · Live State Sync Verification" accent="bg-orange-50 dark:bg-orange-900/10">
+        <View className="flex-row gap-4">
+          <View className="flex-1 bg-white dark:bg-darkgrey rounded-xl p-4 border border-orange-200/50">
+            <Text className="text-[10px] font-bold uppercase text-orange-400 mb-2">Workspace (Persisted)</Text>
+            <View className="gap-y-1">
+              <Text className="text-xs text-charcoal dark:text-white font-bold">Diet: {workspace.userDiet}</Text>
+              <Text className="text-xs text-gray-500">Cals: {workspace.input?.payload.targetCalories ?? 'N/A'}</Text>
+              <Text className="text-xs text-gray-500">Budget: £{workspace.input?.payload.budgetWeekly ?? 'N/A'}</Text>
+            </View>
+          </View>
+          <View className="flex-1 bg-white dark:bg-darkgrey rounded-xl p-4 border border-orange-200/50">
+             <Text className="text-[10px] font-bold uppercase text-orange-400 mb-2">Planner Input (Projected)</Text>
+             {(() => {
+               // Calculate the exact input the engine would receive
+               const projectedInput = buildPlannerInput({
+                 id: 'dev',
+                 name: 'Dev',
+                 targetMacros: { 
+                   calories: workspace.input?.payload.targetCalories ?? 2200, 
+                   protein: 160, 
+                   carbs: 220, 
+                   fats: 80 
+                 },
+                 budgetWeekly: workspace.input?.payload.budgetWeekly ?? 60,
+                 dietaryPreference: workspace.userDiet as any,
+                 allergies: [],
+               }, routine);
+
+               const inputDiet = projectedInput.profile.dietaryPreference;
+               const isSync = inputDiet === workspace.userDiet;
+
+               return (
+                 <View className="gap-y-1">
+                   <Text className={`text-xs font-bold ${isSync ? 'text-green-600' : 'text-red-500'}`}>
+                     Diet: {inputDiet} {isSync ? '✓' : '✗ mismatch'}
+                   </Text>
+                   <Text className="text-xs text-gray-500">
+                     Candidates: {projectedInput.candidates.length}
+                   </Text>
+                   <Text className="text-[10px] text-gray-400 italic mt-1">
+                     (Derived via buildPlannerInput)
+                   </Text>
+                 </View>
+               );
+             })()}
+          </View>
+        </View>
+
+        <View className="mt-4">
+           <TouchableOpacity 
+             onPress={toggleRawState}
+             className="bg-orange-100/50 dark:bg-orange-900/20 rounded-xl px-4 py-2 flex-row justify-between items-center mb-2"
+           >
+             <Text className="text-orange-800 dark:text-orange-300 font-bold text-[10px] uppercase tracking-widest">
+               {showRawState ? 'Hide' : 'Compare'} Raw State Payloads
+             </Text>
+             <Text className="text-orange-400 text-xs">{showRawState ? '▲' : '▼'}</Text>
+           </TouchableOpacity>
+           
+           {showRawState && (
+             <View className="flex-row gap-4">
+               <View className="flex-1">
+                 <Text className="text-[10px] font-bold text-gray-400 mb-1 ml-1">Workspace DB</Text>
+                 <JSONBlock value={workspace} />
+               </View>
+               <View className="flex-1">
+                 <Text className="text-[10px] font-bold text-gray-400 mb-1 ml-1">Projected Input</Text>
+                 <JSONBlock value={{
+                    profile: {
+                      dietaryPreference: workspace.userDiet,
+                      targetCalories: workspace.input?.payload.targetCalories,
+                      targetProteinG: 160,
+                      weeklyBudgetGBP: workspace.input?.payload.budgetWeekly
+                    },
+                    slotsToFill: "..."
+                 }} />
+               </View>
+             </View>
+           )}
+        </View>
+      </Section>
 
 
       {/* Run button */}

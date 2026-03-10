@@ -10,6 +10,7 @@ import {
   InsightMetadata,
   RescueFailureReason
 } from './plannerTypes';
+import { isRecipeAllowedForBaselineDiet } from './dietRules';
 
 /**
  * Validates if a recipe passes hard, non-negotiable eligibility constraints for a slot.
@@ -24,7 +25,12 @@ export function checkHardEligibility(
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
-  // Usability check
+  // 1. Dietary Baseline Enforcement (HARD)
+  if (!isRecipeAllowedForBaselineDiet(recipe, contract.dietaryBaseline)) {
+    failures.push('dietary_mismatch');
+  }
+
+  // 2. Usability check
   if (!recipe.plannerUsable) {
     failures.push('not_planner_usable');
   }

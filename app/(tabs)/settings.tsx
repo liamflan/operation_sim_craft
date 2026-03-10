@@ -3,12 +3,18 @@ import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInp
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../components/ThemeContext';
+import { useActivePlan } from '../../data/ActivePlanContext';
+import { DietaryBaseline } from '../../data/planner/plannerTypes';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
-  const [diet, setDiet] = useState('Omnivore');
+  const { workspace, updateUserDiet } = useActivePlan();
+
+  const diet = workspace.userDiet;
+  const setDiet = (newDiet: DietaryBaseline) => updateUserDiet(newDiet);
+
   const [budget, setBudget] = useState('50');
   const [calories, setCalories] = useState('2400');
   
@@ -198,7 +204,7 @@ export default function SettingsScreen() {
               {['Omnivore', 'Pescatarian', 'Vegetarian', 'Vegan'].map(option => (
                 <TouchableOpacity 
                   key={option}
-                  onPress={() => { setDiet(option); setEditingDiet(false); }}
+                  onPress={() => { setDiet(option as DietaryBaseline); setEditingDiet(false); }}
                   className={`py-4 px-5 rounded-[20px] border transition-all ${diet === option ? 'bg-primary border-primary shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'}`}
                 >
                   <Text className={`font-medium text-[16px] ${diet === option ? 'text-white' : 'text-textSec dark:text-darktextSec'}`}>{option}</Text>
