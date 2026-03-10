@@ -14,7 +14,9 @@ import {
   PlannerCandidate,
   PlannerDay,
   PlannerSlot,
+  PlannerCompliance,
 } from './plannerSchema';
+import { isRecipeAllowedForBaselineDiet } from './planner/dietRules';
 
 const VALID_DAYS  = new Set<PlannerDay>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 const VALID_SLOTS = new Set<PlannerSlot>(['breakfast', 'lunch', 'dinner']);
@@ -486,26 +488,48 @@ export function validatePlannerOutput(
   let nominalRepeatCapsPassed = true;
 
   const sufficiency = checkCandidateSufficiency(input);
-  const effectiveCap = sufficiency.effectiveCaps; // Simplified: usually shared or per-slot
+  const effectiveCap = sufficiency.effectiveCaps;
   const nominalCap = input.preferences.maxRecipeRepeatsPerWeek;
 
   for (const [id, count] of finalRepeatCounts.entries()) {
     if (count > nominalCap) nominalRepeatCapsPassed = false;
-    // Check against per-slot effective caps (using slot type of any assignment of this ID)
     const representativeSlot = validAssignments.find(a => a.recipeId === id)?.slot || 'lunch';
     if (count > (effectiveCap[representativeSlot] ?? 99)) effectiveRepeatCapsPassed = false;
   }
 
-  const compliance: any = {
+  const dietCompliancePassed = validAssignments.every(a => {
+    const c = candidateMap.get(a.recipeId);
+    return c && isRecipeAllowedForBaselineDiet(c as any, input.profile.dietaryPreference as any);
+  });
+
+  const allergenCompliancePassed = validAssignments.every(a => {
+    const c = candidateMap.get(a.recipeId);
+    if (!c) return false;
+    return !input.profile.allergies.some(allergen => 
+      c.title.toLowerCase().includes(allergen.toLowerCase()) || 
+      c.tags.some(t => t.toLowerCase().includes(allergen.toLowerCase()))
+    );
+  });
+
+  const isTargetFeasible = (totalCals >= (targetCalsTotal * CALORIE_COMPLIANCE_THRESHOLD)) && 
+                           (totalProt >= (targetProtTotal * PROTEIN_COMPLIANCE_THRESHOLD));
+
+  const isHardRuleValid = isStructurallyValid && sameDayVarietyPassed && effectiveRepeatCapsPassed && dietCompliancePassed && allergenCompliancePassed;
+
+  const compliance: PlannerCompliance = {
     isStructurallyValid,
     sameDayVarietyPassed,
     effectiveRepeatCapsPassed,
     nominalRepeatCapsPassed,
     meetsTargetCalories: totalCals >= (targetCalsTotal * CALORIE_COMPLIANCE_THRESHOLD),
     meetsTargetProtein: totalProt >= (targetProtTotal * PROTEIN_COMPLIANCE_THRESHOLD),
+    isHardRuleValid,
+    isTargetFeasible,
+    dietCompliancePassed,
+    allergenCompliancePassed,
   };
 
-  const valid = isStructurallyValid && sameDayVarietyPassed && effectiveRepeatCapsPassed;
+  const valid = isHardRuleValid;
 
   const summary = postProcessSummary(raw.summary, totalCost, totalCals, totalProt, input, validAssignments.length);
 

@@ -145,12 +145,18 @@ export default function PlannerDevScreen() {
 
     if (compliance) {
       summary += `## Compliance & Guardrails\n`;
+      summary += `- Hard-rule validity: ${compliance.isHardRuleValid ? '✅' : '❌'}\n`;
+      summary += `- Target feasibility: ${compliance.isTargetFeasible ? '✅' : '❌'}\n\n`;
+      
+      summary += `### Rule Breakdown\n`;
       summary += `- Structural Validity: ${compliance.isStructurallyValid ? '✅' : '❌'}\n`;
       summary += `- Same-Day Variety: ${compliance.sameDayVarietyPassed ? '✅' : '❌'}\n`;
+      summary += `- Diet Compliance: ${compliance.dietCompliancePassed ? '✅' : '❌'}\n`;
+      summary += `- Allergen Compliance: ${compliance.allergenCompliancePassed ? '✅' : '❌'}\n`;
       summary += `- Effective Repeat Caps: ${compliance.effectiveRepeatCapsPassed ? '✅' : '❌'}\n`;
       summary += `- Nominal (User) Caps: ${compliance.nominalRepeatCapsPassed ? '✅' : '❌'}\n`;
-      summary += `- Target Calories Fit: ${compliance.meetsTargetCalories ? '✅' : '⚠ Below 90%'}\n`;
-      summary += `- Target Protein Fit: ${compliance.meetsTargetProtein ? '✅' : '⚠ Below 90%'}\n\n`;
+      summary += `- Calorie Threshold Fit: ${compliance.meetsTargetCalories ? '✅' : '⚠ Below 90%'}\n`;
+      summary += `- Protein Threshold Fit: ${compliance.meetsTargetProtein ? '✅' : '⚠ Below 90%'}\n\n`;
     }
 
     summary += `## Candidate Funnel (${currentDiet})\n`;

@@ -135,6 +135,10 @@ export type PlannerCompliance = {
   nominalRepeatCapsPassed: boolean;  // No recipeId exceeds user-preference caps
   meetsTargetCalories: boolean;      // Total calories >= threshold
   meetsTargetProtein: boolean;       // Total protein >= threshold
+  isHardRuleValid: boolean;          // structural && variety && effectiveCaps && diet && allergens
+  isTargetFeasible: boolean;         // calories && protein
+  dietCompliancePassed: boolean;     // All recipes match profile diet
+  allergenCompliancePassed: boolean; // No recipes contain profile allergens
 };
 
 export type ValidationResult = {
