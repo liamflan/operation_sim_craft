@@ -1,4 +1,4 @@
-# Provision — Taste-Led Hybrid AI Planner 🥑
+# Provision - Taste-Led Hybrid AI Planner 🥑
 
 Provision is a premium, intelligence-first meal planning system designed to bridge the gap between fixed recipe libraries and infinite AI generation. It prioritizes flavor alignment, budget control, and macro precision through a rigorous, multi-layered planning engine.
 
