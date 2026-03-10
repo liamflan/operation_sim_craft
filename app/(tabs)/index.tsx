@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar, Animated } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -34,29 +34,46 @@ const weeklyPlan = [
 export default function DashboardScreen() {
   const router = useRouter();
   const { routine } = useWeeklyRoutine();
+  // currentDayIndex = what the pill selector shows (updates instantly)
+  // displayedDayIndex = what the meal feed actually renders (only updates after fade-out)
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
   const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({});
   const [importModalVisible, setImportModalVisible] = useState(false);
 
-  // Meal feed fade animation (smooth week-switch)
+  // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
+  const pendingDayIndex = useRef(0);
 
-  useEffect(() => {
-    // Quick fade-out then fade-in when day changes
-    Animated.sequence([
-      Animated.timing(mealFadeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-      Animated.timing(mealFadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-    ]).start();
-  }, [currentDayIndex]);
+  const switchDay = (idx: number) => {
+    if (idx === displayedDayIndex) return; // no-op if same day
+    pendingDayIndex.current = idx;
+    setCurrentDayIndex(idx);
+    // Fade out the current content
+    Animated.timing(mealFadeAnim, {
+      toValue: 0,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(() => {
+      // Swap the rendered content only after fade-out is done
+      setDisplayedDayIndex(pendingDayIndex.current);
+      // Then fade back in
+      Animated.timing(mealFadeAnim, {
+        toValue: 1,
+        duration: 240,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
 
-  // Day abbrev -> routine key map
-  const currentDayKey = DAYS[currentDayIndex];
+  // Day abbrev -> routine key map — use displayedDayIndex for meal feed content
+  const currentDayKey = DAYS[displayedDayIndex];
 
-  const activeDayPlan = weeklyPlan[currentDayIndex];
+  const activeDayPlan = weeklyPlan[displayedDayIndex];
   
-  // Helper to fetch the actual active meal ID for the current day
+  // Helper to fetch the actual active meal ID for the displayed day
   const getActiveMealId = (type: 'breakfast' | 'lunch' | 'dinner') => {
-    return (swappedMeals[currentDayIndex] && swappedMeals[currentDayIndex][type]) || activeDayPlan[type];
+    return (swappedMeals[displayedDayIndex] && swappedMeals[displayedDayIndex][type]) || activeDayPlan[type];
   };
 
   // Helper to find recipe object
@@ -78,8 +95,8 @@ export default function DashboardScreen() {
     
     setSwappedMeals(prev => ({ 
       ...prev, 
-      [currentDayIndex]: { 
-        ...(prev[currentDayIndex] || {}), 
+      [displayedDayIndex]: { 
+        ...(prev[displayedDayIndex] || {}), 
         [type]: newRecipe.id 
       } 
     }));
@@ -120,7 +137,7 @@ export default function DashboardScreen() {
               <TouchableOpacity
                 key={idx}
                 testID={`week-selector-day-${days[idx].toLowerCase()}`}
-                onPress={() => setCurrentDayIndex(idx)}
+                onPress={() => switchDay(idx)}
                 className={`flex-1 items-center justify-center py-2.5 rounded-[12px] transition-all duration-300 border ${
                   isSelected
                     ? 'bg-primary/10 dark:bg-darksageTint border-primary/20 dark:border-primary/20 shadow-[0_2px_8px_rgba(157,205,139,0.15)] dark:shadow-none'
@@ -145,7 +162,7 @@ export default function DashboardScreen() {
           })}
         </View>
 
-        {/* Selected day heading */}
+        {/* Selected day heading — uses displayedDayIndex so text also only updates after the fade */}
         <View testID="week-selector-active-day" className="flex-row items-center justify-between pb-2">
           <View>
             <Text testID="dashboard-current-date-heading" className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight mb-1">
@@ -232,6 +249,8 @@ export default function DashboardScreen() {
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('breakfast'))!}
                         slotLabel="Breakfast"
+                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
+                        slot="Breakfast"
                         onSwipe={() => handleSwap('breakfast')}
                       />
                     </View>
@@ -256,6 +275,8 @@ export default function DashboardScreen() {
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('lunch'))!}
                         slotLabel="Lunch"
+                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
+                        slot="Lunch"
                         onSwipe={() => handleSwap('lunch')}
                       />
                     </View>
@@ -280,6 +301,8 @@ export default function DashboardScreen() {
                       <RecipeCard
                         recipe={getRecipe(getActiveMealId('dinner'))!}
                         slotLabel="Dinner"
+                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
+                        slot="Dinner"
                         onSwipe={() => handleSwap('dinner')}
                       />
                     </View>

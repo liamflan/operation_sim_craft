@@ -24,6 +24,18 @@ export type RecipeIngredient = {
   unit: string;
 };
 
+export type MethodStep = {
+  step: number;
+  text: string;
+  timeCue?: string; // e.g. "3 min", "until golden"
+};
+
+export type Substitution = {
+  original: string;
+  swap: string;
+  reason: string; // e.g. "cheaper", "faster", "milder", "higher protein"
+};
+
 export type Recipe = {
   id: string;
   title: string;
@@ -38,6 +50,20 @@ export type Recipe = {
   estimatedCostGBP: number;
   /** Planner-facing role, determining how often it can repeat and when it's used */
   archetype?: RecipeArchetype;
+
+  // ─── Rich detail fields (optional, populated for full recipe detail page) ───
+  description?: string;
+  cookTimeMinutes?: number;
+  totalTimeMinutes?: number;
+  servings?: number;
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
+  method?: MethodStep[];
+  substitutions?: Substitution[];
+  notes?: string;
+  relatedRecipeIds?: string[];
+  costPerServingGBP?: number;
+  reheatsWell?: boolean;
+  freezerFriendly?: boolean;
 };
 
 export type UserProfile = {
