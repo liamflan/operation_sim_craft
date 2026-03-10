@@ -53,7 +53,7 @@ function mergePlanWithRoutine(
 
 // ─── Mock fallback (deterministic) ────────────────────────────────────────────
 
-function mockFallbackPlan(
+export function mockFallbackPlan(
   user: UserProfile,
   routine: WeeklyRoutine,
   warnings: string[],
@@ -61,24 +61,30 @@ function mockFallbackPlan(
   let pool = MOCK_RECIPES.filter(r => isRecipeAllowedForBaselineDiet(r as any, user.dietaryPreference as any));
   if (!pool.length) pool = MOCK_RECIPES;
 
-  const breakfast = pool.find(r => r.suitableFor.includes('breakfast')) ?? pool[0];
-  const lunch     = pool.find(r => r.suitableFor.includes('lunch'))     ?? pool[0];
-  const dinner    = pool.find(r => r.suitableFor.includes('dinner'))    ?? pool[pool.length - 1];
-
-  const assignments = ([...DAYS] as PlannerDay[]).flatMap(day => {
+  const assignments: { day: PlannerDay; slot: 'breakfast' | 'lunch' | 'dinner'; recipeId: string }[] = [];
+  
+  for (const day of [...DAYS] as PlannerDay[]) {
     const dr = routine[day];
-    const result: { day: PlannerDay; slot: 'breakfast' | 'lunch' | 'dinner'; recipeId: string }[] = [];
-    if (isPlanned(dr.breakfast)) result.push({ day, slot: 'breakfast', recipeId: breakfast.id });
-    if (isPlanned(dr.lunch))     result.push({ day, slot: 'lunch',     recipeId: lunch.id });
-    if (isPlanned(dr.dinner))    result.push({ day, slot: 'dinner',    recipeId: dinner.id });
-    return result;
-  });
+    const usedToday = new Set<string>();
+    
+    const slots: ('breakfast' | 'lunch' | 'dinner')[] = ['breakfast', 'lunch', 'dinner'];
+    for (const slot of slots) {
+      if (isPlanned(dr[slot])) {
+        // Find first candidate for slot not already used on this day
+        const match = pool.find(r => r.suitableFor.includes(slot) && !usedToday.has(r.id));
+        const pick = match || pool[0]; // Hard fallback to pool[0] if pool is extremely small
+        assignments.push({ day, slot, recipeId: pick.id });
+        usedToday.add(pick.id);
+      }
+    }
+  }
 
   const meta: PlanMetadata = {
     generatedAt: new Date().toISOString(),
     plannerVersion: 'mock',
     source: 'fallback_mock',
     warnings,
+    planningMode: 'fallback_mock',
   };
 
   return mergePlanWithRoutine(assignments, routine, meta);
@@ -150,6 +156,8 @@ export async function planWeekWithDiagnostics(
       plannerVersion: PLANNER_MODEL_VERSION,
       source,
       warnings: allWarnings,
+      compliance: stageBResult.compliance,
+      planningMode: stageBResult.compliance?.meetsTargetProtein ? 'standard' : 'degraded_due_to_infeasible_protein_target',
     };
 
     const resolvedPlan = mergePlanWithRoutine(stageBResult.plan.assignments, routine, meta, stageBResult.plan.summary);
@@ -216,6 +224,8 @@ export async function planWeek(
       plannerVersion: PLANNER_MODEL_VERSION,
       source,
       warnings: allWarnings,
+      compliance: result.compliance,
+      planningMode: result.compliance?.meetsTargetProtein ? 'standard' : 'degraded_due_to_infeasible_protein_target',
     };
 
     // We no longer abort the plan if some slots were unresolvable.

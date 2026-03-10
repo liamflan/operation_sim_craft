@@ -5,6 +5,7 @@
 // is sent to Gemini. The candidate pool that reaches Gemini is already fully safe.
 
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from './seed';
+import { FULL_RECIPE_LIST } from './planner/recipeRegistry';
 import { UserProfile } from './schema';
 import { WeeklyRoutine, DAYS, isPlanned } from './weeklyRoutine';
 import { PlannerInput, PlannerCandidate, PlannerDay, PlannerSlot } from './plannerSchema';
@@ -17,15 +18,16 @@ import { DietaryBaseline } from './planner/plannerTypes';
 const MEAT_TAGS = ['Beef', 'Chicken', 'Pork', 'Turkey', 'Lamb'];
 const FISH_TAGS = ['Fish', 'Salmon', 'Seafood', 'Omega-3'];
 
-function isSafeForDiet(recipe: typeof MOCK_RECIPES[number], diet: UserProfile['dietaryPreference']): boolean {
-  return isRecipeAllowedForBaselineDiet(recipe as any, diet as DietaryBaseline);
+function isSafeForDiet(recipe: any, diet: UserProfile['dietaryPreference']): boolean {
+  return isRecipeAllowedForBaselineDiet(recipe, diet as DietaryBaseline);
 }
 
-function containsAllergen(recipe: typeof MOCK_RECIPES[number], allergies: string[]): boolean {
+function containsAllergen(recipe: any, allergies: string[]): boolean {
   if (!allergies.length) return false;
   // Check ingredients against allergen list by ingredient name
-  return recipe.ingredients.some(ri => {
-    const ing = MOCK_INGREDIENTS.find(i => i.id === ri.ingredientId);
+  return (recipe.ingredients || []).some((ri: any) => {
+    const ingId = ri.canonicalIngredientId || ri.ingredientId;
+    const ing = MOCK_INGREDIENTS.find(i => i.id === ingId);
     return ing ? allergies.some(a => ing.name.toLowerCase().includes(a.toLowerCase())) : false;
   });
 }
@@ -60,21 +62,22 @@ function buildCandidates(
       .map(i => i.id)
   );
 
-  return MOCK_RECIPES
+  return FULL_RECIPE_LIST
     .filter(r => !containsAllergen(r, user.allergies))
     .filter(r => isSafeForDiet(r, user.dietaryPreference))
     .map(r => ({
       id: r.id,
       title: r.title,
-      suitableFor: r.suitableFor,
+      suitableFor: r.suitableFor as any,
       prepTimeMinutes: r.prepTimeMinutes,
-      macros: r.macros,
+      macros: r.macrosPerServing,
       tags: r.tags,
-      archetype: r.archetype ?? deriveArchetype(r.estimatedCostGBP, r.macros.calories, r.macros.protein, r.suitableFor, user.budgetWeekly / defaultSlotCount(routine)),
+      // Always derive the schema-facing archetype to ensure contract compliance
+      archetype: deriveArchetype(r.estimatedCostPerServingGBP, r.macrosPerServing.calories, r.macrosPerServing.protein, r.suitableFor as any, user.budgetWeekly / defaultSlotCount(routine)),
       pantryIngredients: r.ingredients
-        .filter(ri => wellStockedIds.has(ri.ingredientId))
-        .map(ri => ri.ingredientId),
-      estimatedCostGBP: r.estimatedCostGBP,
+        .filter(ri => wellStockedIds.has(ri.canonicalIngredientId || (ri as any).ingredientId))
+        .map(ri => ri.canonicalIngredientId || (ri as any).ingredientId),
+      estimatedCostGBP: r.estimatedCostPerServingGBP,
     }));
 }
 

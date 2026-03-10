@@ -122,14 +122,27 @@ export type PlanMetadata = {
   plannerVersion: string;
   source: 'gemini_clean' | 'gemini_warned' | 'gemini_repaired' | 'previous' | 'fallback_mock';
   warnings: string[];
+  compliance?: PlannerCompliance;
+  planningMode?: string;
 };
 
 // ─── Validation ───────────────────────────────────────────────────────────────
+ 
+export type PlannerCompliance = {
+  isStructurallyValid: boolean;      // All requested slots have a recipeId
+  sameDayVarietyPassed: boolean;     // No duplicate recipeIds on any one day
+  effectiveRepeatCapsPassed: boolean;// No recipeId exceeds feasibility-relieved caps
+  nominalRepeatCapsPassed: boolean;  // No recipeId exceeds user-preference caps
+  meetsTargetCalories: boolean;      // Total calories >= threshold
+  meetsTargetProtein: boolean;       // Total protein >= threshold
+};
 
 export type ValidationResult = {
   valid: boolean;
   plan: PlannerRawOutput;
   warnings: string[];
+  compliance?: PlannerCompliance;
+  planningMode?: string;
 };
 
 // ─── Common Enums ─────────────────────────────────────────────────────────────

@@ -80,9 +80,142 @@ export default function PlannerDevScreen() {
   const resolvedPlan  = diag?.resolvedPlan   ?? null;
 
   const copyToClipboard = async () => {
+    // 1. Calculate Summary Data (Live)
+    const currentDiet = workspace.userDiet as DietaryBaseline;
+    const proteinTargetPerMeal = 160 / 3;
+    
+    // Project exactly what the builder does
+    const liveUser = {
+      id: 'dev', name: 'Dev',
+      targetMacros: { calories: workspace.input?.payload.targetCalories ?? 2200, protein: 160, carbs: 220, fats: 80 },
+      budgetWeekly: workspace.input?.payload.budgetWeekly ?? 60,
+      dietaryPreference: currentDiet as any,
+      allergies: [],
+    };
+    const projectInput = buildPlannerInput(liveUser, routine);
+
+    const totalRecipes = FULL_RECIPE_LIST.length;
+    const dietAllowed = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, currentDiet));
+    
+    // The "Eligibility" stage filters by Allergies AND plannerUsable flag
+    const eligibilitySafe = dietAllowed.filter(r => projectInput.candidates.some(c => c.id === r.id));
+    const proteinSafe = eligibilitySafe.filter(r => r.macrosPerServing.protein >= proteinTargetPerMeal);
+    
+    const dietClassified = FULL_RECIPE_LIST.filter(r => (r.tags || []).some(t => ['vegan', 'vegetarian', 'pescatarian'].includes(t.toLowerCase()))).length;
+    const veganEligible = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Vegan')).length;
+    const veggieEligible = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Vegetarian')).length;
+    const pesciEligible = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Pescatarian')).length;
+    const omniEligible = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, 'Omnivore')).length;
+
+    const dietMatches = projectInput.profile.dietaryPreference === workspace.userDiet;
+    const caloriesMatch = projectInput.profile.targetCalories === (workspace.input?.payload.targetCalories ?? 2200);
+    const proteinMatch = projectInput.profile.targetProteinG === 160;
+    const budgetMatch = projectInput.profile.weeklyBudgetGBP === (workspace.input?.payload.budgetWeekly ?? 60);
+    const isSync = dietMatches && caloriesMatch && proteinMatch && budgetMatch;
+    const compliance = diag?.resolvedPlan?.meta.compliance;
+    const planningMode = diag?.resolvedPlan?.meta.planningMode || (proteinSafe.length === 0 ? 'degraded_due_to_infeasible_protein_target' : 'standard');
+
+    const activeWarning = dietAllowed.length === 0 ? `No recipes classified for ${currentDiet}` : 
+                         proteinSafe.length < 5 ? `Insufficient ${currentDiet} recipes meet protein target` : 
+                         planningMode === 'degraded_due_to_infeasible_protein_target' ? `Protein target infeasible - planner continued in degraded mode using best-available diet-compliant candidates` : 
+                         errorMsg || null;
+
+    const failureClass = dietAllowed.length === 0 ? 'Metadata Issue / Empty Pool' : 
+                         proteinSafe.length < 5 ? 'infeasible_protein_target_for_current_diet' : 
+                         !isSync ? 'Wiring/Sync Bug' : 'None Detected';
+
+    // 2. Build Markdown Summary
+    let summary = `# PLANNER DIAGNOSTIC SUMMARY\n`;
+    summary += `Generated: ${new Date().toISOString()}\n`;
+    summary += `Status: ${status}\n`;
+    summary += `Planning Mode: ${planningMode === 'degraded_due_to_infeasible_protein_target' ? '⚠ DEGRADED (Protein Infeasible)' : planningMode.toUpperCase()}\n\n`;
+    
+    summary += `## Dietary Context\n`;
+    summary += `- Diet: ${workspace.userDiet}\n`;
+    summary += `- Calories: ${workspace.input?.payload.targetCalories ?? 2200}\n`;
+    summary += `- Protein: 160g\n`;
+    summary += `- Budget: £${workspace.input?.payload.budgetWeekly ?? 60}\n\n`;
+
+    summary += `## State Sync\n`;
+    summary += `- Diet Sync: ${dietMatches ? '✅' : '❌'}\n`;
+    summary += `- Calories Sync: ${caloriesMatch ? '✅' : '❌'}\n`;
+    summary += `- Protein Sync: ${proteinMatch ? '✅' : '❌'}\n`;
+    summary += `- Budget Sync: ${budgetMatch ? '✅' : '❌'}\n`;
+    summary += `- Classification: ${failureClass}\n\n`;
+
+    if (compliance) {
+      summary += `## Compliance & Guardrails\n`;
+      summary += `- Structural Validity: ${compliance.isStructurallyValid ? '✅' : '❌'}\n`;
+      summary += `- Same-Day Variety: ${compliance.sameDayVarietyPassed ? '✅' : '❌'}\n`;
+      summary += `- Effective Repeat Caps: ${compliance.effectiveRepeatCapsPassed ? '✅' : '❌'}\n`;
+      summary += `- Nominal (User) Caps: ${compliance.nominalRepeatCapsPassed ? '✅' : '❌'}\n`;
+      summary += `- Target Calories Fit: ${compliance.meetsTargetCalories ? '✅' : '⚠ Below 90%'}\n`;
+      summary += `- Target Protein Fit: ${compliance.meetsTargetProtein ? '✅' : '⚠ Below 90%'}\n\n`;
+    }
+
+    summary += `## Candidate Funnel (${currentDiet})\n`;
+    summary += `- Total Recipes in Registry: ${totalRecipes}\n`;
+    summary += `- 1. After Diet Filter: ${dietAllowed.length}\n`;
+    summary += `- 2. After Eligibility (Allergens/Usability): ${eligibilitySafe.length}\n`;
+    summary += `- 3. After Protein Filter (${Math.round(proteinTargetPerMeal)}g+): ${proteinSafe.length}\n\n`;
+
+    summary += `## Candidate Samples\n`;
+    summary += `### After Diet Filter:\n${dietAllowed.slice(0, 3).map(r => ` - ${r.title} (${r.id}) [P: ${r.macrosPerServing.protein}g]`).join('\n') || 'None'}\n`;
+    summary += `### After Protein Filter:\n${proteinSafe.slice(0, 3).map(r => ` - ${r.title} (${r.id}) [P: ${r.macrosPerServing.protein}g]`).join('\n') || 'None'}\n\n`;
+
+    if (activeWarning) {
+      summary += `## Active Warnings/Errors\n- ${activeWarning}\n\n`;
+    }
+
+    // 3. Build Full JSON Payload
     const diagnostic = {
-      timestamp: new Date().toISOString(),
-      plannerInput:         diag?.plannerInput,
+      failureClassification: failureClass,
+      planningMode,
+      compliance,
+      activeWarnings: activeWarning ? [activeWarning] : [],
+      diagnosticSummary: {
+        persistedContext: {
+          diet: workspace.userDiet,
+          calories: workspace.input?.payload.targetCalories ?? 2200,
+          protein: 160,
+          budget: workspace.input?.payload.budgetWeekly ?? 60,
+          exclusions: [],
+        },
+        plannerInputProjection: {
+          diet: projectInput.profile.dietaryPreference,
+          calories: projectInput.profile.targetCalories,
+          protein: projectInput.profile.targetProteinG,
+          budget: projectInput.profile.weeklyBudgetGBP,
+          projectedUsableCandidateCount: projectInput.candidates.length,
+          exclusions: projectInput.profile.allergies,
+        },
+        stateSync: {
+          isSync,
+          dietMatches,
+          caloriesMatch,
+          proteinMatch,
+          budgetMatch,
+        },
+        registryAudit: { 
+          totalRecipes: totalRecipes, 
+          dietClassifiedRecipes: dietClassified, 
+          veganEligible, 
+          vegetarianEligible: veggieEligible, 
+          pescatarianEligible: pesciEligible, 
+          omnivoreEligible: omniEligible 
+        },
+        activeDietFunnel: {
+          total: totalRecipes,
+          postDiet: dietAllowed.length,
+          postEligibility: eligibilitySafe.length,
+          postProtein: proteinSafe.length,
+        },
+        candidateSamples: {
+          afterDiet: dietAllowed.slice(0, 5).map(r => ({ id: r.id, title: r.title, protein: r.macrosPerServing.protein })),
+          afterProtein: proteinSafe.slice(0, 5).map(r => ({ id: r.id, title: r.title, protein: r.macrosPerServing.protein })),
+        }
+      },
+      plannerInput:         diag?.plannerInput || projectInput,
       rawOutputFromGemini:  diag?.rawOutput,
       feasibilityChecks:    diag?.suffResult,
       stageAResult:         diag?.stageAResult,
@@ -90,9 +223,10 @@ export default function PlannerDevScreen() {
       mergedPlan:           diag?.resolvedPlan,
     };
 
-    const text = `PLANNER DIAGNOSTIC EXPORT\n=========================\n\n${JSON.stringify(diagnostic, null, 2)}`;
-    await Clipboard.setStringAsync(text);
-    Alert.alert('Copied!', 'Diagnostic data copied to clipboard.');
+    const finalPayload = `${summary}\n\n---\n# FULL DIAGNOSTIC JSON\n\`\`\`json\n${JSON.stringify(diagnostic, null, 2)}\n\`\`\``;
+    
+    await Clipboard.setStringAsync(finalPayload);
+    Alert.alert('Copied!', 'Full diagnostic report copied to clipboard (Summary + JSON).');
   };
 
   async function runPipeline() {

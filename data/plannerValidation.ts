@@ -20,6 +20,9 @@ const VALID_DAYS  = new Set<PlannerDay>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat
 const VALID_SLOTS = new Set<PlannerSlot>(['breakfast', 'lunch', 'dinner']);
 const PLANNER_NOTE_MAX = 200;
 
+export const CALORIE_COMPLIANCE_THRESHOLD = 0.9;
+export const PROTEIN_COMPLIANCE_THRESHOLD = 0.9;
+
 // ─── Pre-planning Sufficiency Check ──────────────────────────────────────────
 
 export interface SufficiencyResult {
@@ -286,8 +289,11 @@ export function validatePlannerOutput(
   const validAssignments: PlannerAssignment[] = [];
   const filledSlots               = new Set<string>();
   const toReassign: { day: PlannerDay; slot: PlannerSlot; originalId?: string }[] = [];
+  const assignedIdsByDay: Record<PlannerDay, Set<string>> = {
+    'Mon': new Set(), 'Tue': new Set(), 'Wed': new Set(), 'Thu': new Set(), 'Fri': new Set(), 'Sat': new Set(), 'Sun': new Set()
+  };
 
-  // 1. Parse & Tally (Identify valid vs over-cap)
+  // 1. Parse & Tally (Identify valid vs over-cap vs variety-breakers)
   for (const a of raw.assignments) {
     const slotKey = `${a.day}:${a.slot}`;
     const isRequestedSlot = input.slotsToFill.some(s => s.day === a.day && s.slot === a.slot);
@@ -302,6 +308,14 @@ export function validatePlannerOutput(
     const candidate = candidateMap.get(a.recipeId);
     if (!candidate) {
       warnings.push(`Invalid recipeId "${a.recipeId}" for ${a.day} ${a.slot}`);
+      toReassign.push({ day: a.day, slot: a.slot, originalId: a.recipeId });
+      filledSlots.add(slotKey);
+      continue;
+    }
+
+    // Variety Check (Same Day Duplicate)
+    if (assignedIdsByDay[a.day].has(a.recipeId)) {
+      warnings.push(`Variety violation: "${candidate.title}" assigned twice on ${a.day}`);
       toReassign.push({ day: a.day, slot: a.slot, originalId: a.recipeId });
       filledSlots.add(slotKey);
       continue;
@@ -331,6 +345,7 @@ export function validatePlannerOutput(
     validAssignments.push(a);
     repeatCounts.set(a.recipeId, currentCount + 1);
     archetypeCounts.set(arch, archCount + 1);
+    assignedIdsByDay[a.day].add(a.recipeId);
     filledSlots.add(slotKey);
   }
 
@@ -370,6 +385,7 @@ export function validatePlannerOutput(
       r.originalId,
       candidateMap,
       currentPlanCost,
+      assignedIdsByDay[r.day],
     );
 
     if (repairedId) {
@@ -389,6 +405,7 @@ export function validatePlannerOutput(
       repeatCounts.set(cleanRepairedId, (repeatCounts.get(cleanRepairedId) ?? 0) + 1);
       const repArch = candidateMap.get(cleanRepairedId)!.archetype;
       archetypeCounts.set(repArch, (archetypeCounts.get(repArch) ?? 0) + 1);
+      assignedIdsByDay[r.day].add(cleanRepairedId);
       
       if (r.originalId) {
         const orig = candidateMap.get(r.originalId);
@@ -441,19 +458,54 @@ export function validatePlannerOutput(
     }
   }
 
-  // Re-calculate summary locally (discard Gemini hallucinated numbers)
+  // 4. Calculate Final Compliance
   let totalCost = 0;
   let totalCals = 0;
   let totalProt = 0;
-
+  
+  const finalRepeatCounts = new Map<string, number>();
+  const finalVarietyPassed = Array.from(VALID_DAYS).every(d => assignedIdsByDay[d as PlannerDay].size === validAssignments.filter(a => a.day === d).length);
+  
   for (const a of validAssignments) {
     const c = candidateMap.get(a.recipeId);
     if (c) {
       totalCost += c.estimatedCostGBP;
       totalCals += c.macros.calories;
       totalProt += c.macros.protein;
+      finalRepeatCounts.set(a.recipeId, (finalRepeatCounts.get(a.recipeId) ?? 0) + 1);
     }
   }
+
+  const targetCalsTotal = input.profile.targetCalories * 7;
+  const targetProtTotal = input.profile.targetProteinG * 7;
+
+  const isStructurallyValid = validAssignments.length === input.slotsToFill.length;
+  const sameDayVarietyPassed = finalVarietyPassed;
+  
+  let effectiveRepeatCapsPassed = true;
+  let nominalRepeatCapsPassed = true;
+
+  const sufficiency = checkCandidateSufficiency(input);
+  const effectiveCap = sufficiency.effectiveCaps; // Simplified: usually shared or per-slot
+  const nominalCap = input.preferences.maxRecipeRepeatsPerWeek;
+
+  for (const [id, count] of finalRepeatCounts.entries()) {
+    if (count > nominalCap) nominalRepeatCapsPassed = false;
+    // Check against per-slot effective caps (using slot type of any assignment of this ID)
+    const representativeSlot = validAssignments.find(a => a.recipeId === id)?.slot || 'lunch';
+    if (count > (effectiveCap[representativeSlot] ?? 99)) effectiveRepeatCapsPassed = false;
+  }
+
+  const compliance: any = {
+    isStructurallyValid,
+    sameDayVarietyPassed,
+    effectiveRepeatCapsPassed,
+    nominalRepeatCapsPassed,
+    meetsTargetCalories: totalCals >= (targetCalsTotal * CALORIE_COMPLIANCE_THRESHOLD),
+    meetsTargetProtein: totalProt >= (targetProtTotal * PROTEIN_COMPLIANCE_THRESHOLD),
+  };
+
+  const valid = isStructurallyValid && sameDayVarietyPassed && effectiveRepeatCapsPassed;
 
   const summary = postProcessSummary(raw.summary, totalCost, totalCals, totalProt, input, validAssignments.length);
 
@@ -461,15 +513,13 @@ export function validatePlannerOutput(
     warnings.push(`[BUDGET WARNING] Estimated plan cost (£${totalCost.toFixed(2)}) exceeds weekly budget (£${input.profile.weeklyBudgetGBP.toFixed(2)})`);
   }
 
-  // Soft calorie heuristic (warning only, never rejects)
   checkCalorieBalance(validAssignments, input, candidateMap, warnings);
-
-  const valid = warnings.filter(w => w.startsWith('Could not fill')).length === 0;
 
   return {
     valid,
     plan: { assignments: validAssignments, summary },
     warnings,
+    compliance,
   };
 }
 
@@ -505,7 +555,7 @@ function isFillerLunch(c: { macros: { protein: number; calories: number } }): bo
   return !isSubstantialLunch(c);
 }
 
-function globalRepair(
+export function globalRepair(
   day: PlannerDay,
   slot: PlannerSlot,
   input: PlannerInput,
@@ -516,13 +566,15 @@ function globalRepair(
   excludeId?: string,
   candidateMap?: Map<string, PlannerCandidate>,
   currentPlanCost?: number,
+  assignedRecipeIdsToday: Set<string> = new Set(),
 ): string | null {
   const { candidates, preferences, profile } = input;
 
-  // 1. Filter to correct slot type and within caps
+  // 1. Filter to correct slot type and within caps AND respect same-day variety
   let pool = candidates.filter(c =>
     c.suitableFor.includes(slot) &&
     c.id !== excludeId &&
+    !assignedRecipeIdsToday.has(c.id) &&
     (repeatCounts.get(c.id) ?? 0) < preferences.maxRecipeRepeatsPerWeek &&
     (archetypeCounts.get(c.archetype) ?? 0) < (input.composition.archetypeRepeatCaps[c.archetype] ?? 99)
   );
@@ -581,6 +633,7 @@ function globalRepair(
     const rescueCandidates = candidates.filter(c =>
       c.suitableFor.includes(slot) &&
       c.id !== excludeId &&
+      !assignedRecipeIdsToday.has(c.id) &&
       c.estimatedCostGBP <= excludeRecipe.estimatedCostGBP + 0.50 && // cheaper or similar cost
       (repeatCounts.get(c.id) ?? 0) < preferences.maxRecipeRepeatsPerWeek && // repeat cap enforced
       (currentPlanCost + c.estimatedCostGBP) <= weeklyBudgetRef // budget-safe
@@ -592,8 +645,8 @@ function globalRepair(
   }
 
   if (!pool.length) {
-    // Relax caps as last resort to guarantee a meal
-    pool = candidates.filter(c => c.suitableFor.includes(slot) && c.id !== excludeId);
+    // Relax caps as last resort to guarantee a meal — BUT still respect same-day variety
+    pool = candidates.filter(c => c.suitableFor.includes(slot) && c.id !== excludeId && !assignedRecipeIdsToday.has(c.id));
     if (slot === 'lunch' && excludeRecipe && isStrongLunch(excludeRecipe)) {
       fillerOnlyMode = true; // Still in emergency mode since cap-relaxed pool may not have substantial
     }
