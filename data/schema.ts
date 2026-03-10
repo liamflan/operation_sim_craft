@@ -64,6 +64,9 @@ export type Recipe = {
   costPerServingGBP?: number;
   reheatsWell?: boolean;
   freezerFriendly?: boolean;
+  
+  /** Audit block for Phase 17 Image Correctness */
+  imageMetadata?: import('./planner/plannerTypes').RecipeImageMetadata;
 };
 
 export type UserProfile = {

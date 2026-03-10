@@ -63,6 +63,9 @@ export interface NormalizedRecipe {
   servingConfidence: number;
   normalizationWarnings: NormalizationWarning[];
   
+  // Image Correctness (Phase 17)
+  imageMetadata?: RecipeImageMetadata;
+  
   // Core Data
   title: string;
   description: string;
@@ -96,6 +99,35 @@ export interface NormalizedRecipe {
   // Usability Gates
   plannerUsable: boolean; // Has it passed all base checks to be considered for an auto-plan?
   libraryVisible: boolean; // Should the user see this in their recipe vault?
+}
+
+// ---------------------------------------------------------------------------
+// IMAGE AUDIT SYSTEM (Phase 17)
+// ---------------------------------------------------------------------------
+
+export type ImageSourceType = 'imported' | 'manual' | 'generated' | 'fallback';
+export type ImageProvider = 'unsplash' | 'pexels' | 'internal' | 'unknown';
+export type ImageAuditStatus = 'correct' | 'missing' | 'suspect' | 'needs-review';
+
+/** Centralized audit reasons to prevent string drift */
+export const IMAGE_AUDIT_REASONS = {
+  MISSING_URL: 'missing-url' as const,
+  PLACEHOLDER_MATCH: 'placeholder-match' as const,
+  DUPLICATE_URL: 'duplicate-url' as const,
+  KEYWORD_MISMATCH_WEAK: 'keyword-weak-mismatch' as const,
+  MANUAL_FLAG: 'manual-flag' as const,
+} as const;
+
+export type ImageAuditReason = typeof IMAGE_AUDIT_REASONS[keyof typeof IMAGE_AUDIT_REASONS];
+
+export interface RecipeImageMetadata {
+  sourceType: ImageSourceType;
+  provider: ImageProvider;
+  status: ImageAuditStatus;
+  reasons: ImageAuditReason[];
+  fingerprint?: string; // Normalized URL or Provider ID
+  alt?: string;
+  lastCheckedAt?: string; // ISO
 }
 
 // ---------------------------------------------------------------------------

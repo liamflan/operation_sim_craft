@@ -8,6 +8,7 @@ import { NormalizedRecipe, RecipeValidationStatus } from './plannerTypes';
 import { Recipe } from '../schema';
 import { MOCK_RECIPES } from '../seed';
 import { curatedRoast, curatedPasta, generatedLentilStew } from './plannerFixtures';
+import { auditRecipeImage } from './RecipeImageAuditor';
 
 /**
  * Converts a legacy Recipe object (from seed.ts) into the rigorous NormalizedRecipe format.
@@ -26,6 +27,8 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     ingredientMappingConfidence: 0.9,
     servingConfidence: 1.0,
     normalizationWarnings: [],
+    
+    imageMetadata: auditRecipeImage(recipe.title, recipe.imageUrl),
     
     title: recipe.title,
     description: recipe.description || '',

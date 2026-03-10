@@ -13,6 +13,7 @@ type DisplayRecipe = (Recipe | NormalizedRecipe) & {
   // Common overrides often passed ad-hoc
   calories?: number;
   protein?: number;
+  imageMetadata?: import('../data/planner/plannerTypes').RecipeImageMetadata;
 };
 
 type Props = {
@@ -197,8 +198,13 @@ export default function RecipeCard({
 
         {/* Full Bleed Image — only rendered when URL exists AND hasn't errored.
             On error, imageLoadFailed flips to true, unmounting this element
-            which ensures the browser's broken-image icon is never visible. */}
-        {(recipe as any).imageUrl && !imageLoadFailed ? (
+            which ensures the browser's broken-image icon is never visible.
+            
+            Phase 17: We also check imageAuditStatus. 
+            'missing' or 'placeholder-match' forces fallback. */}
+        {(recipe as any).imageUrl && !imageLoadFailed && 
+         recipe.imageMetadata?.status !== 'missing' && 
+         !recipe.imageMetadata?.reasons.includes('placeholder-match') ? (
           <Image
             source={(recipe as any).imageUrl}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
@@ -207,6 +213,13 @@ export default function RecipeCard({
             onError={handleImageError}
           />
         ) : null}
+
+        {recipe.imageMetadata && 
+         (recipe.imageMetadata.status === 'suspect' || recipe.imageMetadata.status === 'needs-review') && (
+          <View className="absolute top-20 left-4 z-40 bg-amber-500/80 backdrop-blur-md px-2 py-0.5 rounded border border-white/20">
+            <Text className="text-white text-[9px] font-bold uppercase tracking-widest">Audit: {recipe.imageMetadata.status}</Text>
+          </View>
+        )}
 
         {/* Top Controls Row */}
         <View className="absolute top-4 left-4 right-4 z-30 flex-row justify-between items-start pointer-events-none">
