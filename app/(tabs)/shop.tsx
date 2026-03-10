@@ -223,13 +223,13 @@ const initialList = generateShoppingList();
 
 // Sub-components for structure and utility
 const StatBadge = ({ label, value, icon, color }: { label: string, value: string | number, icon: string, color: string }) => (
-  <View className={`flex-row items-center px-4 py-2 rounded-2xl ${color} border border-black/5 dark:border-white/5 shadow-sm`}>
-    <View className="mr-3 w-5 h-5 items-center justify-center opacity-70">
-      <FontAwesome5 name={icon} size={13} color="currentColor" />
+  <View className={`flex-row items-center px-5 py-4 rounded-[24px] ${color} border shadow-[0_2px_12px_rgba(0,0,0,0.02)] transition-all`}>
+    <View className="mr-3 w-5 h-5 items-center justify-center opacity-80">
+      <FontAwesome5 name={icon} size={14} color="currentColor" />
     </View>
     <View>
       <Text className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-0.5">{label}</Text>
-      <Text className="font-extrabold text-base leading-none">{value}</Text>
+      <Text className="font-medium text-[20px] tracking-tight leading-none">{value}</Text>
     </View>
   </View>
 );
@@ -237,12 +237,12 @@ const StatBadge = ({ label, value, icon, color }: { label: string, value: string
 const FilterToggle = ({ active, onPress, label }: { active: boolean, onPress: () => void, label: string }) => (
   <TouchableOpacity 
     onPress={onPress}
-    className={`flex-row items-center px-5 py-3 rounded-2xl border transition-all ${active ? 'bg-avocado border-avocado shadow-md' : 'bg-white dark:bg-darkgrey border-black/5 dark:border-white/5'}`}
+    className={`flex-row items-center px-5 py-4 rounded-[24px] border transition-all ${active ? 'bg-primary/10 border-primary/20 shadow-sm dark:bg-darksageTint dark:border-darksageTint' : 'bg-surface dark:bg-darksurface border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)]'}`}
   >
-    <View className={`w-5 h-5 rounded-md border mr-3 items-center justify-center ${active ? 'bg-white border-white' : 'border-gray-300 dark:border-gray-600'}`}>
-      {active && <FontAwesome5 name="check" size={10} color="#6DBE75" />}
+    <View className={`w-5 h-5 rounded-[6px] border mr-3 items-center justify-center ${active ? 'bg-primary border-primary dark:bg-primary dark:border-primary' : 'border-black/10 dark:border-white/10'}`}>
+      {active && <FontAwesome5 name="check" size={10} color="white" />}
     </View>
-    <Text className={`font-bold text-sm ${active ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`}>{label}</Text>
+    <Text className={`font-medium text-[14px] ${active ? 'text-textMain dark:text-darktextMain' : 'text-textSec dark:text-darktextSec'}`}>{label}</Text>
   </TouchableOpacity>
 );
 
@@ -250,14 +250,14 @@ const ActionButton = ({ icon, label, onPress, disabled, variant = 'secondary' }:
   <TouchableOpacity 
     onPress={onPress}
     disabled={disabled}
-    className={`flex-row items-center h-11 px-4 rounded-xl transition-all ${
+    className={`flex-row items-center justify-center w-10 h-10 rounded-full transition-all ${
       variant === 'primary' 
-        ? 'bg-charcoal dark:bg-white text-white dark:text-charcoal' 
-        : 'bg-white/80 dark:bg-darkgrey/80 border border-black/5 dark:border-white/10'
-    } ${disabled ? 'opacity-50' : 'active:scale-[0.98]'}`}
+        ? 'bg-textMain dark:bg-darktextMain text-surface dark:text-textMain shadow-sm' 
+        : 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5'
+    } ${disabled ? 'opacity-50' : 'active:scale-[0.95]'}`}
   >
-    <FontAwesome5 name={icon} size={14} color={variant === 'primary' ? (Platform.OS === 'web' ? 'white' : '#1C1C1E') : '#71717a'} className={label ? "mr-2.5" : ""} />
-    {label ? <Text className={`font-bold text-sm ${variant === 'primary' ? 'text-white dark:text-charcoal' : 'text-gray-600 dark:text-gray-400'}`}>{label}</Text> : null}
+    <FontAwesome5 name={icon} size={14} color={variant === 'primary' ? (Platform.OS === 'web' ? 'white' : '#1A1F1B') : '#6E7C74'} className={label ? "mr-2" : ""} />
+    {label ? <Text className={`font-medium text-[13px] ${variant === 'primary' ? 'text-surface dark:text-textMain' : 'text-textSec'}`}>{label}</Text> : null}
   </TouchableOpacity>
 );
 
@@ -388,7 +388,7 @@ export default function ShoppingListScreen() {
   };
 
   return (
-    <SafeAreaView testID="shopping-list-screen" className="flex-1 bg-cream dark:bg-darkcream">
+    <SafeAreaView testID="shopping-list-screen" className="flex-1 bg-appBg dark:bg-darkappBg">
       <ScrollView testID="shopping-list-scroll" className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 w-full mx-auto md:max-w-4xl px-4 md:px-8 pt-10 pb-32 min-h-[90vh]">
           
@@ -405,21 +405,19 @@ export default function ShoppingListScreen() {
                     : `Built for ${plannedMealCount} planned meals this week.`
               }
               rightActions={
-                <View className="hidden md:flex flex-row items-center bg-white/50 dark:bg-darkgrey/50 p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
+                <View className="hidden md:flex flex-row items-center bg-surface dark:bg-darksurface p-1.5 rounded-full border border-black/[0.03] dark:border-darksoftBorder shadow-sm">
                   <ActionButton icon="copy" onPress={handleCopyText} />
-                  <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
                   <ActionButton icon="file-csv" onPress={handleExportCSV} disabled={isExporting} />
-                  <View className="w-px h-6 bg-black/5 dark:bg-white/10 mx-1" />
                   <ActionButton icon="print" onPress={() => Platform.OS === 'web' ? window.print() : Alert.alert("Web only")} />
                 </View>
               }
             />
 
             {/* Contextual Summary Area */}
-            <View className="flex-row flex-wrap gap-3 mb-10">
-              <StatBadge label="Total" value={totalIngredients} icon="shopping-basket" color="bg-white dark:bg-darkgrey text-charcoal dark:text-darkcharcoal" />
-              <StatBadge label="Checked" value={`${checkedCount}/${totalIngredients}`} icon="check-circle" color="bg-avocado/10 text-avocado" />
-              <StatBadge label="Sections" value={categoryCount} icon="th-large" color="bg-blueberry/10 text-blueberry" />
+            <View className="flex-row flex-wrap gap-4 mb-10">
+              <StatBadge label="Total" value={totalIngredients} icon="shopping-basket" color="bg-surface dark:bg-darksurface border-black/[0.03] dark:border-darksoftBorder text-textMain dark:text-darktextMain" />
+              <StatBadge label="Checked" value={`${checkedCount}/${totalIngredients}`} icon="check-circle" color="bg-surface dark:bg-darksurface border border-primary/20 dark:border-primary/20 text-primary" />
+              <StatBadge label="Sections" value={categoryCount} icon="th-large" color="bg-surface dark:bg-darksurface border-black/[0.03] dark:border-darksoftBorder text-textMain dark:text-darktextMain" />
               
               <View className="ml-auto hidden md:flex">
                 <FilterToggle 
@@ -431,13 +429,13 @@ export default function ShoppingListScreen() {
             </View>
 
             {/* Mobile Actions Drawer (Simulated) */}
-            <View className="md:hidden flex-row gap-3 border-t border-black/5 pt-6">
-              <TouchableOpacity onPress={handleCopyText} className="flex-1 bg-charcoal dark:bg-white h-14 rounded-2xl items-center justify-center flex-row shadow-lg">
-                <FontAwesome5 name="copy" size={14} color={Platform.OS === 'web' ? 'white' : '#1C1C1E'} className="mr-3" />
-                <Text className="text-white dark:text-charcoal font-extrabold text-base">Copy List</Text>
+            <View className="md:hidden flex-row gap-3 border-t border-softBorder dark:border-white/5 pt-6">
+              <TouchableOpacity onPress={handleCopyText} className="flex-1 bg-textMain dark:bg-darktextMain h-14 rounded-2xl items-center justify-center flex-row shadow-sm">
+                <FontAwesome5 name="copy" size={14} color={Platform.OS === 'web' ? 'white' : '#1A1F1B'} className="mr-3" />
+                <Text className="text-surface dark:text-textMain font-semibold text-body">Copy List</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setHideStaples(!hideStaples)} className={`w-14 h-14 rounded-2xl items-center justify-center border ${hideStaples ? 'bg-avocado border-avocado' : 'bg-white border-black/5 shadow-sm'}`}>
-                <FontAwesome5 name="eye-slash" size={16} color={hideStaples ? 'white' : '#71717a'} />
+              <TouchableOpacity onPress={() => setHideStaples(!hideStaples)} className={`w-14 h-14 rounded-2xl items-center justify-center border ${hideStaples ? 'bg-primary border-primary' : 'bg-surface border-softBorder dark:border-white/5 shadow-sm'}`}>
+                <FontAwesome5 name="eye-slash" size={16} color={hideStaples ? 'white' : '#6E7C74'} />
               </TouchableOpacity>
             </View>
           </View>
@@ -454,54 +452,52 @@ export default function ShoppingListScreen() {
               if (visibleItems.length === 0) return null;
 
               return (
-                <View key={category} className="mb-10 print:mb-6 print:break-inside-avoid">
-                  <View className="flex-row items-center mb-6 print:mb-2 pl-1">
-                    <View className="w-10 h-10 print:hidden rounded-2xl bg-white dark:bg-darkgrey border border-black/5 dark:border-white/10 items-center justify-center mr-4 shadow-sm">
-                      <FontAwesome5 name={getCategoryIcon(category)} size={16} color="#6DBE75" />
+                <View key={category} className="mb-12 print:mb-6 print:break-inside-avoid">
+                  <View className="flex-row items-center mb-5 print:mb-2 pl-2">
+                    <View className="w-11 h-11 print:hidden rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center mr-4 shadow-sm">
+                      <FontAwesome5 name={getCategoryIcon(category)} size={16} color="#9DCD8B" />
                     </View>
                     <View>
-                      <Text className="text-charcoal dark:text-darkcharcoal print:text-black text-2xl print:text-lg font-extrabold print:font-bold tracking-tight">
+                      <Text className="text-textMain dark:text-darktextMain print:text-black text-[22px] font-medium print:font-bold tracking-tight">
                         {category}
                       </Text>
-                      <Text className="text-gray-400 font-bold text-[10px] print:hidden uppercase tracking-widest">{visibleItems.length} items to collect</Text>
+                      <Text className="text-textSec dark:text-darktextSec font-medium text-[12px] print:hidden opacity-80 mt-0.5">{visibleItems.length} items to collect</Text>
                     </View>
                   </View>
                 
                   {/* The printed list uses standard simple borders and no card styling */}
-                  <View className={`rounded-[28px] print:rounded-none overflow-hidden border print:border-t-0 print:border-l-0 print:border-r-0 print:border-b-0 ${category === 'Pantry Staples' ? 'bg-avocado/[0.03] border-avocado/20 shadow-sm print:bg-transparent print:shadow-none' : 'bg-white/40 dark:bg-darkgrey/40 border-black/5 dark:border-white/5 print:bg-transparent'} transition-all`}>
+                  <View className={`rounded-[32px] print:rounded-none overflow-hidden print:border-t-0 print:border-l-0 print:border-r-0 print:border-b-0 ${category === 'Pantry Staples' ? 'bg-orange-50/50 dark:bg-[#2A2520] border border-orange-100 dark:border-[#38312B] print:bg-transparent print:shadow-none' : 'bg-surface dark:bg-darksurface border border-black/[0.03] dark:border-darksoftBorder print:bg-transparent shadow-[0_2px_12px_rgba(0,0,0,0.02)]'} transition-all`}>
                     {visibleItems.map((item, idx) => (
                       <TouchableOpacity 
                         key={idx} 
                         onPress={() => toggleItem(category, idx)}
                         activeOpacity={0.7}
-                        className={`flex-row justify-between items-start py-5 px-6 print:py-2 print:px-0 border-b border-black/5 dark:border-white/5 print:border-gray-300 last:border-0 print:last:border-b transition-all ${item.checked ? 'bg-black/[0.02] dark:bg-white/[0.02] print:bg-transparent print:opacity-50' : ''} print:break-inside-avoid`}
+                        className={`flex-row justify-between items-center py-5 px-6 print:py-2 print:px-0 border-b border-black/[0.03] dark:border-darksoftBorder print:border-gray-300 last:border-0 print:last:border-b transition-all ${item.checked ? 'bg-black/[0.015] dark:bg-white/[0.02] print:bg-transparent print:opacity-50' : 'hover:bg-black/[0.01] dark:hover:bg-white/[0.01]'} print:break-inside-avoid`}
                       >
-                        <View className="flex-row items-start flex-1 pr-6 print:pr-2">
-                          <View className={`w-7 h-7 print:w-5 print:h-5 print:mt-1 mt-0.5 rounded-lg print:rounded-sm border-2 print:border-[1.5px] print:border-black mr-5 print:mr-3 items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'border-avocado/30 bg-avocado/10 print:border-black print:bg-transparent' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-darkgrey print:border-black print:bg-transparent'}`}>
-                            {item.checked ? (
-                              <FontAwesome5 name="check" size={10} color={Platform.OS === 'web' ? 'inherit' : '#6DBE75'} className="print:text-black" />
-                            ) : (
-                              <View className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 print:hidden" />
+                        <View className="flex-row items-center flex-1 pr-6 print:pr-2">
+                          <View className={`w-8 h-8 print:w-5 print:h-5 rounded-full print:rounded-sm border-2 print:border-[1.5px] print:border-black mr-5 print:mr-3 items-center justify-center flex-shrink-0 transition-all ${item.checked ? 'border-primary/40 bg-primary/20 print:border-black print:bg-transparent' : 'border-black/10 dark:border-white/10 bg-surface dark:bg-darksurface print:border-black print:bg-transparent'}`}>
+                            {item.checked && (
+                              <FontAwesome5 name="check" size={10} color={Platform.OS === 'web' ? '#7BA96A' : '#9DCD8B'} className="print:text-black" />
                             )}
                           </View>
                           
-                          <View className="flex-shrink flex-1">
-                            <View className="flex-row items-center flex-wrap gap-2 print:gap-1 min-h-[28px] print:min-h-0 pt-0.5 print:pt-0.5">
+                          <View className="flex-shrink flex-1 justify-center">
+                            <View className="flex-row items-center flex-wrap gap-2.5 print:gap-1 print:min-h-0">
                               {item.isRestock && (
-                                <View className={`px-2 py-0.5 print:px-0 print:py-0 rounded-md print:rounded-none flex-row items-center ${item.checked ? 'bg-gray-100 dark:bg-gray-800 print:bg-transparent' : 'bg-tomato/10 border border-tomato/20 print:bg-transparent print:border-none'}`}>
-                                  <FontAwesome5 name="redo-alt" size={8} color={item.checked ? '#9CA3AF' : '#FF6B5A'} className="mr-1.5 print:hidden" />
-                                  <Text className={`text-[10px] print:text-xs font-bold uppercase tracking-wider print:tracking-normal print:lowercase print:italic ${item.checked ? 'text-gray-400 print:text-black' : 'text-tomato print:text-black'}`}>
-                                    <Text className="hidden print:flex">(</Text>Replenish pantry<Text className="hidden print:flex">)</Text>
+                                <View className={`px-2.5 py-1 print:px-0 print:py-0 rounded-[6px] print:rounded-none flex-row items-center ${item.checked ? 'bg-black/5 dark:bg-white/5 print:bg-transparent' : 'bg-peach/15 border border-peach/20 dark:border-peach/10 print:bg-transparent print:border-none'}`}>
+                                  <FontAwesome5 name="redo-alt" size={8} color={item.checked ? '#9CA3AF' : '#C48F5D'} className="mr-1.5 print:hidden" />
+                                  <Text className={`text-[10px] print:text-xs font-semibold uppercase tracking-widest print:tracking-normal print:lowercase print:italic ${item.checked ? 'text-gray-400 print:text-black' : 'text-peach dark:text-[#C48F5D] print:text-black'}`}>
+                                    <Text className="hidden print:flex">(</Text>Replenish<Text className="hidden print:flex">)</Text>
                                   </Text>
                                 </View>
                               )}
-                              <Text className={`text-charcoal dark:text-darkcharcoal print:text-black text-lg print:text-base font-bold print:font-normal flex-wrap tracking-tight leading-none ${item.checked ? 'opacity-30 print:opacity-100' : ''}`}>
+                              <Text className={`text-textMain dark:text-darktextMain print:text-black text-[18px] print:text-base font-medium print:font-normal flex-wrap tracking-wide leading-none ${item.checked ? 'opacity-30 print:opacity-100' : ''}`}>
                                 {item.name}
                               </Text>
                             </View>
-                            <View className="flex-row items-start mt-1.5 print:hidden opacity-60">
-                              <FontAwesome5 name={item.isRestock ? "box-open" : "utensils"} size={9} color="#71717a" className="mr-2 mt-0.5" />
-                              <Text className={`text-xs font-semibold leading-relaxed ${item.checked ? 'line-through' : 'text-gray-500 dark:text-gray-400'}`}>
+                            <View className="flex-row items-baseline mt-1.5 print:hidden opacity-60">
+                              <FontAwesome5 name={item.isRestock ? "box-open" : "utensils"} size={10} color="#8C9A90" className="mr-2" />
+                              <Text className={`text-[12px] font-medium ${item.checked ? 'line-through decoration-black/20 text-textSec dark:text-gray-400' : 'text-textSec dark:text-darktextSec'}`}>
                                 {item.purchaseNote}
                               </Text>
                             </View>
@@ -510,17 +506,17 @@ export default function ShoppingListScreen() {
 
                         <View className={`items-end min-w-[70px] print:min-w-0 ${item.checked ? 'opacity-30 print:opacity-100' : ''}`}>
                           {item.unit === 'g' || item.unit === 'ml' ? (
-                            <View className="flex-row items-baseline justify-end w-full">
-                              <Text className="font-extrabold print:font-normal text-2xl print:text-base text-avocado print:text-black">
+                            <View className="bg-appBg dark:bg-black/20 border border-black/[0.04] dark:border-white/5 px-3 py-1.5 rounded-lg flex-row items-baseline justify-end print:bg-transparent print:border-none print:p-0">
+                              <Text className="font-semibold print:font-normal text-[14px] print:text-base text-textMain dark:text-darktextMain print:text-black">
                                 {item.amount}{item.displayUnit}
                               </Text>
                             </View>
                           ) : (
-                            <View className="items-end print:items-baseline justify-end print:justify-start print:flex-row w-full print:gap-1">
-                              <Text className="font-extrabold print:font-normal text-2xl print:text-base text-avocado print:text-black leading-none mb-0.5 print:mb-0 text-right print:text-left">
+                            <View className="bg-appBg dark:bg-black/20 border border-black/[0.04] dark:border-white/5 px-3 py-1.5 rounded-lg items-end print:items-baseline justify-end print:justify-start print:flex-row print:bg-transparent print:border-none print:p-0 print:gap-1">
+                              <Text className="font-semibold print:font-normal text-[16px] print:text-base text-textMain dark:text-darktextMain print:text-black leading-none mb-0.5 print:mb-0 text-right print:text-left">
                                 {item.amount}
                               </Text>
-                              <Text className="text-[11px] print:text-base font-bold print:font-normal text-gray-400 print:text-black lowercase text-right print:text-left">
+                              <Text className="text-[11px] print:text-base font-medium print:font-normal text-textSec dark:text-darktextSec print:text-black lowercase text-right print:text-left">
                                 {item.displayUnit}
                               </Text>
                             </View>
@@ -555,12 +551,12 @@ export default function ShoppingListScreen() {
                     Alert.alert("Shop Complete", "Purchased items have been logged to your Pantry.");
                   }
                 }}
-                className="bg-avocado hover:bg-avocado/80 active:opacity-80 transition-all rounded-2xl px-8 py-4 flex-row items-center shadow-lg shadow-avocado/20"
+                className="bg-primary hover:bg-primary-hover active:opacity-90 transition-all rounded-full px-8 h-16 flex-row items-center justify-center shadow-md dark:shadow-none shadow-primary/20 dark:border dark:border-primary/20 w-full md:w-auto md:min-w-[300px]"
               >
                 <FontAwesome5 name="check-double" size={16} color="white" className="mr-3" />
-                <Text className="text-white font-extrabold text-lg tracking-tight">Complete Shop</Text>
+                <Text className="text-white font-medium text-[16px] tracking-wide">Complete Shop</Text>
               </TouchableOpacity>
-              <Text className="text-gray-400 font-semibold text-xs mt-3">Add {checkedCount} item{checkedCount > 1 ? 's' : ''} to Pantry memory.</Text>
+              <Text className="text-textSec dark:text-darktextSec font-medium text-[12px] mt-4 opacity-80">Add {checkedCount} item{checkedCount > 1 ? 's' : ''} to Pantry memory.</Text>
             </View>
           )}
 

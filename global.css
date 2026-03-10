@@ -35,3 +35,29 @@
     border-radius: 0 !important;
   }
 }
+
+/* Fix for Web Typography: explicitly define @font-face and apply to all text */
+@font-face {
+  font-family: 'GoogleSansFlex';
+  src: url('./assets/fonts/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+}
+
+html, body, #root {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+}
+
+body {
+  font-family: 'GoogleSansFlex', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* React Native Web specific overrides to guarantee custom font */
+div[dir="auto"]:not([style*="font-family"]), span[dir="auto"]:not([style*="font-family"]), input, textarea, select, button {
+  font-family: 'GoogleSansFlex', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+

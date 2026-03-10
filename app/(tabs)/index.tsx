@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar, Animated } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
@@ -37,6 +37,17 @@ export default function DashboardScreen() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({});
   const [importModalVisible, setImportModalVisible] = useState(false);
+
+  // Meal feed fade animation (smooth week-switch)
+  const mealFadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    // Quick fade-out then fade-in when day changes
+    Animated.sequence([
+      Animated.timing(mealFadeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      Animated.timing(mealFadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+  }, [currentDayIndex]);
 
   // Day abbrev -> routine key map
   const currentDayKey = DAYS[currentDayIndex];
@@ -100,34 +111,8 @@ export default function DashboardScreen() {
 
     return (
       <View testID="week-selector-container">
-        {/* Top row: label + date range + nav arrows all in one tight line */}
-        <View testID="week-selector-header" className="flex-row items-center justify-between mb-3">
-          <View className="flex-row items-center gap-2">
-            <FontAwesome5 name="calendar-week" size={11} color="#6DBE75" />
-            <Text className="text-avocado font-bold text-xs uppercase tracking-[0.12em]">This Week</Text>
-            <Text className="text-gray-400 text-xs font-medium">Mar 9 – 15</Text>
-          </View>
-          {/* Arrows sit right next to the label, not floating far right */}
-          <View className="flex-row items-center gap-1">
-            <TouchableOpacity
-              testID="week-selector-prev-btn"
-              className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 items-center justify-center hover:bg-black/5 transition-colors"
-              onPress={() => {}}
-            >
-              <FontAwesome5 name="chevron-left" size={9} color="#9CA3AF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="week-selector-next-btn"
-              className="w-7 h-7 rounded-lg bg-white/70 dark:bg-white/5 border border-black/5 dark:border-white/5 items-center justify-center hover:bg-black/5 transition-colors"
-              onPress={() => {}}
-            >
-              <FontAwesome5 name="chevron-right" size={9} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Day pills — compact, minimum gap */}
-        <View testID="week-selector-pills" className="flex-row gap-0.5">
+        {/* Day pills — Row of 7 rounded day capsules/cards */}
+        <View testID="week-selector-pills" className="flex-row gap-1.5 mb-5">
           {weeklyPlan.map((day, idx) => {
             const isSelected = currentDayIndex === idx;
             const isToday = todayIndex === idx;
@@ -136,47 +121,45 @@ export default function DashboardScreen() {
                 key={idx}
                 testID={`week-selector-day-${days[idx].toLowerCase()}`}
                 onPress={() => setCurrentDayIndex(idx)}
-                className={`flex-1 items-center justify-center py-1.5 rounded-lg border transition-all ${
+                className={`flex-1 items-center justify-center py-2.5 rounded-[12px] transition-all duration-300 border ${
                   isSelected
-                    ? 'bg-avocado/20 border-avocado/60 dark:bg-avocado/25 dark:border-avocado/60'
-                    : 'bg-white/40 dark:bg-white/5 border-black/[0.04] dark:border-white/5 hover:bg-black/[0.03]'
+                    ? 'bg-primary/10 dark:bg-darksageTint border-primary/20 dark:border-primary/20 shadow-[0_2px_8px_rgba(157,205,139,0.15)] dark:shadow-none'
+                    : 'bg-[#FBFCF8] dark:bg-darksurface border-black/[0.04] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
                 }`}
               >
-                <Text className={`font-bold text-[9px] uppercase tracking-wide ${
-                  isSelected ? 'text-avocado' : 'text-gray-400'
+                <Text className={`font-semibold text-[10px] uppercase tracking-widest mb-1 ${
+                  isSelected ? 'text-[#24332D] dark:text-darktextMain' : 'text-textSec dark:text-darktextSec opacity-70'
                 }`}>
                   {days[idx]}
                 </Text>
-                <Text className={`font-extrabold text-sm leading-tight ${
-                  isSelected ? 'text-avocado' : 'text-charcoal dark:text-white'
+                <Text className={`font-medium text-[16px] leading-none ${
+                  isSelected ? 'text-[#24332D] dark:text-darktextMain' : 'text-textMain dark:text-darktextMain'
                 }`}>
                   {idx + 9}
                 </Text>
                 {isToday && (
-                  <View className={`w-1 h-1 rounded-full ${isSelected ? 'bg-avocado' : 'bg-avocado/40'}`} />
+                  <View className={`w-1 h-1 rounded-full mt-1.5 ${isSelected ? 'bg-primary' : 'bg-primary/40'}`} />
                 )}
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Selected day heading — tight, inline, clean */}
-        <View testID="week-selector-active-day" className="flex-row items-center justify-between mt-2 mb-3">
+        {/* Selected day heading */}
+        <View testID="week-selector-active-day" className="flex-row items-center justify-between pb-2">
           <View>
-            <Text testID="dashboard-current-date-heading" className="text-charcoal dark:text-darkcharcoal text-lg font-extrabold tracking-tight leading-tight">
+            <Text testID="dashboard-current-date-heading" className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight mb-1">
               {fullDays[currentDayIndex]}
-              <Text className="text-gray-400 font-medium text-sm"> · March {currentDayIndex + 9}</Text>
             </Text>
-            <Text className="text-gray-400 text-[10px] font-medium">3 meals planned</Text>
+            <Text className="text-textMain dark:text-darktextMain text-[20px] font-medium tracking-tight mr-4">{days[currentDayIndex]} (3 meals planned)</Text>
           </View>
-          <View className="flex-row items-center gap-3">
-            <View testID="week-selector-mini-cal" className="flex-row items-center">
-              <FontAwesome5 name="fire" size={10} color="#FF6B5A" />
-              <Text className="text-gray-500 text-xs font-bold ml-1">{Math.round(activeMacros.calories)} kcal</Text>
+          {/* Day Summary Chips */}
+          <View className="flex-row gap-2">
+            <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
+              <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-peach dark:text-[#C48F5D]">●</Text> {Math.round(activeMacros.calories)} kcal</Text>
             </View>
-            <View testID="week-selector-mini-protein" className="flex-row items-center">
-              <FontAwesome5 name="dumbbell" size={10} color="#4F7FFF" />
-              <Text className="text-gray-500 text-xs font-bold ml-1">{Math.round(activeMacros.protein)}g P</Text>
+            <View className="bg-surface dark:bg-darksurface px-2.5 py-1 rounded-[6px] border border-black/[0.03] dark:border-darksoftBorder">
+              <Text className="text-textMain dark:text-darktextMain font-medium text-[11px]"><Text className="text-lime dark:text-[#A9B86D]">●</Text> {Math.round(activeMacros.protein)}g pro</Text>
             </View>
           </View>
         </View>
@@ -190,279 +173,240 @@ export default function DashboardScreen() {
     // SafeAreaView on web adds transforms/padding via JS which creates new stacking contexts.
     <View
       testID="dashboard-screen"
-      className="flex-1 bg-cream dark:bg-darkcream"
+      className="flex-1 bg-appBg dark:bg-darkappBg"
       style={Platform.OS === 'web'
-        ? { display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'visible' } as any
+        ? { display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' } as any
         : { flex: 1 }
       }
     >
-      {/* Single page scroll — no nested scroll contexts */}
       <ScrollView
         testID="dashboard-scroll"
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        // Critical: no overflow override on the scroll container itself on web
-        // — let the browser handle overflow so sticky children work correctly
-        style={Platform.OS === 'web' ? { overflowY: 'auto', overflowX: 'visible' } as any : undefined}
+        style={Platform.OS === 'web' ? { height: '100%' } as any : undefined}
       >
         <View
           testID="dashboard-layout"
-          className="px-4 pb-32 mx-auto w-full md:max-w-7xl md:px-10"
+          className="px-4 md:px-8 lg:px-12 pb-32 pt-6 w-full max-w-[1400px] mx-auto flex-col md:flex-row gap-8 lg:gap-14"
           style={Platform.OS === 'web'
-            // IMPORTANT: parent must NOT have overflow:hidden or transforms, or sticky breaks.
-            // Removed pt-6/10 to avoid scroll-dependent spacing drift.
-            ? { display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 40, overflow: 'visible', paddingTop: 24 } as any
-            : { paddingTop: 24 }
+            ? { display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 48, paddingTop: 24 } as any
+            : { paddingTop: 20 }
           }
         >
-          {/* ─── LEFT COLUMN ─── visually locked sticky rail ─── */}
+          {/* ─── MAIN CENTRAL CONTENT (Meals Feed & Header) ─── */}
           <View
-            testID="dashboard-left-column"
-            style={Platform.OS === 'web'
-              ? {
-                  width: 300,
-                  flexShrink: 0,
-                  position: 'sticky',
-                  top: 24, // Matches parent paddingTop for stable initial load
-                  alignSelf: 'flex-start',
-                  willChange: 'unset',
-                  transform: 'none',
-                  zIndex: 20,
-                } as any
-              : undefined
-            }
+            testID="dashboard-main-column"
+            className="flex-1 min-w-0"
           >
-            {/* Header */}
-            <View className="flex-row justify-between items-end mb-4 pb-3 border-b border-black/5 dark:border-white/5">
+            {/* Header Area (Compact & Composed) */}
+            <View className="flex-row justify-between items-end mb-4 pt-1">
               <View>
-                <Text className="text-gray-500 text-xs font-bold uppercase tracking-widest">Welcome back,</Text>
-                <Text className="text-charcoal dark:text-darkcharcoal text-xl font-extrabold tracking-tight mt-0.5">{mockUser.name}</Text>
+                <Text className="text-textSec text-[11px] font-medium tracking-[0.15em] mb-1 opacity-80 uppercase">Morning,</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[32px] font-medium tracking-tight leading-none">{mockUser.name}</Text>
+              </View>
+              
+              {/* Top-right aligned week strip label */}
+              <View className="flex-row items-center gap-2 bg-surface dark:bg-darksurface px-4 py-2 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder">
+                <FontAwesome5 name="calendar-day" size={10} color="#9DCD8B" />
+                <Text className="text-textMain dark:text-darktextMain font-medium text-[11px] uppercase tracking-widest ml-1">This Week</Text>
+                <View className="w-[1px] h-3 bg-softBorder dark:bg-darksoftBorder mx-1" />
+                <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium">Mar 9 – 15</Text>
               </View>
             </View>
 
-            {/* Daily Progress Card — single source of truth: activeMacros */}
-            <View testID="dashboard-daily-progress-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 mb-3 shadow-sm">
-              {(() => {
-                const dayRoutine = routine[currentDayKey];
-                const plannedToday = (['breakfast','lunch','dinner'] as const).filter(
-                  slot => isPlanned(dayRoutine[slot])
-                ).length;
-                const totalSlots = 3;
-                const summaryLabel = plannedToday === totalSlots
-                  ? 'Full day planned'
-                  : plannedToday === 0
-                  ? 'No meals planned today'
-                  : `${plannedToday} of ${totalSlots} meals planned today`;
-                return (
-                  <View className="flex-row justify-between items-baseline mb-3">
-                    <Text testID="dashboard-active-day-title" className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Active Day</Text>
-                    <Text className="text-gray-400 text-[10px] font-medium">{summaryLabel}</Text>
-                  </View>
-                );
-              })()}
-
-              {/* ── Calories ── */}
-              <View className="mb-3">
-                <View className="flex-row justify-between items-baseline mb-1.5">
-                  <Text testID="dashboard-calories-label" className="text-charcoal dark:text-gray-300 font-bold text-xs">
-                    Calories{' '}
-                    <Text testID="dashboard-calories-current" className="text-charcoal dark:text-darkcharcoal font-extrabold">
-                      {Math.round(activeMacros.calories)}
-                    </Text>
-                    <Text className="text-gray-400 font-normal"> / {mockUser.targetMacros.calories}</Text>
-                  </Text>
-                  <Text testID="dashboard-calories-remaining" className="text-avocado text-[10px] font-bold">
-                    {Math.max(0, mockUser.targetMacros.calories - Math.round(activeMacros.calories))} left
-                  </Text>
-                </View>
-                <View className="h-1.5 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
-                  <View
-                    testID="dashboard-calories-progress-bar"
-                    className="h-full bg-avocado rounded-full"
-                    style={{ width: `${Math.min(100, Math.round((activeMacros.calories / mockUser.targetMacros.calories) * 100))}%` as any }}
-                  />
-                </View>
-              </View>
-
-              {/* ── Protein ── separator line for rhythm */}
-              <View className="border-t border-black/[0.04] dark:border-white/[0.04] pt-3">
-                <View className="flex-row justify-between items-baseline mb-1.5">
-                  <Text testID="dashboard-protein-label" className="text-charcoal dark:text-gray-300 font-bold text-xs">
-                    Protein{' '}
-                    <Text testID="dashboard-protein-current" className="text-charcoal dark:text-darkcharcoal font-extrabold">
-                      {Math.round(activeMacros.protein)}g
-                    </Text>
-                    <Text className="text-gray-400 font-normal"> / {mockUser.targetMacros.protein}g</Text>
-                  </Text>
-                  <Text testID="dashboard-protein-remaining" className="text-blueberry text-[10px] font-bold">
-                    {Math.max(0, mockUser.targetMacros.protein - Math.round(activeMacros.protein))}g left
-                  </Text>
-                </View>
-                <View className="h-1.5 w-full bg-gray-200 dark:bg-black/40 rounded-full overflow-hidden">
-                  <View
-                    testID="dashboard-protein-progress-bar"
-                    className="h-full bg-blueberry rounded-full"
-                    style={{ width: `${Math.min(100, Math.round((activeMacros.protein / mockUser.targetMacros.protein) * 100))}%` as any }}
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Weekly Budget Card — trimmed */}
-            <View testID="dashboard-weekly-budget-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 mb-3 shadow-sm">
-              <Text className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Weekly Budget</Text>
-              <Text className="text-avocado font-bold text-xs mt-0.5 mb-3">On track for the week</Text>
-              <View className="flex-row justify-between items-end border-t border-black/5 dark:border-white/5 pt-3">
-                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold">£34<Text className="text-sm font-medium text-gray-400"> / £{mockUser.budgetWeekly}</Text></Text>
-                <Text className="text-gray-400 font-bold text-xs">£{mockUser.budgetWeekly - 34} left</Text>
-              </View>
-            </View>
-
-            {/* Next Action — compact, slightly less dominant green */}
-            <TouchableOpacity
-              testID="dashboard-next-action-card"
-              onPress={() => router.push('/shop')}
-              className="bg-avocado/90 rounded-2xl p-4 mb-3 shadow-sm active:opacity-80 hover:opacity-90 transition-opacity"
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1 mr-3">
-                  <Text className="text-white/70 text-[9px] font-bold uppercase tracking-widest mb-0.5">Next Action</Text>
-                  <Text className="text-white text-sm font-bold leading-tight">12 ingredients needed this week</Text>
-                </View>
-                <View className="bg-white/20 px-3 py-1.5 rounded-full flex-row items-center border border-white/30">
-                  <Text className="text-white font-bold text-xs mr-1.5">Shop</Text>
-                  <FontAwesome5 name="arrow-right" size={9} color="white" />
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Taste Profile — trimmed padding */}
-            <View testID="dashboard-taste-profile-card" className="bg-white/60 dark:bg-darkgrey/60 rounded-2xl p-4 shadow-sm">
-              <View className="flex-row justify-between items-center mb-2">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-sm font-bold tracking-tight">Taste Profile</Text>
-                  <Text className="text-gray-400 text-xs font-medium">Shaping next week's plan</Text>
-                </View>
-                <TouchableOpacity testID="dashboard-view-taste-profile-btn" onPress={() => router.push('/taste-profile')}>
-                  <Text className="text-avocado font-bold text-xs">View full</Text>
-                </TouchableOpacity>
-              </View>
-              <View className="flex-row flex-wrap gap-1 mb-3 mt-1.5">
-                {tasteProfileTags.map(tag => (
-                  <View key={tag} className="bg-gray-100 dark:bg-black/20 px-2 py-1 rounded-full border border-black/5 dark:border-white/5">
-                    <Text className="text-charcoal dark:text-gray-300 text-[10px] font-bold">{tag}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text className="text-gray-400 text-[10px] font-medium mb-3">Based on {tasteProfileTags.length + 1} imported recipes</Text>
-              {/* Import Recipe — clean secondary CTA, single icon, no double-plus */}
-              <TouchableOpacity
-                testID="dashboard-add-recipe-btn"
-                onPress={handleAddRecipeClick}
-                className="py-2.5 rounded-xl flex-row items-center justify-center border border-avocado/40 bg-avocado/8 hover:bg-avocado/15 transition-colors"
-              >
-                <FontAwesome5 name="file-import" size={10} color="#6DBE75" />
-                <Text className="text-avocado font-bold text-xs ml-1.5">Import recipe</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ─── RIGHT COLUMN ─── week selector sticky at top, meals below ─── */}
-          <View
-            testID="dashboard-right-column"
-            style={Platform.OS === 'web' ? { flex: 1, minWidth: 0 } as any : undefined}
-            className="mt-6 md:mt-0"
-          >
-            {/* Sticky week planner header — locked offset matches rail */}
+            {/* Week planner component */}
             <View
-              testID="dashboard-week-selector-sticky"
-              style={Platform.OS === 'web'
-                ? { 
-                    position: 'sticky', 
-                    top: 24, // Locked at same offset as left rail
-                    zIndex: 30, 
-                    backgroundColor: 'var(--color-cream, #FAF8F4)', 
-                    paddingBottom: 2 
-                  } as any
-                : undefined
-              }
-              className="bg-cream dark:bg-darkcream pb-0"
+              testID="dashboard-week-selector"
+              className="mb-6"
             >
               <WeekSelector />
-              {/* Faint rule that content slides under */}
-              <View className="h-px bg-black/[0.04] dark:bg-white/[0.05] mb-6" />
             </View>
 
             {/* Meal Feed — routine-aware */}
-            <View testID="dashboard-meal-feed">
+            <Animated.View testID="dashboard-meal-feed" className="mt-2" style={{ opacity: mealFadeAnim }}>
 
               {/* Breakfast */}
-              <Text className="text-gray-400 text-xs mb-3 uppercase tracking-wider font-bold">Breakfast</Text>
               {isPlanned(routine[currentDayKey].breakfast)
                 ? getRecipe(getActiveMealId('breakfast')) && (
-                    <RecipeCard
-                      recipe={getRecipe(getActiveMealId('breakfast'))!}
-                      onSwipe={() => handleSwap('breakfast')}
-                    />
+                    <View className="mb-6">
+                      <RecipeCard
+                        recipe={getRecipe(getActiveMealId('breakfast'))!}
+                        slotLabel="Breakfast"
+                        onSwipe={() => handleSwap('breakfast')}
+                      />
+                    </View>
                   )
                 : (
-                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="coffee" size={13} color="#9CA3AF" />
+                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="coffee" size={16} color="#9DCD8B" />
                     </View>
                     <View>
-                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('breakfast', routine[currentDayKey].breakfast)}</Text>
-                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('breakfast', routine[currentDayKey].breakfast)}</Text>
+                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
                     </View>
                   </View>
                 )
               }
 
               {/* Lunch */}
-              <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Lunch</Text>
               {isPlanned(routine[currentDayKey].lunch)
                 ? getRecipe(getActiveMealId('lunch')) && (
-                    <RecipeCard
-                      recipe={getRecipe(getActiveMealId('lunch'))!}
-                      onSwipe={() => handleSwap('lunch')}
-                    />
+                    <View className="mb-6">
+                      <RecipeCard
+                        recipe={getRecipe(getActiveMealId('lunch'))!}
+                        slotLabel="Lunch"
+                        onSwipe={() => handleSwap('lunch')}
+                      />
+                    </View>
                   )
                 : (
-                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="utensils" size={13} color="#9CA3AF" />
+                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="utensils" size={16} color="#9DCD8B" />
                     </View>
                     <View>
-                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('lunch', routine[currentDayKey].lunch)}</Text>
-                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('lunch', routine[currentDayKey].lunch)}</Text>
+                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
                     </View>
                   </View>
                 )
               }
 
               {/* Dinner */}
-              <Text className="text-gray-400 text-xs mb-3 mt-4 uppercase tracking-wider font-bold">Dinner</Text>
               {isPlanned(routine[currentDayKey].dinner)
                 ? getRecipe(getActiveMealId('dinner')) && (
-                    <RecipeCard
-                      recipe={getRecipe(getActiveMealId('dinner'))!}
-                      onSwipe={() => handleSwap('dinner')}
-                    />
+                    <View className="mb-6">
+                      <RecipeCard
+                        recipe={getRecipe(getActiveMealId('dinner'))!}
+                        slotLabel="Dinner"
+                        onSwipe={() => handleSwap('dinner')}
+                      />
+                    </View>
                   )
                 : (
-                  <View className="bg-white/40 dark:bg-darkgrey/30 rounded-2xl px-4 py-4 mb-1 border border-black/5 dark:border-white/5 flex-row items-center gap-3">
-                    <View className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="moon" size={13} color="#9CA3AF" />
+                  <View className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
+                      <FontAwesome5 name="moon" size={16} color="#9DCD8B" />
                     </View>
                     <View>
-                      <Text className="text-charcoal dark:text-white text-sm font-semibold">{slotLabel('dinner', routine[currentDayKey].dinner)}</Text>
-                      <Text className="text-gray-400 text-xs mt-0.5">Not included in your Fuel List</Text>
+                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('dinner', routine[currentDayKey].dinner)}</Text>
+                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
                     </View>
                   </View>
                 )
               }
 
+            </Animated.View>
+          </View>
+
+          {/* ─── SUPPORTING WIDGET COLUMN (Right side now) ─── */}
+          <View
+            testID="dashboard-support-column"
+            style={Platform.OS === 'web'
+              ? {
+                  width: 320,
+                  flexShrink: 0,
+                  marginTop: 104, // Push down to visually match the active day heading baseline
+                } as any
+              : { marginTop: 40 }
+            }
+          >
+
+            {/* Daily Progress Card — Active Plan */}
+            <View testID="dashboard-daily-progress-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
+              {(() => {
+                const dayRoutine = routine[currentDayKey];
+                const plannedToday = (['breakfast','lunch','dinner'] as const).filter(
+                  meal => isPlanned(dayRoutine[meal])
+                ).length;
+                return (
+                  <>
+                    <View className="flex-row justify-between items-start mb-6">
+                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Active Plan</Text>
+                      <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium opacity-80">{plannedToday > 0 ? 'Full day planned' : 'Not fully planned'}</Text>
+                    </View>
+                    
+                    <View className="gap-6">
+                      {/* Calories */}
+                      <View>
+                        <View className="flex-row justify-between items-baseline mb-2">
+                          <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Calories</Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.calories)} <Text className="text-textSec font-normal opacity-70">/ {mockUser.targetMacros.calories}</Text></Text>
+                        </View>
+                        <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+                          <View className="h-full bg-peach dark:bg-[#C48F5D] rounded-full" style={{ width: `${Math.min((activeMacros.calories / mockUser.targetMacros.calories) * 100, 100)}%` }} />
+                        </View>
+                      </View>
+                      
+                      {/* Protein */}
+                      <View>
+                        <View className="flex-row justify-between items-baseline mb-2">
+                          <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Protein</Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.protein)}g <Text className="text-textSec font-normal opacity-70">/ {mockUser.targetMacros.protein}g</Text></Text>
+                        </View>
+                        <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
+                          <View className="h-full bg-lime dark:bg-[#A9B86D] rounded-full" style={{ width: `${Math.min((activeMacros.protein / mockUser.targetMacros.protein) * 100, 100)}%` }} />
+                        </View>
+                      </View>
+                    </View>
+                  </>
+                );
+              })()}
             </View>
+
+            {/* Weekly Budget Card — Airy */}
+            <View testID="dashboard-weekly-budget-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
+              <View className="flex-row justify-between items-start mb-6">
+                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Grocery Budget</Text>
+                <Text className="text-textSec dark:text-[#A3B0A7] text-[10px] font-medium uppercase tracking-widest bg-sageTint/50 dark:bg-darksageTint px-2 py-1 rounded">On Track</Text>
+              </View>
+              <View className="flex-row items-baseline">
+                <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£34</Text>
+                <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £{mockUser.budgetWeekly}</Text>
+              </View>
+            </View>
+
+            {/* Next Action — Sage Card */}
+            <TouchableOpacity
+              testID="dashboard-next-action-card"
+              onPress={() => router.push('/shop')}
+              className="bg-sageTint dark:bg-darksageTint rounded-3xl p-5 mb-4 shadow-sm border border-transparent dark:border-darksoftBorder active:opacity-90 hover:opacity-95 transition-all flex-row items-center cursor-pointer"
+            >
+              <View className="flex-1 mr-4">
+                <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-widest mb-1.5">Weekly Prep</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">12 ingredients needed</Text>
+              </View>
+              <View className="w-10 h-10 rounded-full bg-white dark:bg-white/10 items-center justify-center shadow-sm">
+                <FontAwesome5 name="arrow-right" size={14} color="#9DCD8B" />
+              </View>
+            </TouchableOpacity>
+
+            {/* Taste Profile — Small refined card */}
+            <View testID="dashboard-taste-profile-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none">
+              <View className="flex-row justify-between items-center mb-5">
+                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Taste Profile</Text>
+                <TouchableOpacity testID="dashboard-view-taste-profile-btn" onPress={() => router.push('/taste-profile')}>
+                  <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium mb-1">Edit</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View className="flex-row flex-wrap gap-2 mb-6">
+                {tasteProfileTags.map(tag => (
+                  <View key={tag} className="bg-appBg dark:bg-white/5 border border-black/[0.04] dark:border-white/5 px-2.5 py-1.5 rounded-full">
+                    <Text className="text-textMain dark:text-darktextMain text-[11px] font-medium opacity-80">{tag}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity 
+                testID="dashboard-add-recipe-btn"
+                onPress={handleAddRecipeClick}
+                className="py-3 rounded-full flex-row items-center justify-center border border-softBorder/80 bg-surface hover:bg-black/[0.02] transition-colors"
+               >
+                 <Text className="text-textSec font-medium text-[13px]">Import Recipe Link</Text>
+               </TouchableOpacity>
+             </View>
           </View>
         </View>
       </ScrollView>

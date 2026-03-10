@@ -27,21 +27,21 @@ export default function PageHeader({
           {/* Eyebrow */}
           {eyebrow && (
             <View className="flex-row items-center mb-2">
-              <View className="w-2 h-2 rounded-full bg-avocado mr-3" />
-              <Text className="text-avocado text-xs font-bold uppercase tracking-[0.2em]">
+              <View className="w-2 h-2 rounded-full bg-primary mr-3" />
+              <Text className="text-primary text-caption font-semibold uppercase tracking-[0.2em]">
                 {eyebrow}
               </Text>
             </View>
           )}
 
           {/* Title */}
-          <Text className="text-charcoal dark:text-darkcharcoal text-4xl md:text-5xl font-extrabold tracking-tight">
+          <Text className="text-textMain dark:text-darktextMain text-display tracking-tight">
             {title}
           </Text>
 
           {/* Subtitle */}
           {subtitle && (
-            <Text className="text-gray-500 text-lg md:text-xl font-medium mt-2 leading-relaxed">
+            <Text className="text-textSec text-body-lg mt-2 leading-relaxed">
               {subtitle}
             </Text>
           )}

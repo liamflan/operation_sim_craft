@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useTheme } from './ThemeContext';
 
 type ImportState = 'input' | 'processing' | 'review';
 
@@ -30,11 +31,11 @@ type FeedbackOption = {
 };
 
 const FEEDBACK_OPTIONS: FeedbackOption[] = [
-  { id: 'more_like_this',  label: 'More like this',   icon: 'thumbs-up',   color: '#6DBE75' },
-  { id: 'less_prep',       label: 'Less prep',         icon: 'bolt',        color: '#F59E0B' },
-  { id: 'lower_cost',      label: 'Lower cost',        icon: 'tag',         color: '#8B5CF6' },
-  { id: 'higher_protein',  label: 'Higher protein',    icon: 'dumbbell',    color: '#4F7FFF' },
-  { id: 'not_for_me',      label: 'Not for me',        icon: 'times-circle', color: '#9CA3AF' },
+  { id: 'more_like_this',  label: 'More like this',    icon: 'thumbs-up',    color: '#9DCD8B' },
+  { id: 'less_prep',       label: 'Less prep',         icon: 'bolt',         color: '#E8B07A' },
+  { id: 'lower_cost',      label: 'Lower cost',        icon: 'tag',          color: '#D6E58B' },
+  { id: 'higher_protein',  label: 'Higher protein',    icon: 'dumbbell',     color: '#D97C6C' },
+  { id: 'not_for_me',      label: 'Not for me',        icon: 'times-circle', color: '#6E7C74' },
 ];
 
 export default function ImportRecipeModal({
@@ -46,6 +47,7 @@ export default function ImportRecipeModal({
   onClose: () => void;
   onSave: (data: any) => void;
 }) {
+  const { isDarkMode } = useTheme();
   const [step, setStep] = useState<ImportState>('input');
   const [url, setUrl] = useState('');
   const [pastedText, setPastedText] = useState('');
@@ -55,6 +57,25 @@ export default function ImportRecipeModal({
   // Desktop: animate modal panel in/out
   const scaleAnim = useRef(new Animated.Value(0.94)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Handle Escape key and body scrolling (web)
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (visible) {
+        document.body.style.overflow = 'hidden';
+        const handleEscape = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => {
+          document.body.style.overflow = 'auto';
+          window.removeEventListener('keydown', handleEscape);
+        };
+      } else {
+        document.body.style.overflow = 'auto';
+      }
+    }
+  }, [visible, onClose]);
 
   useEffect(() => {
     if (visible) {
@@ -129,39 +150,25 @@ export default function ImportRecipeModal({
         transparent
         statusBarTranslucent
       >
-        {/* Overlay — warm, low opacity */}
+        {/* Overlay — unified semi-transparent black */}
         <Pressable
           testID="import-recipe-overlay"
           onPress={onClose}
-          style={{
-            position: 'absolute', inset: 0,
-            backgroundColor: 'rgba(30, 24, 16, 0.35)',
-            backdropFilter: 'blur(4px)',
-          } as any}
+          className="absolute inset-0 bg-black/40 dark:bg-black/60"
+          style={{ backdropFilter: 'blur(4px)' } as any}
         />
 
         {/* Centered animated panel */}
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            pointerEvents: 'box-none',
-          } as any}
-        >
+        <View className="flex-1 justify-center items-center" style={{ pointerEvents: 'box-none' } as any}>
           <Animated.View
+            className="overflow-hidden shadow-2xl border border-black/[0.05] dark:border-darksoftBorder"
             style={{
               transform: [{ scale: scaleAnim }],
               opacity: opacityAnim,
-              width: step === 'review' ? 680 : 520,
+              width: step === 'review' ? 680 : 480, // standardized medium & large widths
               maxHeight: '88vh',
-              borderRadius: 28,
-              backgroundColor: '#FAF8F4',
-              overflow: 'hidden',
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 24 },
-              shadowOpacity: 0.18,
-              shadowRadius: 60,
+              borderRadius: 32, // standardized radius
+              backgroundColor: isDarkMode ? '#212623' : '#FBFCF8',
             } as any}
           >
             <ModalContent
@@ -195,16 +202,11 @@ export default function ImportRecipeModal({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, backgroundColor: 'rgba(30, 24, 16, 0.5)', justifyContent: 'flex-end' }}
+        className="flex-1 justify-end bg-black/40 dark:bg-black/60"
       >
-        <View
-          style={{
-            backgroundColor: '#FAF8F4',
-            borderTopLeftRadius: 32,
-            borderTopRightRadius: 32,
-            maxHeight: '90%',
-            overflow: 'hidden',
-          }}
+        <View 
+          className="rounded-t-[32px] max-h-[90%] overflow-hidden"
+          style={{ backgroundColor: isDarkMode ? '#212623' : '#FBFCF8' }}
         >
           <ModalContent
             step={step}
@@ -262,103 +264,49 @@ function ModalContent({
       {/* ─── Header ─── */}
       <View
         testID="import-recipe-header"
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: 20,
-          paddingBottom: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(0,0,0,0.05)',
-        }}
+        className="flex-row justify-between items-center p-5 pb-4 border-b border-black/[0.05] dark:border-darksoftBorder"
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View
-            style={{
-              width: 36,
-              height: 36,
-              backgroundColor: 'rgba(109,190,117,0.15)',
-              borderRadius: 10,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 10,
-            }}
-          >
-            <FontAwesome5 name="file-import" size={14} color="#6DBE75" />
+        <View className="flex-row items-center">
+          <View className="w-9 h-9 bg-sageTint dark:bg-darksageTint rounded-[10px] items-center justify-center mr-3">
+            <FontAwesome5 name="file-import" size={14} color="#9DCD8B" />
           </View>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#1C1C1E', letterSpacing: -0.3 }}>
+          <Text className="text-[17px] font-bold tracking-tight text-textMain dark:text-darktextMain">
             Import recipe
           </Text>
         </View>
         <TouchableOpacity
           testID="import-recipe-close-btn"
           onPress={onClose}
-          style={{
-            width: 32,
-            height: 32,
-            backgroundColor: 'rgba(0,0,0,0.05)',
-            borderRadius: 16,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="w-8 h-8 rounded-full bg-black/[0.04] dark:bg-white/[0.05] items-center justify-center hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
         >
-          <FontAwesome5 name="times" size={13} color="#9CA3AF" />
+          <FontAwesome5 name="times" size={13} color="#8C9A90" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         {/* ─── Step 1: Input ─── */}
         {step === 'input' && (
-          <View style={{ padding: isDesktop ? 28 : 22, paddingTop: 22, paddingBottom: isDesktop ? 28 : 22 }}>
+          <View className={isDesktop ? "p-8" : "p-6"}>
 
             {/* Section heading */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: '#1C1C1E', letterSpacing: -0.4, marginBottom: 5 }}>
+            <View className="mb-6">
+              <Text className="text-[22px] font-medium tracking-tight text-textMain dark:text-darktextMain mb-1">
                 Import a recipe
               </Text>
-              <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '500', lineHeight: 19 }}>
+              <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec leading-tight">
                 Paste a link or recipe text — we'll extract ingredients, estimate macros, and learn your preferences.
               </Text>
             </View>
 
             {/* ── PRIMARY: URL input ── */}
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 7 }}>
+            <Text className="text-[10px] font-bold uppercase tracking-widest text-[#8C9A90] dark:text-[#6E7C74] mb-2">
               Recipe URL
             </Text>
             <View
-              style={{
-                backgroundColor: 'white',
-                borderRadius: 14,
-                borderWidth: 1.5,
-                borderColor: url.trim() ? '#6DBE75' : 'rgba(0,0,0,0.09)',
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingHorizontal: 13,
-                paddingVertical: 12,
-                marginBottom: 18,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.04,
-                shadowRadius: 6,
-              }}
+              className={`flex-row items-center px-4 py-3.5 mb-5 rounded-[16px] border transition-colors ${url.trim() ? 'bg-surface dark:bg-darksurface border-primary/50 shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.04] border-black/[0.04] dark:border-white/10 hover:border-black/10 dark:hover:border-white/20 focus-within:border-black/20 dark:focus-within:border-white/30'}`}
             >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 8,
-                  backgroundColor: url.trim() ? 'rgba(109,190,117,0.12)' : 'rgba(0,0,0,0.04)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 10,
-                  flexShrink: 0,
-                }}
-              >
-                <FontAwesome5 name="link" size={11} color={url.trim() ? '#6DBE75' : '#C4C4C4'} />
+              <View className={`w-7 h-7 rounded-[8px] items-center justify-center mr-3 ${url.trim() ? 'bg-primary/10 dark:bg-primary/20' : 'bg-black/[0.04] dark:bg-white/[0.05]'}`}>
+                <FontAwesome5 name="link" size={11} color={url.trim() ? '#9DCD8B' : '#8C9A90'} />
               </View>
 
               <TextInput
@@ -366,66 +314,46 @@ function ModalContent({
                 value={url}
                 onChangeText={setUrl}
                 placeholder="https://..."
-                placeholderTextColor="#C4C4C4"
+                placeholderTextColor="#A0ABA5"
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
                 returnKeyType="done"
-                style={{
-                  flex: 1,
-                  fontSize: 15,
-                  color: '#1C1C1E',
-                  fontWeight: '500',
-                  outlineWidth: 0,
-                } as any}
+                className="flex-1 text-[16px] font-medium text-textMain dark:text-gray-200 outline-none"
+                style={{ outlineWidth: 0 } as any}
               />
 
               {url.trim() ? (
-                <TouchableOpacity onPress={() => setUrl('')} style={{ padding: 4, marginLeft: 6 }}>
-                  <FontAwesome5 name="times-circle" size={13} color="#D1D5DB" />
+                <TouchableOpacity onPress={() => setUrl('')} className="p-1 ml-2">
+                  <FontAwesome5 name="times-circle" size={14} color="#8C9A90" />
                 </TouchableOpacity>
               ) : null}
             </View>
 
             {/* ── DIVIDER ── */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.09)' }} />
-              <Text style={{ fontSize: 11, color: '#9CA3AF', fontWeight: '600', marginHorizontal: 14, letterSpacing: 0.3 }}>
-                or paste recipe text
-              </Text>
-              <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.09)' }} />
+            <View className="flex-row items-center mb-5">
+              <View className="flex-1 h-[1px] bg-black/[0.05] dark:bg-darksoftBorder" />
+              <Text className="text-[11px] font-medium text-textSec/60 dark:text-darktextSec/60 mx-4">or paste recipe text</Text>
+              <View className="flex-1 h-[1px] bg-black/[0.05] dark:bg-darksoftBorder" />
             </View>
 
             {/* ── SECONDARY: paste area — independent state ── */}
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 7 }}>
+            <Text className="text-[10px] font-bold uppercase tracking-widest text-[#8C9A90] dark:text-[#6E7C74] mb-2">
               Ingredients or method
             </Text>
             <View
-              style={{
-                backgroundColor: pastedText.trim() ? 'white' : 'rgba(0,0,0,0.02)',
-                borderRadius: 14,
-                borderWidth: 1.5,
-                borderColor: pastedText.trim() ? '#6DBE75' : 'rgba(0,0,0,0.08)',
-                padding: 13,
-                marginBottom: 22,
-              }}
+              className={`rounded-[16px] border p-4 mb-8 transition-colors ${pastedText.trim() ? 'bg-surface dark:bg-darksurface border-primary/50 shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.04] border-black/[0.04] dark:border-white/10 hover:border-black/10 dark:hover:border-white/20 focus-within:border-black/20 dark:focus-within:border-white/30'}`}
             >
               <TextInput
                 testID="import-recipe-text-input"
                 value={pastedText}
                 onChangeText={setPastedText}
                 placeholder="Paste ingredients, method, or any recipe text…"
-                placeholderTextColor="#C4C4C4"
+                placeholderTextColor="#A0ABA5"
                 multiline
                 textAlignVertical="top"
-                style={{
-                  fontSize: 14,
-                  color: '#1C1C1E',
-                  fontWeight: '400',
-                  minHeight: 80,
-                  lineHeight: 21,
-                  outlineWidth: 0,
-                } as any}
+                className="text-[15px] font-medium text-textMain dark:text-gray-200 min-h-[100px] outline-none leading-relaxed"
+                style={{ outlineWidth: 0 } as any}
               />
             </View>
 
@@ -434,15 +362,9 @@ function ModalContent({
               testID="import-recipe-submit-btn"
               onPress={onExtract}
               disabled={!hasInput}
-              style={{
-                paddingVertical: 14,
-                borderRadius: 15,
-                alignItems: 'center',
-                backgroundColor: '#1C1C1E',
-                opacity: hasInput ? 1 : 0.22,
-              }}
+              className={`py-4 rounded-full items-center transition-all ${hasInput ? 'bg-primary hover:bg-primary-hover shadow-[0_4px_16px_rgba(157,205,139,0.3)] active:scale-[0.98]' : 'bg-black/[0.04] dark:bg-white/[0.05]'}`}
             >
-              <Text style={{ fontSize: 15, fontWeight: '700', color: 'white', letterSpacing: 0.15 }}>
+              <Text className={`text-[16px] font-bold tracking-tight ${hasInput ? 'text-white' : 'text-textSec/50 dark:text-[#6E7C74]'}`}>
                 Extract recipe
               </Text>
             </TouchableOpacity>
@@ -451,163 +373,97 @@ function ModalContent({
 
         {/* ─── Step 2: Processing ─── */}
         {step === 'processing' && (
-          <View style={{ alignItems: 'center', justifyContent: 'center', padding: 36, paddingVertical: 50 }}>
-            {/* Main Visual: Spinner + Pulse */}
-            <View style={{ position: 'relative', marginBottom: 24, alignItems: 'center', justifyContent: 'center' }}>
-              <View
-                style={{
-                  width: 88,
-                  height: 88,
-                  backgroundColor: 'white',
-                  borderRadius: 44,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#6DBE75',
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 12,
-                }}
-              >
-                <ActivityIndicator size="large" color="#6DBE75" />
-              </View>
-              <View 
-                style={{
-                  position: 'absolute',
-                  width: 32,
-                  height: 32,
-                  backgroundColor: 'white',
-                  borderRadius: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 4,
-                }}
-              >
-                <FontAwesome5 name="leaf" size={14} color="#6DBE75" />
-              </View>
-            </View>
-
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#1C1C1E', marginBottom: 8, letterSpacing: -0.4 }}>
-              Provision is thinking…
-            </Text>
-            <Text style={{ fontSize: 13, color: '#9CA3AF', fontWeight: '500', textAlign: 'center', marginBottom: 32, paddingHorizontal: 20, lineHeight: 19 }}>
-              {processingText}
-            </Text>
-
-            {/* Simulated Progress Bar */}
-            <View style={{ width: '100%', maxWidth: 300, height: 6, backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 3, overflow: 'hidden', marginBottom: 32 }}>
-              <Animated.View 
-                style={{ 
-                  height: '100%', 
-                  backgroundColor: '#6DBE75', 
-                  width: processingText.includes('profile') ? '90%' : processingText.includes('macros') ? '60%' : '30%',
-                  borderRadius: 3
-                } as any}
-              />
-            </View>
-
-            {/* Step indicators — vertical list with connecting lines */}
-            <View style={{ width: '100%', maxWidth: 260 }}>
-              {[
-                { label: 'Reading recipe structure', done: true },
-                { label: 'Analyzing nutrition & complexity', done: processingText.includes('macros') || processingText.includes('profile') },
-                { label: 'Personalizing your taste profile', done: processingText.includes('profile') },
-              ].map((s, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 }}>
-                  <View style={{ alignItems: 'center', width: 20, marginRight: 12 }}>
-                    <View
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: 10,
-                        backgroundColor: s.done ? '#6DBE75' : 'rgba(0,0,0,0.04)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 2,
-                      }}
-                    >
-                      {s.done 
-                        ? <FontAwesome5 name="check" size={8} color="white" />
-                        : <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB' }} />
-                      }
-                    </View>
-                    {i < 2 && (
-                      <View 
-                        style={{ 
-                          position: 'absolute',
-                          top: 20,
-                          width: 2,
-                          height: 14,
-                          backgroundColor: s.done && (i === 0 ? (processingText.includes('macros') || processingText.includes('profile')) : processingText.includes('profile')) 
-                            ? '#6DBE75' 
-                            : 'rgba(0,0,0,0.04)',
-                        }} 
-                      />
-                    )}
-                  </View>
-                  <Text style={{ fontSize: 13, fontWeight: s.done ? '700' : '500', color: s.done ? '#1C1C1E' : '#C4C4C4', paddingTop: 1 }}>
-                    {s.label}
-                  </Text>
+          <View className="items-center justify-center p-8 md:p-12">
+            <View className="w-full max-w-[280px] items-center">
+              {/* Main Visual: Spinner + Pulse */}
+              <View className="relative mb-6 items-center justify-center">
+                <View className="w-20 h-20 bg-surface dark:bg-darkgrey rounded-full items-center justify-center shadow-[0_4px_24px_rgba(157,205,139,0.15)] dark:shadow-none border border-black/[0.05] dark:border-white/5">
+                  <ActivityIndicator size="large" color="#9DCD8B" />
                 </View>
-              ))}
+                <View className="absolute w-8 h-8 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
+                  <FontAwesome5 name="leaf" size={14} color="#9DCD8B" />
+                </View>
+              </View>
+
+              <Text className="text-[20px] font-bold text-textMain dark:text-darktextMain tracking-tight mb-2 text-center">
+                Provision is thinking…
+              </Text>
+              <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec text-center mb-8 leading-snug">
+                {processingText}
+              </Text>
+
+              {/* Simulated Progress Bar */}
+              <View className="w-full h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden mb-8">
+                <Animated.View 
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: processingText.includes('profile') ? '90%' : processingText.includes('macros') ? '60%' : '30%' } as any}
+                />
+              </View>
+
+              {/* Step indicators */}
+              <View className="w-full pl-2">
+                {[
+                  { label: 'Reading recipe structure', done: true },
+                  { label: 'Analyzing nutrition & complexity', done: processingText.includes('macros') || processingText.includes('profile') },
+                  { label: 'Personalizing your taste profile', done: processingText.includes('profile') },
+                ].map((s, i) => (
+                  <View key={i} className="flex-row items-start mb-4">
+                    <View className="items-center w-5 mr-3 relative">
+                      <View className={`w-5 h-5 rounded-full items-center justify-center z-10 ${s.done ? 'bg-primary shadow-sm' : 'bg-black/[0.04] dark:bg-white/[0.05]'}`}>
+                        {s.done 
+                          ? <FontAwesome5 name="check" size={8} color="white" />
+                          : <View className="w-1.5 h-1.5 rounded-full bg-black/20 dark:bg-white/20" />
+                        }
+                      </View>
+                      {i < 2 && (
+                        <View className={`absolute top-5 w-[2px] h-[20px] ${s.done && (i === 0 ? (processingText.includes('macros') || processingText.includes('profile')) : processingText.includes('profile')) ? 'bg-primary' : 'bg-black/[0.04] dark:bg-white/[0.05]'}`} />
+                      )}
+                    </View>
+                    <Text className={`text-[13px] pt-0.5 ${s.done ? 'font-bold text-textMain dark:text-darktextMain' : 'font-medium text-textSec/60 dark:text-darktextSec/60'}`}>
+                      {s.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
         )}
 
         {/* ─── Step 3: Review ─── */}
         {step === 'review' && (
-          <View style={isDesktop ? { flexDirection: 'row', flex: 1 } : { padding: 20 }}>
+          <View className={isDesktop ? "flex-row flex-1" : "p-6"}>
 
             {/* Left / top: recipe preview */}
-            <View
-              style={isDesktop
-                ? { width: 290, borderRightWidth: 1, borderRightColor: 'rgba(0,0,0,0.05)' }
-                : { marginBottom: 24 }
-              }
-            >
-              {/* Image — taller, better breathing room */}
-              <View style={{ height: isDesktop ? 200 : 150, position: 'relative' }}>
+            <View className={isDesktop ? "w-[290px] border-r border-black/[0.05] dark:border-darksoftBorder" : "mb-6"}>
+              {/* Image */}
+              <View className="relative w-full overflow-hidden" style={{ height: isDesktop ? 200 : 160 } as any}>
                 <Image
                   source={mockExtractedRecipe.imageUrl}
                   style={{ width: '100%', height: '100%' }}
                   contentFit="cover"
                 />
                 {/* Gradient overlay */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 70,
-                    background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.55))',
-                    justifyContent: 'flex-end',
-                    paddingHorizontal: 14,
-                    paddingBottom: 12,
-                  } as any}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <FontAwesome5 name="globe" size={9} color="rgba(255,255,255,0.6)" />
-                    <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: '600', letterSpacing: 0.5 }}>
+                <View className="absolute bottom-0 left-0 right-0 h-[70px] justify-end px-4 pb-3" style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))' } as any}>
+                  <View className="flex-row items-center gap-1.5">
+                    <FontAwesome5 name="globe" size={10} color="rgba(255,255,255,0.7)" />
+                    <Text className="text-white/90 text-[10px] font-bold tracking-widest uppercase">
                       {mockExtractedRecipe.domain}
                     </Text>
                   </View>
                 </View>
               </View>
 
-              {/* Recipe info — more breathing room */}
-              <View style={{ padding: isDesktop ? 20 : 0, paddingTop: isDesktop ? 18 : 16 }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: '#1C1C1E', letterSpacing: -0.3, marginBottom: 12, lineHeight: 21 }}>
+              {/* Recipe info */}
+              <View className={isDesktop ? "p-5 pt-4" : "pt-4"}>
+                <Text className="text-[16px] font-bold tracking-tight text-textMain dark:text-darktextMain mb-4 leading-snug">
                   {mockExtractedRecipe.title}
                 </Text>
 
                 {/* Tags */}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 16 }}>
+                <View className="flex-row flex-wrap gap-1.5 mb-5">
                   {mockExtractedRecipe.tags.map((tag: string) => (
-                    <View key={tag} style={{ backgroundColor: 'rgba(109,190,117,0.12)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 100 }}>
-                      <Text style={{ color: '#6DBE75', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.7 }}>
+                    <View key={tag} className="bg-sageTint dark:bg-darksageTint px-2.5 py-1 rounded-full">
+                      <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-wide">
                         {tag}
                       </Text>
                     </View>
@@ -615,33 +471,33 @@ function ModalContent({
                 </View>
 
                 {/* Macro stats */}
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 11 }}>
-                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#B0B0B0', textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 4 }}>Macros</Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#1C1C1E', lineHeight: 17 }}>{mockExtractedRecipe.macros}</Text>
+                <View className="flex-row gap-2">
+                  <View className="flex-1 bg-black/[0.03] dark:bg-white/[0.03] rounded-[16px] p-3.5 border border-transparent dark:border-white/5">
+                    <Text className="text-[9px] font-bold text-textSec/70 dark:text-darktextSec/70 uppercase tracking-widest mb-1.5">Macros</Text>
+                    <Text className="text-[12px] font-bold text-textMain dark:text-darktextMain leading-tight">{mockExtractedRecipe.macros}</Text>
                   </View>
-                  <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 11 }}>
-                    <Text style={{ fontSize: 9, fontWeight: '700', color: '#B0B0B0', textTransform: 'uppercase', letterSpacing: 0.9, marginBottom: 4 }}>Prep</Text>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#1C1C1E', lineHeight: 17 }}>{mockExtractedRecipe.effort} · {mockExtractedRecipe.time}</Text>
+                  <View className="flex-1 bg-black/[0.03] dark:bg-white/[0.03] rounded-[16px] p-3.5 border border-transparent dark:border-white/5">
+                    <Text className="text-[9px] font-bold text-textSec/70 dark:text-darktextSec/70 uppercase tracking-widest mb-1.5">Prep</Text>
+                    <Text className="text-[12px] font-bold text-textMain dark:text-darktextMain leading-tight">{mockExtractedRecipe.effort} · {mockExtractedRecipe.time}</Text>
                   </View>
                 </View>
               </View>
             </View>
 
             {/* Right / bottom: preference section */}
-            <View style={isDesktop ? { flex: 1, padding: 26, paddingTop: 26 } : { marginTop: 4 }}>
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 }}>
+            <View className={isDesktop ? "flex-1 p-7 pt-6" : "mt-2"}>
+              <Text className="text-[10px] font-bold uppercase tracking-widest text-[#8C9A90] dark:text-[#6E7C74] mb-2">
                 Extraction complete
               </Text>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: '#1C1C1E', letterSpacing: -0.3, marginBottom: 6 }}>
+              <Text className="text-[18px] font-bold tracking-tight text-textMain dark:text-darktextMain mb-1.5">
                 How should Provision learn from this?
               </Text>
-              <Text style={{ fontSize: 13, color: '#9CA3AF', fontWeight: '500', marginBottom: 22, lineHeight: 18 }}>
+              <Text className="text-[13px] font-medium text-textSec dark:text-darktextSec mb-6 leading-snug">
                 Your choice shapes which meals appear in future week plans.
               </Text>
 
               {/* Feedback options */}
-              <View style={{ gap: 5 }}>
+              <View className="gap-2 mb-2">
                 {FEEDBACK_OPTIONS.map((opt, index) => {
                   const isSelected = selectedFeedback === opt.id;
                   const isPrimary = index === 0;
@@ -650,64 +506,35 @@ function ModalContent({
                       key={opt.id}
                       testID={`import-recipe-feedback-${opt.id}`}
                       onPress={() => onFeedback(opt.id)}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        paddingVertical: 10,
-                        paddingHorizontal: 13,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: isSelected
-                          ? opt.color
+                      className={`flex-row items-center px-4 py-3 rounded-[16px] border transition-all ${
+                        isSelected 
+                          ? 'border-primary bg-primary/10 shadow-sm' 
                           : isPrimary
-                            ? 'rgba(109,190,117,0.28)'
-                            : 'rgba(0,0,0,0.06)',
-                        backgroundColor: isSelected
-                          ? `${opt.color}18`
-                          : isPrimary
-                            ? 'rgba(109,190,117,0.06)'
-                            : 'rgba(0,0,0,0.02)',
-                      }}
+                            ? 'border-primary/30 bg-primary/5 hover:bg-primary/10 dark:border-primary/20 dark:bg-primary/10'
+                            : 'border-black/[0.04] dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+                      }`}
                     >
-                      <View
-                        style={{
-                          width: 27,
-                          height: 27,
-                          borderRadius: 7,
-                          backgroundColor: `${opt.color}16`,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: 11,
-                        }}
-                      >
-                        <FontAwesome5 name={opt.icon} size={11} color={opt.color} />
+                      <View className={`w-7 h-7 rounded-[8px] items-center justify-center mr-3 ${isSelected ? 'bg-primary/20' : isPrimary ? 'bg-white dark:bg-black/20 shadow-sm dark:shadow-none' : 'bg-black/[0.04] dark:bg-white/[0.05]'}`}>
+                        <FontAwesome5 name={opt.icon} size={11} color={isSelected || isPrimary ? opt.color : '#8C9A90'} />
                       </View>
-                      <Text style={{ fontSize: 13.5, fontWeight: isPrimary ? '700' : '600', color: isSelected ? opt.color : isPrimary ? '#1C1C1E' : '#374151', flex: 1 }}>
+                      <Text className={`flex-1 text-[14px] ${isSelected ? 'font-bold text-primary dark:text-[#85B674]' : isPrimary ? 'font-bold text-textMain dark:text-darktextMain' : 'font-medium text-textSec dark:text-darktextSec'}`}>
                         {opt.label}
                       </Text>
                       {isSelected && (
-                        <FontAwesome5 name="check" size={10} color={opt.color} />
+                        <FontAwesome5 name="check" size={12} color="#9DCD8B" />
                       )}
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              {/* Secondary save — more visible outlined style */}
+              {/* Secondary save */}
               <TouchableOpacity
                 testID="import-recipe-skip-btn"
                 onPress={() => onFeedback('saved_only')}
-                style={{
-                  alignItems: 'center',
-                  marginTop: 12,
-                  paddingVertical: 10,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: 'rgba(0,0,0,0.09)',
-                  backgroundColor: 'rgba(0,0,0,0.02)',
-                }}
+                className="mt-3 py-3 rounded-[16px] items-center border border-black/[0.06] dark:border-white/10 bg-black/[0.01] dark:bg-white/[0.01] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors"
               >
-                <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '600' }}>
+                <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec">
                   Just save this recipe
                 </Text>
               </TouchableOpacity>

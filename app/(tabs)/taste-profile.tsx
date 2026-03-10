@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,29 +23,29 @@ const InfoRow = ({ label, value, icon, color, onPress, testID }: { label: string
     testID={testID}
     onPress={onPress}
     disabled={!onPress}
-    className="flex-row items-center justify-between py-4 border-b border-black/5 dark:border-white/5 last:border-0"
+    className="flex-row items-center justify-between py-5 border-b border-black/[0.03] dark:border-darksoftBorder last:border-0 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors"
   >
-    <View className="flex-row items-center">
-      <View className={`w-10 h-10 rounded-xl ${color} items-center justify-center mr-4 shadow-sm`}>
-        <FontAwesome5 name={icon} size={16} color="white" />
+    <View className="flex-row items-center pl-2">
+      <View className={`w-12 h-12 rounded-[16px] ${color} items-center justify-center mr-5 shadow-sm`}>
+        <FontAwesome5 name={icon} size={16} color={color.includes('bg-') ? 'white' : 'currentColor'} />
       </View>
       <View>
-        <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-0.5">{label}</Text>
-        <Text className="text-charcoal dark:text-darkcharcoal text-lg font-extrabold">{value}</Text>
+        <Text className="text-textSec dark:text-darktextSec text-[11px] font-bold uppercase tracking-widest mb-1">{label}</Text>
+        <Text className="text-textMain dark:text-darktextMain text-[20px] font-medium tracking-tight">{value}</Text>
       </View>
     </View>
     {onPress && (
-      <View className="w-8 h-8 rounded-full bg-gray-100 dark:bg-black/20 items-center justify-center">
-        <FontAwesome5 name="pen" size={10} color="#9CA3AF" />
+      <View className="w-9 h-9 rounded-full bg-black/[0.03] dark:bg-white/[0.05] items-center justify-center mr-2">
+        <FontAwesome5 name="pen" size={12} color="#8C9A90" />
       </View>
     )}
   </TouchableOpacity>
 );
 
 const IntelligenceBadge = ({ label, icon, color }: { label: string, icon: string, color: string }) => (
-  <View className={`flex-row items-center px-3 py-1.5 rounded-xl border ${color}`}>
-    <FontAwesome5 name={icon} size={10} color="currentColor" className="mr-2" />
-    <Text className="font-extrabold text-[10px] uppercase tracking-wider">{label}</Text>
+  <View className={`flex-row items-center px-4 py-2.5 rounded-full border ${color}`}>
+    <FontAwesome5 name={icon} size={12} color="currentColor" className="mr-2" />
+    <Text className="font-semibold text-[13px] tracking-wide">{label}</Text>
   </View>
 );
 
@@ -57,13 +57,23 @@ const CoreRuleModal = ({
 }) => {
   const [tempValue, setTempValue] = useState(value);
   
-  React.useEffect(() => { if (visible) setTempValue(value) }, [visible, value]);
+  useEffect(() => { if (visible) setTempValue(value) }, [visible, value]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && visible) {
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }
+  }, [visible, onClose]);
 
   return (
     <Modal visible={visible} animationType="fade" transparent={true}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 justify-center items-center bg-black/40 p-4">
-        <View className="bg-white dark:bg-darkgrey w-full max-w-[320px] rounded-[32px] p-6 shadow-xl border border-black/5 dark:border-white/10">
-          <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight mb-6">{title}</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 justify-center items-center bg-black/40 dark:bg-black/60 p-4">
+        <View className="bg-surface dark:bg-darksurface w-full max-w-[340px] rounded-[32px] p-8 shadow-xl border border-black/[0.05] dark:border-darksoftBorder">
+          <Text className="text-textMain dark:text-darktextMain text-[24px] font-medium tracking-tight mb-6">{title}</Text>
           
           {type === 'diet' ? (
             <View className="flex-col gap-2">
@@ -71,33 +81,33 @@ const CoreRuleModal = ({
                 <TouchableOpacity 
                   key={option}
                   onPress={() => setTempValue(option)}
-                  className={`py-3.5 px-4 rounded-xl border transition-all ${tempValue === option ? 'bg-avocado border-avocado shadow-sm' : 'bg-gray-50 dark:bg-black/20 border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  className={`py-4 px-5 rounded-[20px] border transition-all ${tempValue === option ? 'bg-primary border-primary shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'}`}
                 >
-                  <Text className={`font-bold text-base ${tempValue === option ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>{option}</Text>
+                  <Text className={`font-medium text-[16px] ${tempValue === option ? 'text-white' : 'text-textSec dark:text-darktextSec'}`}>{option}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
-            <View className="flex-row items-center justify-center bg-gray-50 dark:bg-black/20 p-4 rounded-2xl border border-black/5 dark:border-white/5">
-              {prefix && <Text className="text-gray-400 dark:text-gray-500 font-extrabold text-3xl mr-1">{prefix}</Text>}
+            <View className="flex-row items-center justify-center bg-black/[0.02] dark:bg-white/[0.02] p-6 rounded-[24px] border border-black/[0.04] dark:border-white/5">
+              {prefix && <Text className="text-textSec/60 dark:text-darktextSec/60 font-medium text-[32px] mr-1">{prefix}</Text>}
               <TextInput
                 autoFocus
                 keyboardType="numeric"
                 value={tempValue}
                 onChangeText={setTempValue}
-                className="text-charcoal dark:text-white font-extrabold text-3xl text-center outline-none min-w-[60px]"
+                className="text-textMain dark:text-darktextMain font-medium text-[40px] text-center outline-none min-w-[80px]"
                 style={{ outlineWidth: 0 } as any}
               />
-              {suffix && <Text className="text-gray-400 dark:text-gray-500 font-bold text-xl ml-2">{suffix}</Text>}
+              {suffix && <Text className="text-textSec/60 dark:text-darktextSec/60 font-medium text-[20px] ml-2">{suffix}</Text>}
             </View>
           )}
 
           <View className="flex-row gap-3 mt-8">
-            <TouchableOpacity onPress={onClose} className="flex-1 py-3.5 rounded-xl border border-black/10 dark:border-white/10 items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/5">
-              <Text className="text-gray-500 font-bold">Cancel</Text>
+            <TouchableOpacity onPress={onClose} className="flex-1 py-4 rounded-full border border-black/10 dark:border-white/10 items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-95">
+              <Text className="text-textSec dark:text-darktextSec font-medium text-[15px]">Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { onSave(tempValue); onClose(); }} className="flex-1 bg-avocado py-3.5 rounded-xl items-center justify-center shadow-md hover:scale-[1.02] transition-transform">
-              <Text className="text-white font-bold">Save</Text>
+            <TouchableOpacity onPress={() => { onSave(tempValue); onClose(); }} className="flex-1 bg-primary py-4 rounded-full items-center justify-center shadow-sm hover:bg-primary-hover active:scale-95 transition-all">
+              <Text className="text-white font-medium text-[15px]">Save</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -124,9 +134,9 @@ const ChipSelector = ({
             key={tag}
             testID={`chip-selector-${tag.replace(/\s+/g, '-').toLowerCase()}`}
             onPress={() => onToggle(tag)}
-            className={`px-4 py-2.5 rounded-2xl border transition-all active:scale-95 ${isSelected ? `${activeColor} shadow-sm` : 'bg-white dark:bg-darkgrey border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}`}
+            className={`px-5 py-3 rounded-full border transition-all active:scale-95 ${isSelected ? `${activeColor} shadow-sm border-transparent` : 'bg-surface dark:bg-darksurface border-black/[0.05] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}`}
           >
-            <Text className={`font-bold text-sm ${isSelected ? 'text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+            <Text className={`font-medium text-[14px] ${isSelected ? 'text-white' : 'text-textSec dark:text-darktextSec'}`}>
               {tag}
             </Text>
           </TouchableOpacity>
@@ -135,7 +145,7 @@ const ChipSelector = ({
 
       {/* Custom Tag Entry */}
       {isAddingCustom ? (
-        <View className="flex-row items-center bg-white dark:bg-darkgrey border-2 border-avocado rounded-2xl px-3 py-1 w-40 shadow-sm">
+        <View className="flex-row items-center bg-surface dark:bg-darksurface border border-primary rounded-full px-5 py-1.5 w-40 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
           <TextInput
             testID="chip-selector-custom-input"
             autoFocus
@@ -144,8 +154,8 @@ const ChipSelector = ({
             onSubmitEditing={onAddCustom}
             onBlur={() => { if (!customText.trim()) setIsAddingCustom(false); }}
             placeholder="Type..."
-            placeholderTextColor="#9ca3af"
-            className="flex-1 text-charcoal dark:text-white font-bold text-sm outline-none w-full"
+            placeholderTextColor="#8C9A90"
+            className="flex-1 text-textMain dark:text-darktextMain font-medium text-[14px] outline-none w-full"
             style={{ outlineWidth: 0, paddingVertical: 6 } as any}
           />
         </View>
@@ -153,10 +163,10 @@ const ChipSelector = ({
         <TouchableOpacity
           testID="chip-selector-add-btn"
           onPress={() => setIsAddingCustom(true)}
-          className="px-4 py-2.5 rounded-2xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-black/20 hover:bg-gray-100 dark:hover:bg-black/40 hover:border-gray-400 dark:hover:border-gray-500 transition-all active:scale-95 flex-row items-center"
+          className="px-5 py-3 rounded-full border border-dashed border-black/10 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-all active:scale-95 flex-row items-center"
         >
-          <FontAwesome5 name="plus" size={10} color="#9CA3AF" className="mr-2" />
-          <Text className="font-bold text-sm text-gray-500 dark:text-gray-400">Add</Text>
+          <FontAwesome5 name="plus" size={10} color="#8C9A90" className="mr-2" />
+          <Text className="font-medium text-[14px] text-textSec dark:text-darktextSec">Add</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -173,21 +183,21 @@ function SlotPicker({ options, value, onChange }: {
   onChange: (v: string) => void;
 }) {
   return (
-    <View className="flex-row bg-black/[0.05] dark:bg-white/5 rounded-xl p-0.5 gap-0.5">
+    <View className="flex-row bg-black/[0.04] dark:bg-white/[0.05] rounded-[12px] p-1 gap-1 flex-1 h-10 items-center justify-between">
       {options.map(opt => {
         const active = opt.value === value;
         return (
           <TouchableOpacity
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            className={`px-2.5 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 h-full items-center justify-center rounded-[8px] transition-all ${
               active
-                ? 'bg-white dark:bg-darkgrey shadow-sm'
-                : 'hover:bg-black/5 dark:hover:bg-white/5'
+                ? 'bg-surface dark:bg-[#343A36] shadow-[0_1px_4px_rgba(0,0,0,0.08)] dark:shadow-none border border-black/[0.02] dark:border-white/5'
+                : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.02] border border-transparent'
             }`}
           >
-            <Text className={`text-[11px] font-bold text-center leading-none ${
-              active ? 'text-charcoal dark:text-white' : 'text-gray-400 dark:text-gray-500'
+            <Text className={`text-[11px] font-bold text-center leading-none tracking-wide ${
+              active ? 'text-textMain dark:text-darktextMain' : 'text-textSec/60 dark:text-darktextSec/60'
             }`}>
               {opt.label}
             </Text>
@@ -215,49 +225,49 @@ function WeeklyRoutineSection() {
   return (
     <View className="mt-6">
       {/* Preset pills */}
-      <View className="flex-row flex-wrap gap-2 mb-6">
+      <View className="flex-row flex-wrap gap-2.5 mb-8">
         {ROUTINE_PRESETS.map(preset => (
           <TouchableOpacity
             key={preset.key}
             onPress={() => handlePreset(preset.key, preset.routine)}
-            className={`px-3.5 py-2 rounded-xl border transition-all ${
+            className={`px-5 py-2.5 rounded-full border transition-all active:scale-95 ${
               activePreset === preset.key
-                ? 'bg-avocado/10 border-avocado/30'
-                : 'bg-white/60 dark:bg-white/5 border-black/5 dark:border-white/10 hover:bg-black/5'
+                ? 'bg-primary/10 border-primary/20 shadow-sm dark:bg-darksageTint dark:border-darksageTint'
+                : 'bg-surface dark:bg-darksurface border-black/[0.03] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
             }`}
           >
-            <Text className={`text-xs font-bold ${
-              activePreset === preset.key ? 'text-avocado' : 'text-gray-500 dark:text-gray-400'
+            <Text className={`text-[13px] font-medium ${
+              activePreset === preset.key ? 'text-primary dark:text-white' : 'text-textSec dark:text-darktextSec'
             }`}>{preset.label}</Text>
           </TouchableOpacity>
         ))}
         <TouchableOpacity
           onPress={() => handlePreset('full', ROUTINE_PRESETS[0].routine)}
-          className="px-3.5 py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:bg-black/5 transition-all"
+          className="px-5 py-2.5 rounded-full border border-dashed border-black/10 dark:border-white/10 hover:bg-black/[0.02] transition-all active:scale-95"
         >
-          <Text className="text-xs font-bold text-gray-400">Reset</Text>
+          <Text className="text-[13px] font-medium text-textSec/60 dark:text-darktextSec/60">Reset Defaults</Text>
         </TouchableOpacity>
       </View>
 
       {/* Column headers */}
-      <View className="flex-row mb-2 pl-14">
-        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Breakfast</Text>
-        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Lunch</Text>
-        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">Dinner</Text>
+      <View className="flex-row mb-3 pl-[88px] pr-4">
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-textSec/60 dark:text-darktextSec/60 text-center">Breakfast</Text>
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-textSec/60 dark:text-darktextSec/60 text-center">Lunch</Text>
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-widest text-textSec/60 dark:text-darktextSec/60 text-center">Dinner</Text>
       </View>
 
       {/* Day rows */}
-      <View className="bg-white/50 dark:bg-darkgrey/50 rounded-3xl overflow-hidden border border-black/5 dark:border-white/5 shadow-sm">
+      <View className="bg-surface dark:bg-darksurface rounded-[32px] overflow-hidden border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] py-2">
         {DAYS.map((day, idx) => (
           <View
             key={day}
-            className={`flex-row items-center px-4 py-3 ${
-              idx < DAYS.length - 1 ? 'border-b border-black/[0.04] dark:border-white/[0.04]' : ''
+            className={`flex-row items-center px-4 py-3.5 ${
+              idx < DAYS.length - 1 ? 'border-b border-black/[0.03] dark:border-darksoftBorder' : ''
             }`}
           >
             {/* Day label */}
-            <View className="w-10 mr-4">
-              <Text className="font-extrabold text-xs text-charcoal dark:text-white uppercase tracking-widest">{day}</Text>
+            <View className="w-[64px] mr-2">
+              <Text className="font-bold text-[11px] text-textMain dark:text-darktextMain uppercase tracking-[0.2em]">{day}</Text>
             </View>
 
             {/* Breakfast picker */}
@@ -316,6 +326,19 @@ export default function TasteProfileScreen() {
   const [customRestrictionText, setCustomRestrictionText] = useState('');
   const [isAddingRestriction, setIsAddingRestriction] = useState(false);
 
+  useEffect(() => {
+    if (Platform.OS === 'web' && (isImportOpen || editingRule)) {
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsImportOpen(false);
+          setEditingRule(null);
+        }
+      };
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }
+  }, [isImportOpen, editingRule]);
+
   const deleteRecipe = (id: string) => {
     setScrapedRecipes(prev => prev.filter(r => r.id !== id));
   };
@@ -367,7 +390,7 @@ export default function TasteProfileScreen() {
   }, [selectedRestrictions]);
 
   return (
-    <SafeAreaView testID="taste-profile-screen" className="flex-1 bg-cream dark:bg-darkcream">
+    <SafeAreaView testID="taste-profile-screen" className="flex-1 bg-appBg dark:bg-darkappBg">
       <ScrollView testID="taste-profile-scroll" className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="flex-1 w-full mx-auto md:max-w-4xl px-4 md:px-8 pt-10 pb-32 min-h-[90vh]">
           
@@ -378,106 +401,97 @@ export default function TasteProfileScreen() {
             subtitle="What shapes your recommendations."
           />
 
-          {/* Synthesized DNA Summary (Intelligence Area) */}
-          <View className="bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 md:p-8 relative overflow-hidden shadow-sm border border-white dark:border-white/5 backdrop-blur-md">
-              <View className="flex-row justify-between items-start z-10">
-                <View className="flex-1">
-                  <View className="flex-row items-center mb-2">
-                    <FontAwesome5 name="brain" size={14} color="#6DBE75" className="mr-2" />
-                    <Text className="text-avocado font-bold uppercase tracking-widest text-xs">WHAT WE'RE LEARNING</Text>
-                  </View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl md:text-3xl font-extrabold tracking-tight mb-4">
-                    Extracted Preferences
-                  </Text>
-                  <View className="flex-row flex-wrap gap-2 mb-4">
-                    {dynamicBadges.map((badge, idx) => (
-                      <IntelligenceBadge key={idx} label={badge.label} icon={badge.icon} color={badge.color} />
-                    ))}
-                  </View>
-
-                  <View className="border-t border-black/5 dark:border-white/5 pt-4">
-                    <Text className="text-gray-400 dark:text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2">Exclusions</Text>
-                    <View className="flex-row flex-wrap gap-2">
-                       {dynamicAvoids.length === 0 ? (
-                         <Text className="text-charcoal/40 dark:text-white/40 text-xs font-bold italic">No active exclusions</Text>
-                       ) : (
-                         dynamicAvoids.map((avoid, idx) => (
-                           <View key={idx} className="flex-row items-center mr-3 mb-1">
-                             <FontAwesome5 name="times-circle" size={10} color="#FF6B5A" className="mr-1.5" />
-                             <Text className="text-charcoal/60 dark:text-white/60 text-xs font-bold">{avoid}</Text>
-                           </View>
-                         ))
-                       )}
-                    </View>
-                  </View>
+          {/* Synthesis Hero Area */}
+          <View className="bg-surface dark:bg-darksurface rounded-[32px] p-6 md:p-8 relative overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-darksoftBorder mb-12">
+            <View className="flex-row justify-between items-start z-10">
+              <View className="flex-1">
+                <View className="flex-row items-center mb-3">
+                  <FontAwesome5 name="brain" size={14} color="#8C9A90" className="mr-2" />
+                  <Text className="text-textSec dark:text-darktextSec font-bold uppercase tracking-widest text-[11px]">Intelligent Overview</Text>
                 </View>
-                <View className="items-end justify-start hidden sm:flex">
-                  <View className="bg-avocado/10 px-3 py-1.5 rounded-xl border border-avocado/20 flex-row items-center">
-                    <FontAwesome5 name="bolt" size={10} color="#6DBE75" className="mr-2" />
-                    <Text className="text-avocado font-bold text-[10px] uppercase tracking-wider">
-                      Learned from {scrapedRecipes.length} imports & onboarding
-                    </Text>
+                <Text className="text-textMain dark:text-darktextMain text-[28px] md:text-[32px] font-medium tracking-tight mb-6">
+                  Your Taste Identity
+                </Text>
+                
+                <View className="flex-row flex-wrap gap-2.5 mb-6">
+                  {dynamicBadges.map((badge, idx) => (
+                    <IntelligenceBadge key={idx} label={badge.label} icon={badge.icon} color={badge.color} />
+                  ))}
+                </View>
+
+                <View className="flex-row items-center border-t border-black/[0.04] dark:border-darksoftBorder pt-5">
+                  <Text className="text-textSec dark:text-darktextSec text-[11px] font-bold uppercase tracking-widest mr-4">Avoids</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                     {dynamicAvoids.length === 0 ? (
+                       <Text className="text-textSec/60 dark:text-darktextSec/60 text-[13px] font-medium italic">No active exclusions</Text>
+                     ) : (
+                       dynamicAvoids.map((avoid, idx) => (
+                         <View key={idx} className="bg-danger/10 px-3 py-1.5 rounded-lg flex-row items-center">
+                           <FontAwesome5 name="times-circle" size={10} color="#D97C6C" className="mr-1.5" />
+                           <Text className="text-danger dark:text-[#D97C6C] font-semibold text-[12px]">{avoid}</Text>
+                         </View>
+                       ))
+                     )}
                   </View>
                 </View>
               </View>
-              {/* Background abstract decoration placeholder */}
-              <View className="absolute -bottom-10 -right-10 w-40 h-40 bg-avocado/20 rounded-full blur-3xl opacity-30" />
+              <View className="items-end justify-start hidden sm:flex">
+                <View className="bg-primary/10 px-4 py-2 rounded-2xl border border-primary/20 flex-row items-center">
+                  <FontAwesome5 name="bolt" size={12} color="#7BA96A" className="mr-2.5" />
+                  <Text className="text-primary font-bold text-[11px] uppercase tracking-wider">
+                    {scrapedRecipes.length} Learning Signals
+                  </Text>
+                </View>
+              </View>
             </View>
+          </View>
 
           <View className="gap-y-16">
             
-            {/* 1. Core Rules (User Defined) */}
+            {/* 1. Planning Guardrails (Unified Core Rules + Dietary Goals) */}
             <View>
-              <View className="flex-row justify-between items-center mb-6">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Core Rules</Text>
-                  <Text className="text-gray-500 text-sm font-medium">What you've explicitly told us.</Text>
+              <View className="mb-6 pl-2">
+                <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Planning Guardrails</Text>
+                <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Foundational rules for your recommendations.</Text>
+              </View>
+
+              <View className="bg-surface dark:bg-darksurface rounded-[32px] p-2 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-darksoftBorder mb-6">
+                <View className="px-4">
+                  <InfoRow 
+                    testID="taste-profile-diet-row"
+                    label="Baseline Diet" 
+                    value={diet} 
+                    icon="leaf" 
+                    color="bg-primary" 
+                    onPress={() => setEditingRule({ title: 'Baseline Diet', value: diet, type: 'diet', onSave: setDiet })} 
+                  />
+                  <InfoRow 
+                    testID="taste-profile-budget-row"
+                    label="Weekly Budget" 
+                    value={`£${budget}`} 
+                    icon="pound-sign" 
+                    color="bg-peach" 
+                    onPress={() => setEditingRule({ title: 'Weekly budget', value: budget.toString(), type: 'number', prefix: '£', onSave: (v) => setBudget(Number(v) || budget) })} 
+                  />
+                  <InfoRow 
+                    testID="taste-profile-calorie-row"
+                    label="Calorie Ceiling" 
+                    value={`${calorieGoal} kcal`} 
+                    icon="fire" 
+                    color="bg-danger" 
+                    onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => setCalorieGoal(Number(v) || calorieGoal) })} 
+                  />
                 </View>
               </View>
 
-              <View className="bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 shadow-sm border border-white dark:border-white/5">
-                <InfoRow 
-                  testID="taste-profile-diet-row"
-                  label="Baseline Diet" 
-                  value={diet} 
-                  icon="leaf" 
-                  color="bg-avocado shadow-avocado/30" 
-                  onPress={() => setEditingRule({ title: 'Baseline Diet', value: diet, type: 'diet', onSave: setDiet })} 
-                />
-                <InfoRow 
-                   testID="taste-profile-budget-row"
-                   label="Weekly Budget" 
-                  value={`£${budget}`} 
-                  icon="pound-sign" 
-                  color="bg-tomato shadow-tomato/30" 
-                  onPress={() => setEditingRule({ title: 'Weekly budget', value: budget.toString(), type: 'number', prefix: '£', onSave: (v) => setBudget(Number(v) || budget) })} 
-                />
-                <InfoRow 
-                  testID="taste-profile-calorie-row"
-                  label="Calorie Ceiling" 
-                  value={`${calorieGoal} kcal`} 
-                  icon="fire" 
-                  color="bg-blueberry shadow-blueberry/30" 
-                  onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => setCalorieGoal(Number(v) || calorieGoal) })} 
-                />
-              </View>
-            </View>
-
-            {/* 1.5 Dietary Goals & Restrictions (Optional Refinement Layer) */}
-            <View>
-              <View className="flex-row justify-between items-center mb-6">
+              {/* Goals & Restrictions Chips (Integrated as a sub-section of Guardrails) */}
+              <View className="bg-surface dark:bg-darksurface rounded-[32px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-darksoftBorder space-y-8">
                 <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Goals & Restrictions</Text>
-                  <Text className="text-gray-500 text-sm font-medium">Fine-tune your recommendations.</Text>
-                </View>
-              </View>
-
-              <View className="bg-white/60 dark:bg-darkgrey/60 rounded-[32px] p-6 shadow-sm border border-white dark:border-white/5 space-y-8">
-                {/* Goals */}
-                <View>
-                  <View className="flex-row items-center mb-4">
-                    <FontAwesome5 name="bullseye" size={12} color="#4F7FFF" className="mr-2" />
-                    <Text className="text-charcoal dark:text-gray-300 font-bold uppercase tracking-widest text-xs">Dietary Goals</Text>
+                  <View className="flex-row items-center mb-5">
+                    <View className="w-8 h-8 rounded-full bg-blueberry/10 items-center justify-center mr-3">
+                      <FontAwesome5 name="bullseye" size={12} color="#4F7FFF" />
+                    </View>
+                    <Text className="text-textMain dark:text-darktextMain font-medium text-[16px]">Active Goals</Text>
                   </View>
                   <ChipSelector 
                     options={PREDEFINED_GOALS}
@@ -498,11 +512,12 @@ export default function TasteProfileScreen() {
                   />
                 </View>
 
-                {/* Restrictions */}
-                <View className="border-t border-black/5 dark:border-white/5 pt-6">
-                  <View className="flex-row items-center mb-4">
-                    <FontAwesome5 name="ban" size={12} color="#FF6B5A" className="mr-2" />
-                    <Text className="text-charcoal dark:text-gray-300 font-bold uppercase tracking-widest text-xs">Exclusions & Allergies</Text>
+                <View className="border-t border-black/[0.04] dark:border-darksoftBorder pt-6">
+                  <View className="flex-row items-center mb-5">
+                    <View className="w-8 h-8 rounded-full bg-danger/10 items-center justify-center mr-3">
+                      <FontAwesome5 name="ban" size={12} color="#FF6B5A" />
+                    </View>
+                    <Text className="text-textMain dark:text-darktextMain font-medium text-[16px]">Exclusions & Allergies</Text>
                   </View>
                   <ChipSelector 
                     options={PREDEFINED_RESTRICTIONS}
@@ -519,7 +534,7 @@ export default function TasteProfileScreen() {
                       setCustomRestrictionText('');
                       setIsAddingRestriction(false);
                     }}
-                    activeColor="bg-tomato text-white border-tomato"
+                    activeColor="bg-danger text-white border-danger"
                   />
                 </View>
               </View>
@@ -527,41 +542,41 @@ export default function TasteProfileScreen() {
 
             {/* 2. Learned Context (Live Engine Activity) */}
             <View>
-              <View className="flex-row justify-between items-center mb-6">
-                <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">What Provision has learned</Text>
-                  <Text className="text-gray-500 text-sm font-medium">Recipes and actions shaping future recommendations.</Text>
+              <View className="flex-row justify-between items-end mb-6 pl-2">
+                <View className="flex-1 pr-4">
+                  <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Vibe Signals</Text>
+                  <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Signals learned from your imports.</Text>
                 </View>
                 <TouchableOpacity 
                   testID="taste-profile-add-recipe-btn"
                   onPress={() => setIsImportOpen(true)}
-                  className="bg-avocado/10 px-4 py-2.5 rounded-xl border border-avocado/20 flex-row items-center justify-center hover:bg-avocado/20 transition-colors shadow-sm ml-4"
+                  className="bg-primary hover:bg-primary-hover active:scale-95 transition-all px-5 py-3 rounded-full shadow-sm flex-row items-center justify-center"
                 >
-                  <FontAwesome5 name="plus" size={10} color="#6DBE75" className="mr-2" />
-                  <Text className="text-avocado font-bold text-sm tracking-wide">Import recipe</Text>
+                  <FontAwesome5 name="plus" size={12} color="white" className="mr-2" />
+                  <Text className="text-white font-medium text-[14px] tracking-wide">Import</Text>
                 </TouchableOpacity>
               </View>
 
               <View className="gap-y-4">
                 {/* Behavioral Signals */}
                 {(selectedGoals.length > 0 || diet !== 'Omnivore' || selectedRestrictions.length > 0) && (
-                  <View className="flex-row flex-wrap gap-2 mb-2">
+                  <View className="flex-row flex-wrap gap-2 mb-2 pl-2">
                     {diet !== 'Omnivore' && (
-                      <View className="bg-avocado/10 border border-avocado/20 px-3 py-1.5 rounded-full flex-row items-center">
-                        <FontAwesome5 name="info-circle" size={10} color="#6DBE75" className="mr-2" />
-                        <Text className="text-avocado text-xs font-bold">Baseline: {diet}</Text>
+                      <View className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full flex-row items-center">
+                        <FontAwesome5 name="info-circle" size={10} color="#7BA96A" className="mr-2" />
+                        <Text className="text-primary text-[11px] font-bold uppercase tracking-wider">Baseline: {diet}</Text>
                       </View>
                     )}
                     {selectedGoals.map(goal => (
                       <View key={`goal-${goal}`} className="bg-blueberry/10 border border-blueberry/20 px-3 py-1.5 rounded-full flex-row items-center">
                         <FontAwesome5 name="info-circle" size={10} color="#4F7FFF" className="mr-2" />
-                        <Text className="text-blueberry text-xs font-bold">Goal: {goal}</Text>
+                        <Text className="text-blueberry text-[11px] font-bold uppercase tracking-wider">Goal: {goal}</Text>
                       </View>
                     ))}
                     {selectedRestrictions.map(res => (
-                      <View key={`res-${res}`} className="bg-tomato/10 border border-tomato/20 px-3 py-1.5 rounded-full flex-row items-center">
+                      <View key={`res-${res}`} className="bg-danger/10 border border-danger/20 px-3 py-1.5 rounded-full flex-row items-center">
                         <FontAwesome5 name="info-circle" size={10} color="#FF6B5A" className="mr-2" />
-                        <Text className="text-tomato text-xs font-bold">Avoid: {res.replace(/^(Avoid|No)\s+/i, '')}</Text>
+                        <Text className="text-danger dark:text-[#D97C6C] text-[11px] font-bold uppercase tracking-wider">Avoid: {res.replace(/^(Avoid|No)\s+/i, '')}</Text>
                       </View>
                     ))}
                   </View>
@@ -569,26 +584,26 @@ export default function TasteProfileScreen() {
 
                 {/* Imported Recipes */}
                 {scrapedRecipes.length === 0 ? (
-                  <View className="bg-white/40 dark:bg-darkgrey/40 rounded-[32px] p-10 items-center justify-center border border-dashed border-black/10 dark:border-white/10">
-                    <FontAwesome5 name="cloud-download-alt" size={32} color="#6DBE75" className="mb-4" />
-                    <Text className="text-gray-500 text-center font-bold">No recipes imported yet.</Text>
-                    <Text className="text-gray-400 text-center text-xs mt-1">Add URLs on the dashboard to shape your DNA.</Text>
+                  <View className="bg-surface dark:bg-darksurface rounded-[32px] p-10 items-center justify-center border border-dashed border-black/10 dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+                    <FontAwesome5 name="cloud-download-alt" size={32} color="#8C9A90" className="mb-4 opacity-50" />
+                    <Text className="text-textSec dark:text-darktextSec text-center font-medium text-[16px]">No signals imported yet.</Text>
+                    <Text className="text-textSec/60 dark:text-darktextSec/60 text-center text-[13px] mt-1">Import recipes to shape your DNA.</Text>
                   </View>
                 ) : (
                   scrapedRecipes.map((item) => (
-                    <View key={item.id} className="bg-white dark:bg-darkgrey rounded-[28px] p-5 shadow-sm border border-black/5 dark:border-white/5 flex-row justify-between items-start">
+                    <View key={item.id} className="bg-surface dark:bg-darksurface rounded-[28px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-black/[0.03] dark:border-darksoftBorder flex-row justify-between items-start">
                       <View className="flex-1 pr-6">
-                        <View className="flex-row items-center mb-1.5">
-                          <Text className="text-gray-400 text-[10px] font-extrabold uppercase tracking-widest">{item.domain}</Text>
-                          <View className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-2" />
-                          <Text className="text-gray-400/80 text-[10px] font-bold uppercase tracking-widest">{item.date}</Text>
+                        <View className="flex-row items-center mb-2.5">
+                          <Text className="text-textSec dark:text-darktextSec text-[11px] font-bold uppercase tracking-widest">{item.domain}</Text>
+                          <View className="w-1 h-1 bg-black/10 dark:bg-white/10 rounded-full mx-2" />
+                          <Text className="text-textSec/60 dark:text-darktextSec/60 text-[11px] font-bold uppercase tracking-widest">{item.date}</Text>
                         </View>
-                        <Text className="text-charcoal dark:text-darkcharcoal font-extrabold text-xl leading-tight mb-3">{item.title}</Text>
+                        <Text className="text-textMain dark:text-darktextMain font-medium text-[20px] leading-tight mb-4 tracking-tight">{item.title}</Text>
                         
                         <View className="flex-row flex-wrap gap-2">
                           {item.tags?.map(tag => (
-                            <View key={tag} className="bg-charcoal/5 dark:bg-white/5 border border-black/5 dark:border-white/5 px-2.5 py-1 rounded-lg">
-                              <Text className="text-gray-500 dark:text-gray-400 text-[10px] font-extrabold uppercase tracking-wider">{tag}</Text>
+                            <View key={tag} className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/5 px-2.5 py-1 rounded-lg">
+                              <Text className="text-textSec dark:text-darktextSec text-[10px] font-bold uppercase tracking-widest">{tag}</Text>
                             </View>
                           ))}
                         </View>
@@ -597,9 +612,9 @@ export default function TasteProfileScreen() {
                       <TouchableOpacity 
                         testID={`taste-profile-delete-recipe-${item.id}`}
                         onPress={() => deleteRecipe(item.id)}
-                        className="w-10 h-10 bg-gray-50 dark:bg-black/20 rounded-2xl items-center justify-center border border-black/5 dark:border-white/5 hover:bg-tomato/10 hover:border-tomato/20 transition-colors group"
+                        className="w-11 h-11 bg-black/[0.02] dark:bg-white/[0.02] rounded-full items-center justify-center border border-black/[0.03] dark:border-white/[0.03] hover:bg-danger/10 hover:border-danger/20 transition-colors group active:scale-95"
                       >
-                        <FontAwesome5 name="trash-alt" size={14} color="#9CA3AF" className="group-hover:text-tomato transition-colors" />
+                        <FontAwesome5 name="trash-alt" size={14} color="#8C9A90" className="group-hover:text-danger transition-colors" />
                       </TouchableOpacity>
                     </View>
                   ))
@@ -608,20 +623,20 @@ export default function TasteProfileScreen() {
             </View>
 
             {/* 3. Vibe Matches (Onboarding Anchors) */}
-            <View className="mb-8">
-              <View className="mb-6">
-                <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Vibe Matches</Text>
-                <Text className="text-gray-500 text-sm font-medium">Meals you picked during onboarding.</Text>
+            <View>
+              <View className="mb-6 pl-2">
+                <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Taste Gallery</Text>
+                <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Meals you anchored during onboarding.</Text>
               </View>
               
               <View className="flex-row gap-4">
                 {MOCK_RECIPES.slice(0, 2).map((recipe) => (
-                  <View key={recipe.id} className="flex-1 h-44 rounded-[32px] overflow-hidden relative shadow-md bg-gray-100">
+                  <View key={recipe.id} className="flex-1 h-[200px] rounded-[32px] overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder bg-black/5 dark:bg-white/5">
                     <Image source={recipe.imageUrl} style={{width: '100%', height: '100%', position: 'absolute'}} contentFit="cover" />
                     {/* Subtle Top Inner Highlight for premium feel */}
                     <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/20 z-20" />
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.8)']} locations={[0, 0.4, 1]} className="absolute inset-0 justify-end p-5">
-                       <Text className="text-white font-extrabold text-lg leading-tight tracking-tight shadow-sm" numberOfLines={2}>
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']} locations={[0, 0.4, 1]} className="absolute inset-0 justify-end p-6">
+                       <Text className="text-white font-medium text-[18px] leading-tight tracking-tight shadow-sm" numberOfLines={2}>
                         {recipe.title}
                        </Text>
                     </LinearGradient>
@@ -631,11 +646,11 @@ export default function TasteProfileScreen() {
             </View>
 
             {/* 4. Weekly Routine */}
-            <View>
-              <View className="flex-row justify-between items-center mb-1">
+            <View className="mb-8">
+              <View className="flex-row justify-between items-center mb-6 pl-2">
                 <View>
-                  <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Weekly Routine</Text>
-                  <Text className="text-gray-500 text-sm font-medium mt-0.5">Tell Provision which meals you actually want help planning.</Text>
+                  <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Weekly Routine</Text>
+                  <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Tell Provision which meals you want planned.</Text>
                 </View>
               </View>
 

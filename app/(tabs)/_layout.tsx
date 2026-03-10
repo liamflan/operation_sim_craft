@@ -13,12 +13,18 @@ function NavItem({ icon, label, isActive, onPress }: { icon: string, label: stri
   return (
     <TouchableOpacity 
       onPress={onPress}
-      className={`flex-row items-center p-4 rounded-2xl mb-2 transition-colors ${isActive ? 'bg-avocado/10' : 'hover:bg-charcoal/5 dark:hover:bg-white/5'}`}
+      className={`flex-row items-center px-3.5 py-2.5 rounded-full mb-1.5 transition-all duration-300 ${
+        isActive 
+          ? 'bg-primary/15 dark:bg-primary/20 border border-primary/10 dark:border-primary/10' 
+          : 'hover:bg-white/40 dark:hover:bg-white/5 border border-transparent'
+      }`}
     >
-      <View className="w-8">
-        <FontAwesome5 name={icon} size={20} color={isActive ? '#6DBE75' : '#71717a'} />
+      <View className="w-8 items-center mr-2">
+        <FontAwesome5 name={icon} size={14} color={isActive ? '#7BA96A' : '#A3B3A9'} />
       </View>
-      <Text className={`text-lg font-bold ${isActive ? 'text-avocado' : 'text-gray-600 dark:text-gray-400'}`}>{label}</Text>
+      <Text className={`font-normal text-[14px] tracking-wide ${
+        isActive ? 'text-[#24332D] font-medium dark:text-darktextMain' : 'text-[#6E7C74] dark:text-darktextSec'
+      }`}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -34,12 +40,18 @@ export default function TabLayout() {
     return (
       <WeeklyRoutineProvider>
       <PantryProvider>
-        <View className="flex-1 flex-row bg-cream dark:bg-darkcream">
+        <View 
+          className="flex-1 flex-row bg-appBg dark:bg-darkappBg"
+          style={Platform.OS === 'web' ? { height: '100vh', width: '100vw', overflow: 'hidden' } as any : undefined}
+        >
         {/* Persistent Left Sidebar */}
-        <View className="w-64 bg-white dark:bg-darkgrey border-r border-black/5 dark:border-white/5 pt-12 px-6 pb-8 h-full sticky top-0 print-hide" style={{position: Platform.OS === 'web' ? 'fixed' : 'relative', height: '100%'}}>
-          <View className="mb-12">
-            <Text className="text-charcoal dark:text-darkcharcoal text-2xl font-extrabold tracking-tight">Provision</Text>
-            <Text className="text-avocado text-sm font-bold uppercase tracking-widest mt-1">Taste-Led Planning</Text>
+        <View 
+          className="w-[260px] bg-[#EEF4E8] dark:bg-darksageTint pt-12 px-5 pb-8 print-hide border-r border-transparent dark:border-darksoftBorder shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10" 
+          style={Platform.OS === 'web' ? { flexShrink: 0, height: '100%' } : { height: '100%' }}
+        >
+          <View className="mb-12 pl-3">
+            <Text className="text-textMain dark:text-darktextMain text-[24px] font-semibold tracking-tight">Provision</Text>
+            <Text className="text-primary text-[10px] font-medium uppercase tracking-widest mt-1 opacity-80">Taste-Led Setup</Text>
           </View>
 
           <View className="flex-1">
@@ -74,23 +86,22 @@ export default function TabLayout() {
               onPress={() => router.push('/(tabs)/planner-dev')} 
             />
           </View>
-          
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/settings')}
-            className="flex-row items-center p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors mt-auto"
+            className="flex-row items-center p-3 rounded-full hover:bg-white/40 dark:hover:bg-white/5 transition-colors mt-auto border border-transparent hover:border-white/40"
           >
-            <View className="w-10 h-10 bg-avocado rounded-full items-center justify-center mr-3 shadow-sm border border-black/5 dark:border-white/10">
-              <Text className="text-white font-bold text-sm leading-none">LF</Text>
+            <View className="w-10 h-10 bg-white/80 dark:bg-darksurface rounded-full items-center justify-center mr-3 shadow-sm">
+              <Text className="text-[#6E7C74] dark:text-darktextSec font-medium text-caption leading-none tracking-tight">LF</Text>
             </View>
             <View>
-              <Text className="text-charcoal dark:text-darkcharcoal font-bold leading-tight">Liam F.</Text>
-              <Text className="text-gray-500 text-xs">Settings</Text>
+              <Text className="text-textMain dark:text-darktextMain font-medium text-[14px] leading-tight">Liam F.</Text>
+              <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium mt-0.5 opacity-80">Free Plan</Text>
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Fluid Main Content Area */}
-        <View className="flex-1 print-expand" style={{marginLeft: Platform.OS === 'web' ? 256 : 0}}> {/* 256px is w-64 */}
+        <View className="flex-1 print-expand" style={Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : undefined}>
           <Slot />
         </View>
       </View>
@@ -105,12 +116,12 @@ export default function TabLayout() {
     <PantryProvider>
       <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#6DBE75',
+        tabBarActiveTintColor: '#9DCD8B',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: 'rgba(0,0,0,0.05)',
+          backgroundColor: '#FBFCF8',
+          borderTopColor: '#DDE6D8',
         }
       }}>
       <Tabs.Screen
