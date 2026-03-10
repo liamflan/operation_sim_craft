@@ -3,19 +3,14 @@
 // Builds the structured prompt, calls Gemini with JSON mode, and returns
 // the raw parsed response. All validation happens in plannerValidation.ts.
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Platform } from 'react-native';
 import { PlannerInput, PlannerRawOutput } from './plannerSchema';
 
-const MODEL_ID = 'gemini-2.5-flash-lite';
+const MODEL_ID = 'gemini-2.5-flash-lite'; // Synced with server expectation
 
-function getClient(): GoogleGenerativeAI {
-  const key =
-    (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-    (typeof window !== 'undefined' && (window as any).GEMINI_API_KEY);
-  if (!key) throw new Error('GEMINI_API_KEY is not set');
-  return new GoogleGenerativeAI(key);
-}
+// Production URL for Native environments, relative for Web
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL || '';
+const PROXY_URL = `${API_BASE}/api/generateContent`;
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
@@ -113,23 +108,26 @@ RESPONSE FORMAT — return this exact JSON shape and nothing else:
 `.trim();
 }
 
-// ─── API Call ─────────────────────────────────────────────────────────────────
+// ─── API Call (Proxy) ─────────────────────────────────────────────────────────
 
 export async function callGeminiPlanner(input: PlannerInput): Promise<PlannerRawOutput> {
-  const genAI = getClient();
-  const model = genAI.getGenerativeModel({
-    model: MODEL_ID,
-    generationConfig: {
-      responseMimeType: 'application/json',
+  const prompt = buildPrompt(input);
+
+  const response = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ prompt }),
   });
 
-  const prompt = buildPrompt(input);
-  const result = await model.generateContent(prompt);
-  const text   = result.response.text();
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Generation failed: ${response.status}`);
+  }
 
-  // Will throw if Gemini returns invalid JSON — caught by planWeek()
-  return JSON.parse(text) as PlannerRawOutput;
+  // Validated JSON return directly from proxy
+  return await response.json() as PlannerRawOutput;
 }
 
 export { MODEL_ID as PLANNER_MODEL_VERSION };

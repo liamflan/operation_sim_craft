@@ -18,8 +18,6 @@ import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const HARDCODED_API_KEY = 'REDACTED_LEAKED_KEY_20260310'; // Add your key here for testing
-
 const mockUser = {
   id: 'dev-user',
   name: 'Dev User',
@@ -72,7 +70,6 @@ export default function PlannerDevScreen() {
   const [diag, setDiag] = useState<PlannerDiagnostics | null>(null);
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState(HARDCODED_API_KEY);
   const [showRawGemini, setShowRawGemini] = useState(false);
 
   // Derived shortcuts for rendering
@@ -106,10 +103,6 @@ export default function PlannerDevScreen() {
     setErrorMsg(null);
 
     try {
-      if (apiKey && typeof window !== 'undefined') {
-        (window as any).GEMINI_API_KEY = apiKey;
-      }
-
       // Single pipeline call — all diagnostic states come from the same Gemini response
       const result = await planWeekWithDiagnostics(mockUser, routine);
       setDiag(result);
@@ -151,17 +144,6 @@ export default function PlannerDevScreen() {
         <Text className="text-gray-400 text-sm mt-1">Inspect the Gemini planning pipeline end-to-end.</Text>
       </View>
 
-      {/* API Key input */}
-      <Section title="Gemini API Key" accent="bg-blueberry/10">
-        <TextInput
-          value={apiKey}
-          onChangeText={setApiKey}
-          placeholder="AIza… (leave blank to use env var)"
-          placeholderTextColor="#9CA3AF"
-          secureTextEntry
-          className="bg-white dark:bg-darkgrey border border-black/10 dark:border-white/5 rounded-xl px-4 py-3 text-charcoal dark:text-darkcharcoal text-sm font-mono"
-        />
-      </Section>
 
       {/* Run button */}
       {/* Run & Copy buttons */}
