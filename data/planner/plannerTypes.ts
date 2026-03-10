@@ -112,8 +112,9 @@ export type ImageAuditStatus = 'correct' | 'missing' | 'suspect' | 'needs-review
 /** Centralized audit reasons to prevent string drift */
 export const IMAGE_AUDIT_REASONS = {
   MISSING_URL: 'missing-url' as const,
-  PLACEHOLDER_MATCH: 'placeholder-match' as const,
+  PLACEHOLDER_IMAGE: 'placeholder-image' as const,
   DUPLICATE_URL: 'duplicate-url' as const,
+  DIVERSE_REUSE: 'diverse-reuse' as const,
   KEYWORD_MISMATCH_WEAK: 'keyword-weak-mismatch' as const,
   MANUAL_FLAG: 'manual-flag' as const,
 } as const;

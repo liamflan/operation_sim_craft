@@ -204,7 +204,7 @@ export default function RecipeCard({
             'missing' or 'placeholder-match' forces fallback. */}
         {(recipe as any).imageUrl && !imageLoadFailed && 
          recipe.imageMetadata?.status !== 'missing' && 
-         !recipe.imageMetadata?.reasons.includes('placeholder-match') ? (
+         !recipe.imageMetadata?.reasons.includes('placeholder-image') ? (
           <Image
             source={(recipe as any).imageUrl}
             style={{ width: '100%', height: '100%', position: 'absolute' }}

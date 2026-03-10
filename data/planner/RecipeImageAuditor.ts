@@ -72,7 +72,7 @@ export function auditRecipeImage(
     const id = fingerprint.split(':')[1];
     if (KNOWN_PLACEHOLDERS.includes(id)) {
       status = 'suspect';
-      reasons.push(IMAGE_AUDIT_REASONS.PLACEHOLDER_MATCH);
+      reasons.push(IMAGE_AUDIT_REASONS.PLACEHOLDER_IMAGE);
     }
   }
 
@@ -88,7 +88,7 @@ export function auditRecipeImage(
   }
 
   return {
-    sourceType: imageUrl.includes('unsplash') ? 'imported' : 'unknown' as any,
+    sourceType: 'imported', // Since we have a URL
     provider: imageUrl.includes('unsplash') ? 'unsplash' : 'unknown',
     status,
     reasons,
