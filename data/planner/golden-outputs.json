@@ -1,0 +1,902 @@
+{
+  "oneDayPlan": {
+    "assignments": [
+      {
+        "id": "assign_week_42_0_breakfast",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_0_lunch",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "proposed",
+        "candidateId": "cand_rec_lentil_01_0_lunch",
+        "recipeId": "rec_lentil_01",
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": "planner_autofill"
+        },
+        "decisionSnapshot": {
+          "scores": {
+            "totalScore": 83,
+            "slotFitScore": 70,
+            "macroFitScore": 85,
+            "budgetFitScore": 75,
+            "tasteFitScore": 85,
+            "varietyFitScore": 90,
+            "pantryFitScore": 95,
+            "leftoverFitScore": 30
+          },
+          "insights": [
+            {
+              "type": "pantry_match",
+              "score": 0.95,
+              "icon": "box-open",
+              "label": "Pantry Staple",
+              "detail": "Uses ingredients you likely have."
+            }
+          ],
+          "budgetConstraintAtTimeOfDecision": 2.5,
+          "proteinTargetAtTimeOfDecision": 30
+        }
+      },
+      {
+        "id": "assign_week_42_0_dinner",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "proposed",
+        "candidateId": "cand_rec_roast_01_0_dinner",
+        "recipeId": "rec_roast_01",
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": "planner_autofill"
+        },
+        "decisionSnapshot": {
+          "scores": {
+            "totalScore": 77,
+            "slotFitScore": 70,
+            "macroFitScore": 93,
+            "budgetFitScore": 63,
+            "tasteFitScore": 85,
+            "varietyFitScore": 90,
+            "pantryFitScore": 95,
+            "leftoverFitScore": 30
+          },
+          "insights": [
+            {
+              "type": "macro_fit",
+              "score": 0.93,
+              "icon": "bullseye",
+              "label": "Hits Protein Target",
+              "detail": "40g aligns with 35g goal."
+            },
+            {
+              "type": "pantry_match",
+              "score": 0.95,
+              "icon": "box-open",
+              "label": "Pantry Staple",
+              "detail": "Uses ingredients you likely have."
+            }
+          ],
+          "budgetConstraintAtTimeOfDecision": 4,
+          "proteinTargetAtTimeOfDecision": 35
+        }
+      }
+    ],
+    "diagnostics": [
+      {
+        "slotId": "0_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "0_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 1,
+        "rejectedCount": 2,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": false,
+        "actionTaken": "filled_normally",
+        "assignedCandidateId": "cand_rec_lentil_01_0_lunch",
+        "bestScoreAchieved": 83
+      },
+      {
+        "slotId": "0_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 1,
+        "rejectedCount": 2,
+        "topFailureReasons": {
+          "protein_minimum_failed": 1,
+          "repeat_cap_exhausted": 1
+        },
+        "rescueTriggered": false,
+        "actionTaken": "filled_normally",
+        "assignedCandidateId": "cand_rec_roast_01_0_dinner",
+        "bestScoreAchieved": 77
+      }
+    ]
+  },
+  "sevenDayPlan": {
+    "assignments": [
+      {
+        "id": "assign_week_42_0_breakfast",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_0_lunch",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "proposed",
+        "candidateId": "cand_rec_lentil_01_0_lunch",
+        "recipeId": "rec_lentil_01",
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": "planner_autofill"
+        },
+        "decisionSnapshot": {
+          "scores": {
+            "totalScore": 83,
+            "slotFitScore": 70,
+            "macroFitScore": 85,
+            "budgetFitScore": 75,
+            "tasteFitScore": 85,
+            "varietyFitScore": 90,
+            "pantryFitScore": 95,
+            "leftoverFitScore": 30
+          },
+          "insights": [
+            {
+              "type": "pantry_match",
+              "score": 0.95,
+              "icon": "box-open",
+              "label": "Pantry Staple",
+              "detail": "Uses ingredients you likely have."
+            }
+          ],
+          "budgetConstraintAtTimeOfDecision": 2.5,
+          "proteinTargetAtTimeOfDecision": 30
+        }
+      },
+      {
+        "id": "assign_week_42_0_dinner",
+        "planId": "week_42",
+        "dayIndex": 0,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "proposed",
+        "candidateId": "cand_rec_roast_01_0_dinner",
+        "recipeId": "rec_roast_01",
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": "planner_autofill"
+        },
+        "decisionSnapshot": {
+          "scores": {
+            "totalScore": 77,
+            "slotFitScore": 70,
+            "macroFitScore": 93,
+            "budgetFitScore": 63,
+            "tasteFitScore": 85,
+            "varietyFitScore": 90,
+            "pantryFitScore": 95,
+            "leftoverFitScore": 30
+          },
+          "insights": [
+            {
+              "type": "macro_fit",
+              "score": 0.93,
+              "icon": "bullseye",
+              "label": "Hits Protein Target",
+              "detail": "40g aligns with 35g goal."
+            },
+            {
+              "type": "pantry_match",
+              "score": 0.95,
+              "icon": "box-open",
+              "label": "Pantry Staple",
+              "detail": "Uses ingredients you likely have."
+            }
+          ],
+          "budgetConstraintAtTimeOfDecision": 4,
+          "proteinTargetAtTimeOfDecision": 35
+        }
+      },
+      {
+        "id": "assign_week_42_1_breakfast",
+        "planId": "week_42",
+        "dayIndex": 1,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_1_lunch",
+        "planId": "week_42",
+        "dayIndex": 1,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_1_dinner",
+        "planId": "week_42",
+        "dayIndex": 1,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_2_breakfast",
+        "planId": "week_42",
+        "dayIndex": 2,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_2_lunch",
+        "planId": "week_42",
+        "dayIndex": 2,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_2_dinner",
+        "planId": "week_42",
+        "dayIndex": 2,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_3_breakfast",
+        "planId": "week_42",
+        "dayIndex": 3,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_3_lunch",
+        "planId": "week_42",
+        "dayIndex": 3,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_3_dinner",
+        "planId": "week_42",
+        "dayIndex": 3,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_4_breakfast",
+        "planId": "week_42",
+        "dayIndex": 4,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_4_lunch",
+        "planId": "week_42",
+        "dayIndex": 4,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_4_dinner",
+        "planId": "week_42",
+        "dayIndex": 4,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_5_breakfast",
+        "planId": "week_42",
+        "dayIndex": 5,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_5_lunch",
+        "planId": "week_42",
+        "dayIndex": 5,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_5_dinner",
+        "planId": "week_42",
+        "dayIndex": 5,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_6_breakfast",
+        "planId": "week_42",
+        "dayIndex": 6,
+        "date": "2026-03-09",
+        "slotType": "breakfast",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "no_slot_match": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_6_lunch",
+        "planId": "week_42",
+        "dayIndex": 6,
+        "date": "2026-03-09",
+        "slotType": "lunch",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "budget_delta_exceeded": 1,
+            "protein_minimum_failed": 1
+          }
+        }
+      },
+      {
+        "id": "assign_week_42_6_dinner",
+        "planId": "week_42",
+        "dayIndex": 6,
+        "date": "2026-03-09",
+        "slotType": "dinner",
+        "state": "generating",
+        "candidateId": null,
+        "recipeId": null,
+        "isBatchCookOrigin": false,
+        "metrics": {
+          "swappedCount": 0,
+          "autoFilledBy": null,
+          "priorFailedCandidateCounts": {
+            "protein_minimum_failed": 1
+          }
+        }
+      }
+    ],
+    "diagnostics": [
+      {
+        "slotId": "0_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "0_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 1,
+        "rejectedCount": 2,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": false,
+        "actionTaken": "filled_normally",
+        "assignedCandidateId": "cand_rec_lentil_01_0_lunch",
+        "bestScoreAchieved": 83
+      },
+      {
+        "slotId": "0_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 1,
+        "rejectedCount": 2,
+        "topFailureReasons": {
+          "protein_minimum_failed": 1,
+          "repeat_cap_exhausted": 1
+        },
+        "rescueTriggered": false,
+        "actionTaken": "filled_normally",
+        "assignedCandidateId": "cand_rec_roast_01_0_dinner",
+        "bestScoreAchieved": 77
+      },
+      {
+        "slotId": "1_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "1_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "1_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "2_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "2_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "2_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "3_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "3_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "3_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "4_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "4_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "4_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "5_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "5_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "5_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "6_breakfast",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "no_slot_match": 3,
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "6_lunch",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "budget_delta_exceeded": 1,
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      },
+      {
+        "slotId": "6_dinner",
+        "totalConsidered": 3,
+        "eligibleCount": 0,
+        "rejectedCount": 3,
+        "topFailureReasons": {
+          "repeat_cap_exhausted": 2,
+          "protein_minimum_failed": 1
+        },
+        "rescueTriggered": true,
+        "actionTaken": "gemini_generation_needed",
+        "assignedCandidateId": null,
+        "bestScoreAchieved": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+(node:39220) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS data/planner/__tests__/actions.test.ts
+(node:9144) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL data/planner/__tests__/selectors.test.ts
+  ● Planner Selectors › transforms a locked assignment into a robust MealCardViewModel
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 15 |[39m     expect(vm[33m.[39minsights[33m.[39mlength)[33m.[39mtoBeGreaterThan([35m0[39m)[33m;[39m
+     [90m 16 |[39m     [90m// It should have the budget_fit insight based on the normalAssignment fixture[39m
+    [31m[1m>[22m[39m[90m 17 |[39m     expect(vm[33m.[39minsights[33m.[39msome(i [33m=>[39m i[33m.[39mtype [33m===[39m [32m'budget_fit'[39m))[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m    |[39m                                                            [31m[1m^[22m[39m
+     [90m 18 |[39m   })[33m;[39m
+     [90m 19 |[39m
+     [90m 20 |[39m   it([32m'transforms a generating assignment into a loading MealCardViewModel'[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.toBe (data/planner/__tests__/selectors.test.ts:17:60)
+
+(node:40728) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:42204) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS data/planner/__tests__/evaluator.test.ts
+PASS data/planner/__tests__/orchestrator.test.ts
+
+Test Suites: 1 failed, 3 passed, 4 total
+Tests:       1 failed, 24 passed, 25 total
+Snapshots:   0 total
+Time:        0.818 s, estimated 2 s
+Ran all test suites matching data/planner.

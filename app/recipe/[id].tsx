@@ -62,28 +62,22 @@ function RecipeHeroImage({ recipe, isDark }: { recipe: Recipe; isDark: boolean }
   return (
     <View style={{ width: '100%', height: '100%' }}>
       {/* Fallback always underneath */}
-      <LinearGradient
-        colors={[startColor, endColor]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ position: 'absolute', width: '100%', height: '100%' }}
-      >
-        <View style={{ position: 'absolute', width: 260, height: 260, borderRadius: 130,
-          backgroundColor: `rgba(255,255,255,${circleAlpha})`, top: -80, right: -80 }} />
-        <View style={{ position: 'absolute', width: 160, height: 160, borderRadius: 80,
-          backgroundColor: `rgba(255,255,255,${circleAlpha})`, bottom: -40, left: -50 }} />
-        <View style={{ position: 'absolute', width: 80, height: 80, borderRadius: 40,
-          backgroundColor: `rgba(157,205,139,${isDark ? '0.10' : '0.14'})`, top: '40%', left: '15%' }} />
+      <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: isDark ? '#2A332C' : '#EEF4E8' }}>
+        <View style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150,
+          backgroundColor: `rgba(157,205,139,${isDark ? '0.05' : '0.12'})`, top: -100, right: -100 }} />
+        <View style={{ position: 'absolute', width: 200, height: 200, borderRadius: 100,
+          backgroundColor: `rgba(157,205,139,${isDark ? '0.08' : '0.18'})`, bottom: -50, left: -60 }} />
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{
             width: 80, height: 80, borderRadius: 24,
-            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.50)',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.4)',
             alignItems: 'center', justifyContent: 'center',
-            borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.70)',
+            borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.6)',
           }}>
-            <FontAwesome5 name={iconName} size={32} color={isDark ? '#7AB868' : '#9DCD8B'} />
+            <FontAwesome5 name={iconName} size={32} color={isDark ? 'rgba(122,184,104,0.5)' : 'rgba(157,205,139,0.7)'} />
           </View>
         </View>
-      </LinearGradient>
+      </View>
       {/* Actual image — unmounted on error so browser broken-img never shows */}
       {recipe.imageUrl && !failed ? (
         <Image
@@ -128,14 +122,14 @@ function TagChip({ label }: { label: string }) {
 // ─── INSIGHT CARD ─────────────────────────────────────────────────────────────
 function InsightCard({ icon, label, sub, accent }: { icon: string; label: string; sub?: string; accent?: string }) {
   return (
-    <View className="bg-surface dark:bg-darksurface border border-black/[0.04] dark:border-darksoftBorder rounded-2xl px-4 py-3.5 mr-3 shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-none" style={{ minWidth: 148 }}>
+    <View className="bg-sageTint/40 dark:bg-[#1C241E] border border-primary/20 dark:border-primary/10 rounded-2xl px-4 py-3.5 mr-3" style={{ minWidth: 160 }}>
       <View className="flex-row items-center mb-1.5">
-        <View className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20 items-center justify-center mr-2.5">
+        <View className="w-6 h-6 rounded-full bg-primary/20 dark:bg-primary/10 items-center justify-center mr-2.5">
           <FontAwesome5 name={icon} size={10} color="#9DCD8B" />
         </View>
-        <Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold tracking-tight flex-1">{label}</Text>
+        <Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold tracking-tight leading-tight flex-1">{label}</Text>
       </View>
-      {sub ? <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium opacity-70 ml-8">{sub}</Text> : null}
+      {sub ? <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium opacity-80 ml-8">{sub}</Text> : null}
     </View>
   );
 }
@@ -224,40 +218,45 @@ function RelatedRecipeCard({ recipe, label, isDark, onPress }: {
   recipe: Recipe; label?: string; isDark: boolean; onPress: () => void;
 }) {
   const [failed, setFailed] = useState(false);
-  const [startColor, endColor] = getGradient(recipe.id, isDark);
   const n = parseInt(recipe.id.replace(/\D/g, ''), 10) || 0;
   const iconName = FOOD_ICONS[n % FOOD_ICONS.length];
 
   return (
     <Pressable
       onPress={onPress}
-      className="mr-3 active:scale-[0.97] transition-transform"
-      style={{ width: 160 }}
+      className="mr-5 active:scale-[0.98] transition-transform"
+      style={{ width: 176 }}
     >
-      <View className="w-full h-24 rounded-2xl overflow-hidden mb-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.05)] dark:shadow-none">
-        <LinearGradient colors={[startColor, endColor]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ position: 'absolute', width: '100%', height: '100%' }}>
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-            <FontAwesome5 name={iconName} size={20} color={isDark ? '#7AB868' : '#9DCD8B'} />
+      <View className="w-full aspect-[4/3] rounded-[20px] overflow-hidden mb-2.5 shadow-[0_4px_12px_rgba(0,0,0,0.04)] dark:shadow-none bg-[#F5F8F2] dark:bg-[#1A221C] border border-primary/10 dark:border-primary/5">
+        {/* Premium Fallback pattern */}
+        <View style={{ position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: isDark ? 'rgba(157,205,139,0.03)' : 'rgba(157,205,139,0.08)', top: -40, right: -40 }} />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <View className="w-12 h-12 rounded-full items-center justify-center border" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.6)', borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.8)' }}>
+            <FontAwesome5 name={iconName} size={18} color={isDark ? 'rgba(122,184,104,0.4)' : 'rgba(157,205,139,0.7)'} />
           </View>
-        </LinearGradient>
+        </View>
+
         {recipe.imageUrl && !failed ? (
           <Image source={recipe.imageUrl} style={{ width: '100%', height: '100%', position: 'absolute' }}
             contentFit="cover" transition={{ duration: 400, effect: 'cross-dissolve' }}
             onError={() => setFailed(true)} />
         ) : null}
+        
         {label ? (
-          <View className="absolute top-2 left-2 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full">
+          <View className="absolute top-2.5 left-2.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
             <Text className="text-white text-[9px] font-bold uppercase tracking-widest">{label}</Text>
           </View>
         ) : null}
       </View>
-      <Text className="text-textMain dark:text-darktextMain text-[13px] font-medium leading-tight mb-1 pr-1" numberOfLines={2}>
-        {recipe.title}
-      </Text>
-      {recipe.tags[0] ? (
-        <Text className="text-textSec dark:text-darktextSec text-[11px] opacity-70">{recipe.tags[0]}</Text>
-      ) : null}
+      
+      <View className="px-1.5">
+        <Text className="text-textMain dark:text-darktextMain text-[15px] font-bold tracking-tight leading-tight mb-0.5" numberOfLines={2}>
+          {recipe.title}
+        </Text>
+        {recipe.tags[0] ? (
+          <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium opacity-70">{recipe.tags[0]}</Text>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -416,30 +415,30 @@ export default function RecipeDetailPage() {
     >
       {/* ── TOP CONTEXT BAR ─────────────────────────────────────────────────── */}
       <View
-        className="flex-row items-center justify-between px-5 py-3.5 bg-appBg dark:bg-darkappBg border-b border-black/[0.04] dark:border-darksoftBorder"
+        className="flex-row items-center justify-between px-5 py-3.5 bg-appBg dark:bg-darkappBg align-middle border-b border-transparent dark:border-white/[0.02]"
         style={Platform.OS === 'web' ? { flexShrink: 0 } as any : undefined}
       >
         {/* Back */}
         <TouchableOpacity onPress={handleBack}
-          className="flex-row items-center gap-2 h-10 px-1 -ml-1 active:opacity-60">
-          <FontAwesome5 name="chevron-left" size={14} color={isDarkMode ? '#E8EBE9' : '#24332D'} />
+          className="flex-row items-center gap-2 h-10 -ml-1 active:opacity-60 flex-1">
+          <FontAwesome5 name="chevron-left" size={13} color={isDarkMode ? '#8C9A90' : '#4A5C50'} />
           <Text className="text-textMain dark:text-darktextMain font-medium text-[14px]">Back</Text>
         </TouchableOpacity>
 
         {/* Context label */}
-        <View className="flex-row items-center bg-surface dark:bg-darksurface px-3.5 py-1.5 rounded-full border border-black/[0.04] dark:border-darksoftBorder">
-          <FontAwesome5 name="calendar-check" size={10} color="#9DCD8B" />
-          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold ml-2 tracking-wide">{contextLabel}</Text>
+        <View className="flex-row items-center bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.04] px-4 py-1.5 rounded-full justify-center">
+          <FontAwesome5 name="calendar-check" size={10} color={isDarkMode ? '#A0ABA5' : '#6E7C74'} />
+          <Text className="text-textSec dark:text-darktextSec text-[12px] font-semibold ml-2 tracking-wide">{contextLabel}</Text>
         </View>
 
         {/* Right actions */}
-        <View className="flex-row items-center gap-2">
-          <TouchableOpacity className="w-9 h-9 rounded-full bg-surface dark:bg-darksurface border border-black/[0.04] dark:border-darksoftBorder items-center justify-center active:opacity-60">
+        <View className="flex-row items-center gap-1.5 flex-1 justify-end">
+          <TouchableOpacity className="w-10 h-10 rounded-full bg-surface dark:bg-darksurface border border-black/[0.04] dark:border-white/[0.04] shadow-sm dark:shadow-none items-center justify-center active:opacity-60">
             <FontAwesome5 name="bookmark" size={12} color={isDarkMode ? '#8C9A90' : '#6E7C74'} />
           </TouchableOpacity>
-          <TouchableOpacity className="flex-row items-center gap-1.5 bg-surface dark:bg-darksurface border border-black/[0.04] dark:border-darksoftBorder px-3.5 py-2 rounded-full active:opacity-60">
+          <TouchableOpacity className="flex-row items-center justify-center gap-1.5 bg-surface dark:bg-darksurface border border-black/[0.04] dark:border-white/[0.04] shadow-sm dark:shadow-none px-4 h-10 rounded-full active:opacity-60">
             <FontAwesome5 name="random" size={10} color={isDarkMode ? '#8C9A90' : '#6E7C74'} />
-            <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Swap</Text>
+            <Text className="text-textSec dark:text-darktextSec text-[13px] font-medium">Swap</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -453,7 +452,7 @@ export default function RecipeDetailPage() {
         <View
           className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12 pb-24 pt-6"
           style={isDesktop
-            ? { display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 40 } as any
+            ? { display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 32 } as any
             : undefined}
         >
 
@@ -461,22 +460,24 @@ export default function RecipeDetailPage() {
           <View style={isDesktop ? { flex: 1, minWidth: 0 } as any : undefined}>
 
             {/* ── HERO ──────────────────────────────────────────────────────── */}
-            <View className="mb-6">
+            <View className="mb-5">
               {/* Hero image */}
-              <View className="w-full h-[280px] md:h-[340px] rounded-4xl overflow-hidden mb-5 shadow-[0_8px_32px_rgba(0,0,0,0.07)] dark:shadow-none">
+              <View className="w-full h-[280px] md:h-[340px] rounded-4xl overflow-hidden mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.07)] dark:shadow-none">
                 <RecipeHeroImage recipe={recipe} isDark={isDarkMode} />
                 {/* Bottom gradient overlay with title */}
                 <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.04)', 'rgba(0,0,0,0.65)']}
-                  locations={[0.45, 0.7, 1]}
-                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%',
-                    justifyContent: 'flex-end', padding: 24 }}
+                  colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.75)']}
+                  locations={[0.3, 0.65, 1]}
+                  style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70%',
+                    justifyContent: 'flex-end', padding: 24, paddingBottom: 20 }}
                 >
                   {/* Slot badge */}
-                  <View className="bg-white/15 backdrop-blur-sm self-start px-3 py-1 rounded-full border border-white/20 mb-3">
-                    <Text className="text-white text-[10px] font-bold uppercase tracking-widest">{slot ?? 'Dinner'}</Text>
-                  </View>
-                  <Text className="text-white text-[30px] md:text-[34px] font-medium tracking-tight leading-[1.15]">
+                  {day && slot ? (
+                    <View className="bg-black/40 backdrop-blur-md self-start px-3.5 py-1.5 rounded-full border border-white/10 mb-2.5">
+                      <Text className="text-white text-[10px] font-bold uppercase tracking-[0.2em]">{day} • {slot}</Text>
+                    </View>
+                  ) : null}
+                  <Text className="text-white text-[32px] md:text-[38px] font-medium tracking-tight leading-[1.1]">
                     {recipe.title}
                   </Text>
                 </LinearGradient>
@@ -484,13 +485,13 @@ export default function RecipeDetailPage() {
 
               {/* Description */}
               {recipe.description ? (
-                <Text className="text-textSec dark:text-darktextSec text-[15px] leading-relaxed mb-4 opacity-80">
+                <Text className="text-textSec dark:text-darktextSec text-[16px] leading-[1.6] mb-3 opacity-80">
                   {recipe.description}
                 </Text>
               ) : null}
 
               {/* Metadata chips row */}
-              <View className="flex-row flex-wrap mb-3">
+              <View className="flex-row flex-wrap gap-x-0 gap-y-0 mb-2">
                 {recipe.prepTimeMinutes ? <MetaChip icon="clock" label={`${recipe.prepTimeMinutes}m prep`} isDark={isDarkMode} /> : null}
                 {recipe.cookTimeMinutes ? <MetaChip icon="fire" label={`${recipe.cookTimeMinutes}m cook`} isDark={isDarkMode} /> : null}
                 <MetaChip icon="bolt" label={`${recipe.macros.calories} kcal`} isDark={isDarkMode} />
@@ -505,48 +506,53 @@ export default function RecipeDetailPage() {
               </View>
 
               {/* Tag chips */}
-              <View className="flex-row flex-wrap mb-5">
+              <View className="flex-row flex-wrap gap-x-0 gap-y-0 mb-4">
                 {recipe.tags.map(tag => <TagChip key={tag} label={tag} />)}
               </View>
 
               {/* Hero primary actions */}
               <View className="flex-row gap-3">
-                <TouchableOpacity className="flex-1 bg-primary py-3.5 rounded-full items-center justify-center shadow-[0_4px_12px_rgba(157,205,139,0.30)] active:opacity-85">
-                  <Text className="text-white font-semibold text-[15px] tracking-wide">Keep in Plan</Text>
+                <TouchableOpacity className="flex-1 bg-primary py-3.5 rounded-full items-center justify-center shadow-[0_4px_16px_rgba(157,205,139,0.35)] active:opacity-85">
+                  <Text className="text-white font-semibold text-[15px] tracking-wide">
+                    {day && slot ? `Planned for ${day} ${slot}` : 'Keep in Plan'}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="px-5 py-3.5 rounded-full border border-softBorder dark:border-darksoftBorder bg-surface dark:bg-darksurface items-center justify-center flex-row gap-2 active:opacity-75">
-                  <FontAwesome5 name="random" size={12} color={isDarkMode ? '#8C9A90' : '#6E7C74'} />
-                  <Text className="text-textSec dark:text-darktextSec font-medium text-[14px]">Swap</Text>
+                <TouchableOpacity className="px-5 py-3.5 rounded-full border border-black/[0.06] dark:border-white/[0.06] bg-surface dark:bg-darksurface shadow-[0_2px_8px_rgba(0,0,0,0.02)] items-center justify-center flex-row gap-2 active:opacity-75">
+                  <FontAwesome5 name="random" size={14} color={isDarkMode ? '#8C9A90' : '#6E7C74'} />
+                  <Text className="text-textSec dark:text-darktextSec font-semibold text-[15px]">Swap</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* ── PROVISION INSIGHT STRIP ─────────────────────────────────── */}
             <View className="mb-6">
-              <View className="flex-row items-center mb-3">
-                <View className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-                <Text className="text-primary text-[11px] font-bold uppercase tracking-[0.15em]">Provision Insights</Text>
+              <View className="flex-row items-center gap-2 mb-3 ml-1">
+                <FontAwesome5 name="sparkles" size={10} color="#9DCD8B" />
+                <Text className="text-primary text-[11px] font-bold uppercase tracking-[0.16em]">Provision Insights</Text>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}>
-                <InsightCard icon="bullseye" label="Fits your High-Protein goal" sub="163g → target 160g" />
-                {pantryCount > 0 ? (
-                  <InsightCard icon="box-open" label={`${pantryCount} pantry items match`} sub="Already in stock" />
-                ) : null}
-                {missingCount > 0 ? (
-                  <InsightCard icon="shopping-basket" label={`${missingCount} item${missingCount > 1 ? 's' : ''} to buy`} sub="Not yet on Fuel List" />
-                ) : null}
-                {recipe.costPerServingGBP ? (
-                  <InsightCard icon="pound-sign" label={`£${recipe.costPerServingGBP.toFixed(2)} per serving`} sub="Within weekly budget" />
-                ) : null}
-                <InsightCard icon="star" label="Taste profile match" sub="You prefer quick savory meals" />
-                {recipe.reheatsWell ? (
-                  <InsightCard icon="redo" label="Reheats well" sub="Great for meal prep" />
-                ) : null}
-              </ScrollView>
+              <View className="bg-surface dark:bg-[#161A18] rounded-[24px] py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none border border-black/[0.02] dark:border-white/[0.02]">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+                  <InsightCard icon="bullseye" label="Fits your High-Protein goal" sub="163g → target 160g" />
+                  {pantryCount > 0 ? (
+                    <InsightCard icon="box-open" label={`${pantryCount} pantry items match`} sub="Already in stock" />
+                  ) : null}
+                  {missingCount > 0 ? (
+                    <InsightCard icon="shopping-basket" label={`${missingCount} items to buy`} sub="Not yet on Fuel List" />
+                  ) : null}
+                  {recipe.costPerServingGBP ? (
+                    <InsightCard icon="pound-sign" label={`£${recipe.costPerServingGBP.toFixed(2)} per serving`} sub="Within weekly budget" />
+                  ) : null}
+                  <InsightCard icon="star" label="Taste profile match" sub="You prefer quick savory meals" />
+                  {recipe.reheatsWell ? (
+                    <InsightCard icon="redo" label="Reheats well" sub="Great for meal prep" />
+                  ) : null}
+                </ScrollView>
+              </View>
             </View>
 
+            {/* major spacing updates from here on */}
             {/* ── INGREDIENTS ─────────────────────────────────────────────── */}
-            <View className="bg-surface dark:bg-darksurface rounded-3xl p-5 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none mb-4">
+            <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
               <SectionHeader
                 title="Ingredients"
                 action={missingCount > 0 && !addedToFuelList ? `Add ${missingCount} to Fuel List` : addedToFuelList ? '✓ Added' : undefined}
@@ -599,7 +605,7 @@ export default function RecipeDetailPage() {
             </View>
 
             {/* ── METHOD ──────────────────────────────────────────────────── */}
-            <View className="bg-surface dark:bg-darksurface rounded-3xl p-5 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none mb-4">
+            <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
               <SectionHeader title="Method" />
               {recipe.method && recipe.method.length > 0 ? (
                 recipe.method.map(step => <MethodStepCard key={step.step} step={step} />)
@@ -615,7 +621,7 @@ export default function RecipeDetailPage() {
 
             {/* ── SUBSTITUTIONS ────────────────────────────────────────────── */}
             {recipe.substitutions && recipe.substitutions.length > 0 ? (
-              <View className="bg-surface dark:bg-darksurface rounded-3xl p-5 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none mb-4">
+              <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
                 <SectionHeader title="Substitutions" />
                 {recipe.substitutions.map((sub, i) => (
                   <View key={i} className="flex-row items-start py-3 border-b border-black/[0.04] dark:border-darksoftBorder">
@@ -641,7 +647,7 @@ export default function RecipeDetailPage() {
 
             {/* ── NOTES ────────────────────────────────────────────────────── */}
             {recipe.notes ? (
-              <View className="bg-[#F5F8F2] dark:bg-darksageTint rounded-3xl p-5 border border-primary/10 dark:border-primary/10 mb-4">
+              <View className="bg-sageTint/60 dark:bg-darksageTint rounded-3xl p-6 border border-primary/10 dark:border-primary/5 mb-8">
                 <View className="flex-row items-center mb-3">
                   <FontAwesome5 name="lightbulb" size={12} color="#9DCD8B" />
                   <Text className="text-[#3D6250] dark:text-[#85B674] text-[12px] font-bold uppercase tracking-widest ml-2">Chef's Note</Text>
@@ -652,10 +658,12 @@ export default function RecipeDetailPage() {
 
             {/* ── RELATED RECIPES ──────────────────────────────────────────── */}
             {relatedRecipes.length > 0 ? (
-              <View className="mb-6">
-                <SectionHeader title="You might also like" />
+              <View className="mb-8 pt-4">
+                <View className="mb-4 ml-1">
+                  <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold tracking-tight">You might also like</Text>
+                </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                  style={{ marginHorizontal: -4 }} contentContainerStyle={{ paddingHorizontal: 4, paddingBottom: 4 }}>
+                  style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16 }}>
                   {relatedRecipes.map(({ recipe: r, label }) => (
                     <RelatedRecipeCard
                       key={r.id}
@@ -682,7 +690,7 @@ export default function RecipeDetailPage() {
 
           {/* ══ RIGHT / SUPPORT COLUMN (desktop only) ════════════════════════ */}
           {isDesktop ? (
-            <View style={{ width: 300, flexShrink: 0 } as any}>
+            <View style={{ width: 300, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start' } as any}>
 
               {/* Nutrition widget */}
               <WidgetCard>

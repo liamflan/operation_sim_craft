@@ -22,34 +22,14 @@ export default function CalibrationScreen() {
   ];
   const isSetupComplete = loadingStage >= loadingMessages.length - 1;
 
-  // Pulse animation for generation state
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     if (step === 3 && !isSetupComplete) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true })
-        ])
-      ).start();
-
-      Animated.loop(
-        Animated.timing(rotateAnim, { toValue: 1, duration: 3000, useNativeDriver: true })
-      ).start();
-
       const timer = setTimeout(() => {
         setLoadingStage(prev => prev + 1);
       }, 1500);
       return () => clearTimeout(timer);
     }
   }, [step, loadingStage, isSetupComplete]);
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg']
-  });
 
   const toggleVibe = (id: string) => {
     setSelectedVibes(prev =>
@@ -220,32 +200,20 @@ export default function CalibrationScreen() {
   const renderStep3 = () => (
     <View className="flex-1 w-full items-center justify-center">
       <View className="w-full max-w-[600px]">
-        {/* Animated Generation Header */}
+        {/* Generation Header */}
         <View className="items-center mb-8">
           <View className="relative mb-6 items-center justify-center">
-            {/* Pulsing ring — matches Import Recipe treatment */}
-            {!isSetupComplete && (
-               <Animated.View
-                 className="absolute w-[110px] h-[110px] md:w-[130px] md:h-[130px] rounded-full border-2 border-primary/20"
-                 style={{
-                   transform: [{ scale: pulseAnim }],
-                   opacity: pulseAnim.interpolate({ inputRange: [1, 1.1], outputRange: [0.8, 0] })
-                 }}
-               />
-            )}
-
-            <View className={`w-24 h-24 md:w-28 md:h-28 rounded-[36px] items-center justify-center relative transition-colors duration-700 ${isSetupComplete ? 'bg-primary shadow-[0_8px_32px_rgba(157,205,139,0.35)]' : 'bg-surface dark:bg-darksurface shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-black/[0.04] dark:border-white/5'}`}>
+            {/* Main Visual: Spinner + Check */}
+            <View className={`w-28 h-28 rounded-full items-center justify-center relative transition-colors duration-700 ${isSetupComplete ? 'bg-primary shadow-[0_8px_32px_rgba(157,205,139,0.35)] dark:shadow-none' : 'bg-surface dark:bg-darkgrey shadow-[0_4px_24px_rgba(157,205,139,0.15)] dark:shadow-none border border-black/[0.05] dark:border-white/5'}`}>
               {isSetupComplete ? (
-                <FontAwesome5 name="check" size={32} color="white" />
+                <FontAwesome5 name="check" size={36} color="white" />
               ) : (
                 <>
-                  {/* Rotating arc track — matches Import Recipe spinner exactly */}
-                  <Animated.View style={{ transform: [{ rotate: spin }] }} className="absolute inset-0 items-center justify-center opacity-80">
-                    <View className="w-[60px] h-[60px] rounded-full border-[3px] border-primary/10 border-t-primary/80 border-r-primary/80" />
-                  </Animated.View>
-                  {/* Brain icon in center — same as Import Recipe spinner */}
-                  <View className="w-10 h-10 bg-appBg dark:bg-darkappBg rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
-                    <FontAwesome5 name="brain" size={14} color="#9DCD8B" />
+                  {/* Activity spinner exactly like Import Recipe */}
+                  <ActivityIndicator size="large" color="#9DCD8B" style={{ transform: [{ scale: 1.5 }] }} />
+                  {/* Leaf icon in center */}
+                  <View className="absolute w-12 h-12 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
+                    <FontAwesome5 name="leaf" size={16} color="#9DCD8B" />
                   </View>
                 </>
               )}
