@@ -6,7 +6,7 @@ import {
   typicalDinnerContract, 
   exhaustedBudgetDinnerContract 
 } from '../plannerFixtures';
-import { SlotContract, NormalizedRecipe } from '../plannerTypes';
+import { SlotContract, NormalizedRecipe, PlannedMealAssignment } from '../plannerTypes';
 
 describe('Planner Orchestrator', () => {
   const recipes: NormalizedRecipe[] = [curatedRoast, curatedPasta];

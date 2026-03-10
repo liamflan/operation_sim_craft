@@ -10,6 +10,9 @@ import { View } from 'react-native';
 
 import { useColorScheme as useNavColorScheme } from '@/hooks/use-color-scheme';
 import { ThemeProvider, useTheme } from '../components/ThemeContext';
+import { WeeklyRoutineProvider } from '../data/WeeklyRoutineContext';
+import { PantryProvider } from '../data/PantryContext';
+import { ActivePlanProvider } from '../data/ActivePlanContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -53,7 +56,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RootApp />
+      <WeeklyRoutineProvider>
+        <PantryProvider>
+          <ActivePlanProvider>
+            <RootApp />
+          </ActivePlanProvider>
+        </PantryProvider>
+      </WeeklyRoutineProvider>
     </ThemeProvider>
   );
 }

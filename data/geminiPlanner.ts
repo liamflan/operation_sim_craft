@@ -4,6 +4,7 @@
 // the raw parsed response. All validation happens in plannerValidation.ts.
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Platform } from 'react-native';
 import { PlannerInput, PlannerRawOutput } from './plannerSchema';
 
 const MODEL_ID = 'gemini-2.5-flash-lite';

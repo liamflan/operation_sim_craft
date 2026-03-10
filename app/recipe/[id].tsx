@@ -10,7 +10,11 @@ import { useWindowDimensions } from 'react-native';
 
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
 import { Recipe, MethodStep as MethodStepType, Substitution as SubstitutionType } from '../../data/schema';
+import { NormalizedRecipe } from '../../data/planner/plannerTypes';
+import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 import { useTheme } from '../../components/ThemeContext';
+
+type DisplayRecipe = (Recipe | NormalizedRecipe);
 
 // ─── MOCK PANTRY STATE (mirrors PantryContext placeholder) ───────────────────
 // ingredientId → status: 'in_pantry' | 'low_stock' | 'in_fuel_list'
@@ -52,7 +56,7 @@ function getGradient(id: string, isDark: boolean): [string, string] {
 }
 
 // ─── RECIPE IMAGE / FALLBACK ─────────────────────────────────────────────────
-function RecipeHeroImage({ recipe, isDark }: { recipe: Recipe; isDark: boolean }) {
+function RecipeHeroImage({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boolean }) {
   const [failed, setFailed] = useState(false);
   const n = parseInt(recipe.id.replace(/\D/g, ''), 10) || 0;
   const [startColor, endColor] = getGradient(recipe.id, isDark);
@@ -215,7 +219,7 @@ function NutritionRow({ label, value, color }: { label: string; value: string; c
 
 // ─── RELATED RECIPE CARD (mini) ──────────────────────────────────────────────
 function RelatedRecipeCard({ recipe, label, isDark, onPress }: {
-  recipe: Recipe; label?: string; isDark: boolean; onPress: () => void;
+  recipe: DisplayRecipe; label?: string; isDark: boolean; onPress: () => void;
 }) {
   const [failed, setFailed] = useState(false);
   const n = parseInt(recipe.id.replace(/\D/g, ''), 10) || 0;
@@ -327,7 +331,7 @@ export default function RecipeDetailPage() {
   const isDesktop = width >= 768;
 
   // ── Find recipe ──────────────────────────────────────────────────────────────
-  const recipe = MOCK_RECIPES.find(r => r.id === id);
+  const recipe = FULL_RECIPE_CATALOG[id] || MOCK_RECIPES.find(r => r.id === id);
 
   // ── Back navigation ──────────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
@@ -374,10 +378,11 @@ export default function RecipeDetailPage() {
   const relatedRecipes = getRelatedRecipes();
 
   // ── Ingredient breakdown ─────────────────────────────────────────────────────
-  const ingredientRows = recipe.ingredients.map(ing => {
-    const info = MOCK_INGREDIENTS.find(i => i.id === ing.ingredientId);
-    const status = getIngredientStatus(ing.ingredientId);
-    return { ...ing, name: info?.name ?? ing.ingredientId, status };
+  const ingredientRows = (recipe.ingredients as any[]).map(ing => {
+    const ingId = ing.ingredientId || ing.canonicalIngredientId || '';
+    const info = MOCK_INGREDIENTS.find(i => i.id === ingId);
+    const status = getIngredientStatus(ingId);
+    return { ...ing, ingredientId: ingId, name: info?.name ?? ing.name ?? ingId, status };
   });
 
   const missingCount = ingredientRows.filter(i =>
@@ -397,11 +402,11 @@ export default function RecipeDetailPage() {
   const contextLabel = day && slot ? `${day} ${slot}` : 'Planned Meal';
 
   // ── Difficulty colour ────────────────────────────────────────────────────────
-  const difficultyColor = {
+  const difficultyColor = (({
     Easy: 'text-[#3D6250] dark:text-[#85B674]',
     Medium: 'text-[#7A4A20] dark:text-[#C48F5D]',
     Hard: 'text-[#7A3020] dark:text-danger',
-  }[recipe.difficulty ?? 'Easy'] ?? 'text-textSec dark:text-darktextSec';
+  }) as Record<string, string>)[(recipe as any).difficulty ?? 'Easy'] ?? 'text-textSec dark:text-darktextSec';
 
   // ────────────────────────────────────────────────────────────────────────────
   // RENDER
@@ -494,10 +499,12 @@ export default function RecipeDetailPage() {
               <View className="flex-row flex-wrap gap-x-0 gap-y-0 mb-2">
                 {recipe.prepTimeMinutes ? <MetaChip icon="clock" label={`${recipe.prepTimeMinutes}m prep`} isDark={isDarkMode} /> : null}
                 {recipe.cookTimeMinutes ? <MetaChip icon="fire" label={`${recipe.cookTimeMinutes}m cook`} isDark={isDarkMode} /> : null}
-                <MetaChip icon="bolt" label={`${recipe.macros.calories} kcal`} isDark={isDarkMode} />
-                <MetaChip icon="seedling" label={`${recipe.macros.protein}g protein`} isDark={isDarkMode} />
+                <MetaChip icon="bolt" label={`${(recipe as any).macros?.calories ?? (recipe as any).macrosPerServing?.calories ?? 0} kcal`} isDark={isDarkMode} />
+                <MetaChip icon="seedling" label={`${(recipe as any).macros?.protein ?? (recipe as any).macrosPerServing?.protein ?? 0}g protein`} isDark={isDarkMode} />
                 {recipe.servings ? <MetaChip icon="users" label={`${recipe.servings} serving${recipe.servings > 1 ? 's' : ''}`} isDark={isDarkMode} /> : null}
-                {recipe.costPerServingGBP ? <MetaChip icon="pound-sign" label={`£${recipe.costPerServingGBP.toFixed(2)}/srv`} isDark={isDarkMode} /> : null}
+                {((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP) ? (
+                  <MetaChip icon="pound-sign" label={`£${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)}/srv`} isDark={isDarkMode} />
+                ) : null}
                 {recipe.difficulty ? (
                   <View className="flex-row items-center bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 rounded-full border border-black/[0.04] dark:border-white/[0.06] mr-2 mb-2">
                     <Text className={`text-[12px] font-semibold ${difficultyColor}`}>{recipe.difficulty}</Text>
@@ -539,8 +546,8 @@ export default function RecipeDetailPage() {
                   {missingCount > 0 ? (
                     <InsightCard icon="shopping-basket" label={`${missingCount} items to buy`} sub="Not yet on Fuel List" />
                   ) : null}
-                  {recipe.costPerServingGBP ? (
-                    <InsightCard icon="pound-sign" label={`£${recipe.costPerServingGBP.toFixed(2)} per serving`} sub="Within weekly budget" />
+                  {((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP) ? (
+                    <InsightCard icon="pound-sign" label={`£${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)} per serving`} sub="Within weekly budget" />
                   ) : null}
                   <InsightCard icon="star" label="Taste profile match" sub="You prefer quick savory meals" />
                   {recipe.reheatsWell ? (
@@ -623,7 +630,7 @@ export default function RecipeDetailPage() {
             {recipe.substitutions && recipe.substitutions.length > 0 ? (
               <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
                 <SectionHeader title="Substitutions" />
-                {recipe.substitutions.map((sub, i) => (
+                {((recipe as any).substitutions as any[]).map((sub, i) => (
                   <View key={i} className="flex-row items-start py-3 border-b border-black/[0.04] dark:border-darksoftBorder">
                     {/* Original */}
                     <View className="flex-1 pr-2">
@@ -652,7 +659,7 @@ export default function RecipeDetailPage() {
                   <FontAwesome5 name="lightbulb" size={12} color="#9DCD8B" />
                   <Text className="text-[#3D6250] dark:text-[#85B674] text-[12px] font-bold uppercase tracking-widest ml-2">Chef's Note</Text>
                 </View>
-                <Text className="text-textMain dark:text-darktextMain text-[14px] leading-relaxed">{recipe.notes}</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[14px] leading-relaxed">{(recipe as any).notes}</Text>
               </View>
             ) : null}
 
@@ -695,10 +702,10 @@ export default function RecipeDetailPage() {
               {/* Nutrition widget */}
               <WidgetCard>
                 <SectionHeader title="Nutrition" />
-                <NutritionRow label="Calories" value={`${recipe.macros.calories} kcal`} color="text-peach dark:text-[#C48F5D]" />
-                <NutritionRow label="Protein" value={`${recipe.macros.protein}g`} color="text-lime dark:text-[#A9B86D]" />
-                <NutritionRow label="Carbs" value={`${recipe.macros.carbs}g`} color="text-[#9B8FCC] dark:text-[#9B8FCC]" />
-                <NutritionRow label="Fats" value={`${recipe.macros.fats}g`} color="text-[#C48F5D] dark:text-[#C48F5D]" />
+                <NutritionRow label="Calories" value={`${(recipe as any).macros?.calories ?? (recipe as any).macrosPerServing?.calories ?? 0} kcal`} color="text-peach dark:text-[#C48F5D]" />
+                <NutritionRow label="Protein" value={`${(recipe as any).macros?.protein ?? (recipe as any).macrosPerServing?.protein ?? 0}g`} color="text-lime dark:text-[#A9B86D]" />
+                <NutritionRow label="Carbs" value={`${(recipe as any).macros?.carbs ?? (recipe as any).macrosPerServing?.carbs ?? 0}g`} color="text-[#9B8FCC] dark:text-[#9B8FCC]" />
+                <NutritionRow label="Fats" value={`${(recipe as any).macros?.fats ?? (recipe as any).macrosPerServing?.fats ?? 0}g`} color="text-[#C48F5D] dark:text-[#C48F5D]" />
                 {recipe.servings ? (
                   <Text className="text-textSec dark:text-darktextSec text-[11px] mt-3 opacity-60">
                     Per serving · {recipe.servings} serving{recipe.servings > 1 ? 's' : ''}
@@ -717,10 +724,10 @@ export default function RecipeDetailPage() {
                 ) : null}
                 <PlanningFlag icon="hourglass-half" label="Total time" value={<Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold">{totalTime}m</Text>} />
                 {recipe.difficulty ? (
-                  <PlanningFlag icon="signal" label="Difficulty" value={<Text className={`text-[13px] font-semibold ${difficultyColor}`}>{recipe.difficulty}</Text>} />
+                  <PlanningFlag icon="signal" label="Difficulty" value={<Text className={`text-[13px] font-semibold ${difficultyColor}`}>{(recipe as any).difficulty}</Text>} />
                 ) : null}
-                {recipe.estimatedCostGBP ? (
-                  <PlanningFlag icon="pound-sign" label="Est. cost" value={<Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold">£{recipe.estimatedCostGBP.toFixed(2)}</Text>} />
+                {((recipe as any).estimatedCostGBP || (recipe as any).estimatedCostTotalGBP) ? (
+                  <PlanningFlag icon="pound-sign" label="Est. cost" value={<Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold">£{((recipe as any).estimatedCostGBP || (recipe as any).estimatedCostTotalGBP).toFixed(2)}</Text>} />
                 ) : null}
                 {recipe.reheatsWell !== undefined ? (
                   <PlanningFlag icon="redo" label="Reheats well" value={

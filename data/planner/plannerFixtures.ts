@@ -55,6 +55,7 @@ export const curatedRoast: NormalizedRecipe = {
   
   title: 'Classic Roast Chicken',
   description: 'A stable, hearty Sunday roast.',
+  imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 90, prepTimeMinutes: 15, difficulty: 'Medium', servings: 4,
   
   estimatedCostTotalGBP: 12.00,
@@ -78,6 +79,7 @@ export const curatedPasta: NormalizedRecipe = {
   
   title: 'Quick Tomato Pasta',
   description: 'Fast, cheap, and easy.',
+  imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
   
   estimatedCostTotalGBP: 3.00,
@@ -101,6 +103,7 @@ export const generatedLentilStew: NormalizedRecipe = {
   
   title: 'Spiced Lentil & Bean Stew',
   description: 'A deeply savory, budget-saving protein powerhouse.',
+  imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop',
   totalTimeMinutes: 25, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
   
   estimatedCostTotalGBP: 2.50,

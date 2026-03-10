@@ -66,11 +66,11 @@ export interface NormalizedRecipe {
   // Core Data
   title: string;
   description: string;
+  imageUrl?: string;
   totalTimeMinutes: number;
   prepTimeMinutes: number;
+  cookTimeMinutes?: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
-  
-  // Explicit Metrics
   servings: number;
   estimatedCostTotalGBP: number;
   estimatedCostPerServingGBP: number;
@@ -87,6 +87,11 @@ export interface NormalizedRecipe {
   reheatsWell: boolean;
   yieldsLeftovers: boolean;
   suitableFor: SlotType[];
+  
+  // Rich Optional Details
+  notes?: string;
+  substitutions?: { original: string; swap: string; reason: string }[];
+  relatedRecipeIds?: string[];
   
   // Usability Gates
   plannerUsable: boolean; // Has it passed all base checks to be considered for an auto-plan?

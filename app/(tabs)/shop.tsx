@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
 import { UserProfile } from '../../data/schema';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 import { WeeklyRoutine, DAYS, isPlanned } from '../../data/weeklyRoutine';
+import { useActivePlan } from '../../data/ActivePlanContext';
+import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 
 // ─── Shopping Intelligence Layer ────────────────────────────────────────────
 
@@ -136,7 +139,7 @@ function computePurchaseRecommendation(
 import { MOCK_INGREDIENTS as ALL_MOCKS } from '../../data/seed';
 function ingDataForNote(id: string) { return ALL_MOCKS.find(i=>i.id===id); }
 
-function generateShoppingList(routine?: WeeklyRoutine): CategorizedList {
+function generateShoppingList(workspaceAssignments: any[] = []): CategorizedList {
   const mockUser: UserProfile = { 
     id: "u1", 
     name: "Liam", 
@@ -150,40 +153,23 @@ function generateShoppingList(routine?: WeeklyRoutine): CategorizedList {
       "i7": 2000,
     }
   };
-  // Static seed plan — mirrors the Dashboard seed until planWeek() is wired in.
-  const weeklyPlan = [
-    { date: 'Mon', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
-    { date: 'Tue', breakfast: 'r7', lunch: 'r6', dinner: 'r4' },
-    { date: 'Wed', breakfast: 'r3', lunch: 'r1', dinner: 'r2' },
-    { date: 'Thu', breakfast: 'r7', lunch: 'r4', dinner: 'r6' },
-    { date: 'Fri', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
-    { date: 'Sat', breakfast: 'r7', lunch: 'r8', dinner: 'r2' },
-    { date: 'Sun', breakfast: 'r3', lunch: 'r6', dinner: 'r4' },
-  ];
 
   const ingredientMap: Record<string, { amount: number, recipes: Set<string> }> = {};
-  weeklyPlan.forEach((day, idx: number) => {
-    const dayKey = DAYS[idx % DAYS.length];
-    const slots: Array<{ id: string | undefined; slot: 'breakfast'|'lunch'|'dinner' }> = [
-      { id: day.breakfast, slot: 'breakfast' },
-      { id: day.lunch,     slot: 'lunch'     },
-      { id: day.dinner,    slot: 'dinner'    },
-    ];
-    slots.forEach(({ id: recipeId, slot }) => {
-      if (!recipeId) return;
-      // Skip if the user's routine marks this slot as non-planned
-      if (routine && !isPlanned(routine[dayKey][slot])) return;
-      const recipe = MOCK_RECIPES.find(r => r.id === recipeId);
-      if (recipe) {
-        recipe.ingredients.forEach(ing => {
-          if (!ingredientMap[ing.ingredientId]) {
-            ingredientMap[ing.ingredientId] = { amount: 0, recipes: new Set() };
-          }
-          ingredientMap[ing.ingredientId].amount += ing.amount;
-          ingredientMap[ing.ingredientId].recipes.add(recipe.title);
-        });
-      }
-    });
+  
+  workspaceAssignments.forEach((assignment) => {
+    if (!assignment.recipeId) return;
+    const recipe = FULL_RECIPE_CATALOG[assignment.recipeId];
+    if (recipe) {
+      recipe.ingredients.forEach(ing => {
+        const ingId = ing.canonicalIngredientId;
+        if (!ingId) return;
+        if (!ingredientMap[ingId]) {
+          ingredientMap[ingId] = { amount: 0, recipes: new Set() };
+        }
+        ingredientMap[ingId].amount += ing.amount;
+        ingredientMap[ingId].recipes.add(recipe.title);
+      });
+    }
   });
 
   const categorizedList: CategorizedList = {};
@@ -276,19 +262,21 @@ import { usePantry } from '../../data/PantryContext';
 import PageHeader from '../../components/PageHeader';
 
 export default function ShoppingListScreen() {
+  const router = useRouter();
+  const { workspace } = useActivePlan();
   const { routine } = useWeeklyRoutine();
+  const { confirmShop } = usePantry();
+  const assignments = workspace.output?.assignments || [];
 
-  // Re-compute the shopping list whenever the routine changes
-  const routineFilteredList = useMemo(() => generateShoppingList(routine), [routine]);
+  // Re-compute the shopping list whenever the workspace assignments change
+  const currentList = useMemo(() => generateShoppingList(assignments), [assignments]);
 
-  const [list, setList] = useState(initialList);
+  const [list, setList] = useState(currentList);
   const [isExporting, setIsExporting] = useState(false);
   const [hideStaples, setHideStaples] = useState(false);
-  
-  const { confirmShop } = usePantry();
 
-  // Sync list whenever routine changes
-  React.useEffect(() => { setList(routineFilteredList); }, [routineFilteredList]);
+  // Sync list whenever assignments change
+  React.useEffect(() => { setList(currentList); }, [currentList]);
 
   // Compute exclusion summary for the header
   const exclusionSummary = useMemo(() => {
@@ -446,7 +434,41 @@ export default function ShoppingListScreen() {
             <Text className="text-gray-800 text-sm font-bold tracking-widest uppercase mt-1">Week of {new Date().toLocaleDateString()}</Text>
           </View>
 
-          <View className="gap-y-12">
+          {/* LOADING STATE */}
+          {workspace.status === 'generating' && (
+            <View className="flex-1 items-center justify-center py-20">
+              <ActivityIndicator size="large" color="#9DCD8B" />
+              <Text className="text-textSec dark:text-darktextSec mt-4 font-medium">Generating your shopping list...</Text>
+            </View>
+          )}
+
+          {/* ERROR STATE */}
+          {workspace.status === 'error' && (
+            <View className="flex-1 items-center justify-center py-20 bg-red-50 dark:bg-red-900/10 rounded-[32px] border border-red-100 dark:border-red-900/20 px-6">
+              <FontAwesome5 name="exclamation-circle" size={32} color="#EF4444" />
+              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4 text-center">Fuel List Generation Failed</Text>
+              <Text className="text-textSec dark:text-darktextSec mt-2 text-center">{workspace.error || 'Unknown error occurred'}</Text>
+              <TouchableOpacity onPress={() => router.replace('/calibration')} className="mt-6 bg-red-500 px-8 py-3 rounded-full">
+                <Text className="text-white font-bold">Restart Onboarding</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* EMPTY STATE (No output yet) */}
+          {workspace.status === 'idle' && (
+            <View className="flex-1 items-center justify-center py-20">
+              <FontAwesome5 name="clipboard-list" size={48} color="#A3B3A9" />
+              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4">No Active Plan</Text>
+              <Text className="text-textSec dark:text-darktextSec mt-2 text-center">Complete onboarding to generate your first shopping list.</Text>
+              <TouchableOpacity onPress={() => router.replace('/calibration')} className="mt-6 bg-primary px-8 py-3 rounded-full">
+                <Text className="text-white font-bold">Start Planning</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ACTUAL LIST CONTENT */}
+          {workspace.status === 'ready' && (
+            <View className="gap-y-12">
             {Object.entries(list).map(([category, items]) => {
               const visibleItems = hideStaples ? items.filter(i => !i.isRestock) : items;
               if (visibleItems.length === 0) return null;
@@ -529,6 +551,7 @@ export default function ShoppingListScreen() {
               );
             })}
           </View>
+          )}
           
           {/* Post-Shop Integration Action */}
           {checkedCount > 0 && (

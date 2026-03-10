@@ -5,6 +5,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { MOCK_RECIPES } from '../data/seed';
+import { useActivePlan } from '../data/ActivePlanContext';
 
 export default function CalibrationScreen() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function CalibrationScreen() {
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
   const [diet, setDiet] = useState<string | null>(null);
   const [loadingStage, setLoadingStage] = useState(0);
+  const { regenerateWorkspace, workspace } = useActivePlan();
 
   const loadingMessages = [
     'Learning your taste profile...',
@@ -20,7 +22,17 @@ export default function CalibrationScreen() {
     'Shaping your weekly plan...',
     'Your first plan is ready'
   ];
-  const isSetupComplete = loadingStage >= loadingMessages.length - 1;
+  const isSetupComplete = loadingStage >= loadingMessages.length - 1 && workspace.status === 'ready';
+
+  // Trigger generation when entering step 3
+  useEffect(() => {
+    if (step === 3 && workspace.status === 'idle') {
+      regenerateWorkspace({
+        selectedVibes,
+        diet: diet || 'Omnivore'
+      });
+    }
+  }, [step]);
 
   useEffect(() => {
     if (step === 3 && !isSetupComplete) {

@@ -136,7 +136,7 @@ export async function planWeekWithDiagnostics(
       return { plannerInput: input, rawOutput: raw, stageAResult: false, suffResult, feasBounds, stageBResult: null, resolvedPlan, errorMsg: null };
     }
 
-    const stageBResult = validatePlannerOutput(raw, input, suffResult.effectiveCaps);
+    const stageBResult = validatePlannerOutput(raw, input);
     const allWarnings = [...warnings, ...stageBResult.warnings];
     // Distinguish: repaired (assignments changed), warned (only notes/warnings), clean (nothing)
     const wasRepaired = stageBResult.warnings.some(w =>
@@ -203,7 +203,7 @@ export async function planWeek(
     }
 
     // Stage B: business validation + deterministic repair
-    const result = validatePlannerOutput(raw, input, sufficiency.effectiveCaps);
+    const result = validatePlannerOutput(raw, input);
     const allWarnings = [...warnings, ...result.warnings];
     const wasRepaired = result.warnings.some(w =>
       w.startsWith('Repaired') || w.startsWith('Filled missing') || w.startsWith('Could not')

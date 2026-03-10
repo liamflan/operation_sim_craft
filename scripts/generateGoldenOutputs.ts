@@ -13,10 +13,10 @@ function main() {
   
   // 1-Day Plan
   const oneDayContracts = [
-    { ...typicalDinnerContract, slotType: 'breakfast', budgetEnvelopeGBP: 1.50, macroTargets: { calories: { min: 300, ideal: 400, max: 600 }, protein: { min: 15, ideal: 25 } } },
-    { ...typicalDinnerContract, slotType: 'lunch', budgetEnvelopeGBP: 2.50, macroTargets: { calories: { min: 400, ideal: 500, max: 700 }, protein: { min: 20, ideal: 30 } } },
+    { ...typicalDinnerContract, slotType: 'breakfast' as const, budgetEnvelopeGBP: 1.50, macroTargets: { calories: { min: 300, ideal: 400, max: 600 }, protein: { min: 15, ideal: 25 } } },
+    { ...typicalDinnerContract, slotType: 'lunch' as const, budgetEnvelopeGBP: 2.50, macroTargets: { calories: { min: 400, ideal: 500, max: 700 }, protein: { min: 20, ideal: 30 } } },
      typicalDinnerContract 
-  ];
+  ] as import('../data/planner/plannerTypes').SlotContract[];
 
   const oneDayPlan = generatePlan(oneDayContracts, recipes, 'planner_autofill');
 

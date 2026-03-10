@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { PantryProvider } from '../../data/PantryContext';
 import { WeeklyRoutineProvider } from '../../data/WeeklyRoutineContext';
+import { useActivePlan } from '../../data/ActivePlanContext';
 
 function NavItem({ icon, label, isActive, onPress }: { icon: string, label: string, isActive: boolean, onPress: () => void }) {
   return (
@@ -35,15 +36,21 @@ export default function TabLayout() {
   const isDesktop = width >= 768; // Tailwind md breakpoint
   const router = useRouter();
   const pathname = usePathname();
+  const { clearWorkspace } = useActivePlan();
+
+  const handleReset = () => {
+    if (confirm('Are you sure you want to reset your entire plan and account baseline? This cannot be undone.')) {
+      clearWorkspace();
+      router.replace('/calibration');
+    }
+  };
 
   if (isDesktop) {
     return (
-      <WeeklyRoutineProvider>
-      <PantryProvider>
-        <View 
-          className="flex-1 flex-row bg-appBg dark:bg-darkappBg"
-          style={Platform.OS === 'web' ? { height: '100vh', width: '100vw', overflow: 'hidden' } as any : undefined}
-        >
+      <View 
+        className="flex-1 flex-row bg-appBg dark:bg-darkappBg"
+        style={Platform.OS === 'web' ? { height: '100vh', width: '100vw', overflow: 'hidden' } as any : undefined}
+      >
         {/* Persistent Left Sidebar */}
         <View 
           className="w-[260px] bg-[#EEF4E8] dark:bg-darksageTint pt-12 px-5 pb-8 print-hide border-r border-transparent dark:border-darksoftBorder shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10" 
@@ -92,18 +99,30 @@ export default function TabLayout() {
               onPress={() => router.push('/(tabs)/planner-sandbox')} 
             />
           </View>
-          <TouchableOpacity 
-            onPress={() => router.push('/(tabs)/settings')}
-            className="flex-row items-center p-3 rounded-full hover:bg-white/40 dark:hover:bg-white/5 transition-colors mt-auto border border-transparent hover:border-white/40"
-          >
-            <View className="w-10 h-10 bg-white/80 dark:bg-darksurface rounded-full items-center justify-center mr-3 shadow-sm">
-              <Text className="text-[#6E7C74] dark:text-darktextSec font-medium text-caption leading-none tracking-tight">LF</Text>
-            </View>
-            <View>
-              <Text className="text-textMain dark:text-darktextMain font-medium text-[14px] leading-tight">Liam F.</Text>
-              <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium mt-0.5 opacity-80">Free Plan</Text>
-            </View>
-          </TouchableOpacity>
+          <View className="mt-auto">
+            <TouchableOpacity 
+              onPress={handleReset}
+              className="flex-row items-center p-3 rounded-full hover:bg-red-500/10 dark:hover:bg-red-500/10 transition-colors mb-2 group border border-transparent hover:border-red-500/20"
+            >
+              <View className="w-8 items-center mr-2">
+                <FontAwesome5 name="trash-alt" size={12} color="#EF4444" className="opacity-60 group-hover:opacity-100" />
+              </View>
+              <Text className="text-red-500/60 group-hover:text-red-500 font-bold text-[11px] uppercase tracking-widest">Reset System</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/settings')}
+              className="flex-row items-center p-3 rounded-full hover:bg-white/40 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-white/40"
+            >
+              <View className="w-10 h-10 bg-white/80 dark:bg-darksurface rounded-full items-center justify-center mr-3 shadow-sm">
+                <Text className="text-[#6E7C74] dark:text-darktextSec font-medium text-caption leading-none tracking-tight">LF</Text>
+              </View>
+              <View>
+                <Text className="text-textMain dark:text-darktextMain font-medium text-[14px] leading-tight">Liam F.</Text>
+                <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium mt-0.5 opacity-80">Free Plan</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Fluid Main Content Area */}
@@ -111,16 +130,12 @@ export default function TabLayout() {
           <Slot />
         </View>
       </View>
-      </PantryProvider>
-      </WeeklyRoutineProvider>
     );
   }
 
   // Mobile Fallback: Standard Bottom Tabs
   return (
-    <WeeklyRoutineProvider>
-    <PantryProvider>
-      <Tabs
+    <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#9DCD8B',
         headerShown: false,
@@ -180,7 +195,5 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    </PantryProvider>
-    </WeeklyRoutineProvider>
   );
 }

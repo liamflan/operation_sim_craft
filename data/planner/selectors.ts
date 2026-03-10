@@ -49,7 +49,7 @@ export function getMealCardViewModel(
     slotType: assignment.slotType,
     state: assignment.state,
     
-    recipeId: recipe ? recipe.id : null,
+    recipeId: recipe ? recipe.id : assignment.recipeId,
     title: recipe ? recipe.title : null,
     timeLabel: recipe ? `${recipe.totalTimeMinutes}m` : null,
     calories: recipe ? recipe.macrosPerServing.calories : null,
@@ -70,10 +70,11 @@ export function getMealCardViewModel(
 
 export function getAssignmentsForDay(
   assignments: PlannedMealAssignment[],
-  planId: string,
+  planId: string, 
   dayIndex: number
 ): PlannedMealAssignment[] {
-  return assignments.filter(a => a.planId === planId && a.dayIndex === dayIndex);
+  // Use loose equality or explicit cast to handle potential serialization quirks (string vs number)
+  return assignments.filter(a => Number(a.dayIndex) === Number(dayIndex));
 }
 
 export function getWeeklyMetrics(
@@ -86,7 +87,7 @@ export function getWeeklyMetrics(
   let totalProtein = 0;
   let populatedSlots = 0;
 
-  const weekAssignments = assignments.filter(a => a.planId === planId);
+  const weekAssignments = assignments;
 
   weekAssignments.forEach(a => {
     if (a.recipeId && recipes[a.recipeId]) {

@@ -5,10 +5,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Recipe } from '../data/schema';
+import { NormalizedRecipe } from '../data/planner/plannerTypes';
 import { useTheme } from './ThemeContext';
 
+/** Flexible type for UI display that handles both legacy and normalized recipes */
+type DisplayRecipe = (Recipe | NormalizedRecipe) & {
+  // Common overrides often passed ad-hoc
+  calories?: number;
+  protein?: number;
+};
+
 type Props = {
-  recipe: Recipe;
+  recipe: DisplayRecipe;
   slotLabel?: string;
   /** Day string forwarded as query param, e.g. 'Monday' */
   day?: string;
@@ -20,21 +28,20 @@ type Props = {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Subtle food-oriented fallback background tints — light + dark pairs (rotate between them for variety)
 const FALLBACK_GRADIENTS_LIGHT: [string, string][] = [
-  ['#E8F2E0', '#C8DFC0'],  // sage / herb — richer
-  ['#F3E9DB', '#E5D5BE'],  // warm parchment
-  ['#E3ECEC', '#C8DEDE'],  // muted teal
-  ['#EEE8F5', '#DDD5EE'],  // soft lavender
-  ['#F0EAD8', '#E2D5BD'],  // honey / oat
+  ['#84A98C', '#52796F'], // deep sage
+  ['#DDA15E', '#BC6C25'], // spicy orange
+  ['#E07A5F', '#3D405B'], // terracotta & deep blue
+  ['#A8DADC', '#457B9D'], // fresh blue
+  ['#9C6644', '#7F4F24'], // deep coffee/mocha
 ];
 
 const FALLBACK_GRADIENTS_DARK: [string, string][] = [
-  ['#243028', '#1A241D'],  // dark sage
-  ['#2E2820', '#221E16'],  // dark parchment
-  ['#1E2828', '#161E1E'],  // dark teal
-  ['#28222E', '#1E1A24'],  // dark lavender
-  ['#2A2418', '#1E1A10'],  // dark honey
+  ['#2A3C24', '#1A241D'], // dark green
+  ['#4A3B22', '#2E1C11'], // dark amber
+  ['#3A2424', '#201616'], // dark crimson
+  ['#1D2E30', '#121F22'], // deep ocean
+  ['#30221E', '#1A1211'], // dark wood
 ];
 
 // Deterministic gradient picker from recipe id
@@ -49,20 +56,13 @@ function getFallbackGradientDark(id: string): [string, string] {
 }
 
 // Premium fallback used when imageUrl is missing or fails to load
-function FallbackCard({ recipe, isDark }: { recipe: Recipe; isDark: boolean }) {
+function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boolean }) {
   const [lightStart, lightEnd] = getFallbackGradientLight(recipe.id);
   const [darkStart, darkEnd] = getFallbackGradientDark(recipe.id);
   const startColor = isDark ? darkStart : lightStart;
   const endColor = isDark ? darkEnd : lightEnd;
 
-  // Icon tint is slightly different per variant so each card feels distinct
-  const numeric = parseInt(recipe.id.replace(/\D/g, ''), 10) || 0;
-  const foodIcons = ['utensils', 'carrot', 'fish', 'drumstick-bite', 'seedling'] as const;
-  const iconName = foodIcons[numeric % foodIcons.length];
-
-  const circleAlpha = isDark ? '0.08' : '0.20';
-  const iconBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.50)';
-  const iconBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.70)';
+  const circleAlpha = isDark ? '0.15' : '0.25';
 
   return (
     <LinearGradient
@@ -75,24 +75,25 @@ function FallbackCard({ recipe, isDark }: { recipe: Recipe; isDark: boolean }) {
       <View
         style={{
           position: 'absolute',
-          width: 220,
-          height: 220,
-          borderRadius: 110,
+          width: 300,
+          height: 300,
+          borderRadius: 150,
           backgroundColor: `rgba(255,255,255,${circleAlpha})`,
-          top: -70,
-          right: -70,
+          top: -100,
+          right: -80,
+          transform: [{ scaleY: 1.2 }],
         }}
       />
       {/* Medium circle — bottom-left */}
       <View
         style={{
           position: 'absolute',
-          width: 140,
-          height: 140,
-          borderRadius: 70,
-          backgroundColor: `rgba(255,255,255,${circleAlpha})`,
-          bottom: -30,
-          left: -40,
+          width: 180,
+          height: 180,
+          borderRadius: 90,
+          backgroundColor: `rgba(0,0,0,${isDark ? '0.2' : '0.05'})`,
+          bottom: -60,
+          left: -60,
         }}
       />
       {/* Small accent circle — mid-left */}
@@ -102,33 +103,11 @@ function FallbackCard({ recipe, isDark }: { recipe: Recipe; isDark: boolean }) {
           width: 72,
           height: 72,
           borderRadius: 36,
-          backgroundColor: `rgba(157,205,139,${isDark ? '0.10' : '0.14'})`,
+          backgroundColor: `rgba(255,255,255,${isDark ? '0.05' : '0.1'})`,
           top: '38%',
           left: '12%',
         }}
       />
-
-      {/* Centered icon badge */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-        <View
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 20,
-            backgroundColor: iconBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: iconBorder,
-            shadowColor: '#000',
-            shadowOpacity: isDark ? 0.3 : 0.06,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 3 },
-          }}
-        >
-          <FontAwesome5 name={iconName} size={24} color={isDark ? '#7AB868' : '#9DCD8B'} />
-        </View>
-      </View>
     </LinearGradient>
   );
 }
@@ -198,12 +177,11 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
         opacity: opacity,
       }}
       {...panResponder.panHandlers}
-      className="mb-8"
     >
       <Pressable
         testID="recipe-card-pressable"
         onPress={onPress}
-        className="w-full h-64 md:h-[260px] rounded-3xl overflow-hidden active:scale-[0.99] transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder"
+        className="w-full h-56 md:h-[220px] rounded-3xl overflow-hidden active:scale-[0.99] transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder"
       >
         {/* Premium fallback — always renders first, image crossfades over it once loaded */}
         <FallbackCard recipe={recipe} isDark={isDarkMode} />
@@ -211,9 +189,9 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
         {/* Full Bleed Image — only rendered when URL exists AND hasn't errored.
             On error, imageLoadFailed flips to true, unmounting this element
             which ensures the browser's broken-image icon is never visible. */}
-        {recipe.imageUrl && !imageLoadFailed ? (
+        {(recipe as any).imageUrl && !imageLoadFailed ? (
           <Image
-            source={recipe.imageUrl}
+            source={(recipe as any).imageUrl}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             contentFit="cover"
             transition={{ duration: 500, effect: 'cross-dissolve' }}
@@ -257,11 +235,11 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
 
         {/* Bottom gradient + content */}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.05)', 'rgba(0,0,0,0.7)']}
-          locations={[0.5, 0.75, 1]}
-          className="absolute inset-0 w-full h-full justify-end p-6 z-10"
+          colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.85)']}
+          locations={[0.4, 0.7, 1]}
+          className="absolute inset-0 w-full h-full justify-end p-5 md:p-6 z-10"
         >
-          <Text testID="recipe-card-title" className="text-white font-medium text-[28px] md:text-[32px] leading-[1.15] mb-4 tracking-tight">
+          <Text testID="recipe-card-title" className="text-white font-medium text-[26px] md:text-[28px] leading-[1.1] mb-3 tracking-tight">
             {recipe.title}
           </Text>
 
@@ -274,12 +252,16 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
 
               <View className="bg-white/20 dark:bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20 dark:border-white/10">
                 <FontAwesome5 name="fire" size={10} color="white" />
-                <Text className="text-white text-[12px] font-medium ml-2">{recipe.macros.calories} kcal</Text>
+                <Text className="text-white text-[12px] font-medium ml-2">
+                  {recipe.calories ?? (recipe as NormalizedRecipe).macrosPerServing?.calories ?? (recipe as Recipe).macros?.calories ?? 0} kcal
+                </Text>
               </View>
 
               <View className="bg-white/20 dark:bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20 dark:border-white/10">
                 <FontAwesome5 name="seedling" size={10} color="white" />
-                <Text className="text-white text-[12px] font-medium ml-2">{recipe.macros.protein}g Protein</Text>
+                <Text className="text-white text-[12px] font-medium ml-2">
+                  {recipe.protein ?? (recipe as NormalizedRecipe).macrosPerServing?.protein ?? (recipe as Recipe).macros?.protein ?? 0}g Protein
+                </Text>
               </View>
             </View>
 

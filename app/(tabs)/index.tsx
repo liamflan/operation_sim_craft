@@ -1,35 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar, Animated } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, SafeAreaView, TextInput, TouchableOpacity, LayoutAnimation, Platform, StatusBar, Animated, ActivityIndicator } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
-import { calculateDailyMacros } from '../../data/engine';
-import { MOCK_RECIPES } from '../../data/seed';
+import { slotLabel, isPlanned, DAYS } from '../../data/weeklyRoutine';
+import { useActivePlan } from '../../data/ActivePlanContext';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
-import { DAYS, slotLabel, isPlanned } from '../../data/weeklyRoutine';
+import { getMealCardViewModel, getAssignmentsForDay, getWeeklyMetrics } from '../../data/planner/selectors';
+import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 
-// Mock User for MVP
-const mockUser = {
-  id: "u1",
-  name: "Liam",
-  targetMacros: { calories: 2400, protein: 160, carbs: 250, fats: 80 },
-  budgetWeekly: 50,
-  dietaryPreference: "Omnivore" as const,
-  allergies: [],
-};
-
-// Static seed plan — recipe assignments to display while Gemini plan loads.
-// These are overridden by swappedMeals on user interaction.
-const weeklyPlan = [
-  { date: 'Mon', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
-  { date: 'Tue', breakfast: 'r7', lunch: 'r6', dinner: 'r4' },
-  { date: 'Wed', breakfast: 'r3', lunch: 'r1', dinner: 'r2' },
-  { date: 'Thu', breakfast: 'r7', lunch: 'r4', dinner: 'r6' },
-  { date: 'Fri', breakfast: 'r3', lunch: 'r5', dinner: 'r1' },
-  { date: 'Sat', breakfast: 'r7', lunch: 'r8', dinner: 'r2' },
-  { date: 'Sun', breakfast: 'r3', lunch: 'r6', dinner: 'r4' },
-];
+// Static plan overrides are now handled by ActivePlanContext
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -38,8 +19,8 @@ export default function DashboardScreen() {
   // displayedDayIndex = what the meal feed actually renders (only updates after fade-out)
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
-  const [swappedMeals, setSwappedMeals] = useState<Record<number, Record<string, string>>>({});
   const [importModalVisible, setImportModalVisible] = useState(false);
+  const { workspace } = useActivePlan();
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
@@ -72,37 +53,39 @@ export default function DashboardScreen() {
   // Day abbrev -> routine key map — use displayedDayIndex for meal feed content
   const currentDayKey = DAYS[displayedDayIndex];
 
-  const activeDayPlan = weeklyPlan[displayedDayIndex];
+  // Derive active day data from the new hybrid plan
+  const planId = workspace.id || 'initial';
+  const dayAssignments = workspace.output 
+    ? getAssignmentsForDay(workspace.output.assignments, planId, displayedDayIndex)
+    : [];
   
-  // Helper to fetch the actual active meal ID for the displayed day
-  const getActiveMealId = (type: 'breakfast' | 'lunch' | 'dinner') => {
-    return (swappedMeals[displayedDayIndex] && swappedMeals[displayedDayIndex][type]) || activeDayPlan[type];
+  const weeklyMetrics = workspace.output
+    ? getWeeklyMetrics(workspace.output.assignments, planId, FULL_RECIPE_CATALOG)
+    : { totalCalories: 0, totalProtein: 0, estimatedTotalCostGBP: 0, populatedSlots: 0, totalSlots: 0 };
+
+  // Helper to get view model for a specific slot
+  const getSlotViewModel = (type: string) => {
+    const assignment = dayAssignments.find(a => a.slotType === type);
+    if (!assignment) return null;
+    const recipeId = assignment.recipeId;
+    const recipe = recipeId ? FULL_RECIPE_CATALOG[recipeId] : undefined;
+    return getMealCardViewModel(assignment, recipe);
   };
 
-  // Helper to find recipe object
-  const getRecipe = (id?: string) => MOCK_RECIPES.find(r => r.id === id);
+  // Daily macros for the top bar
+  const activeMacros = dayAssignments.reduce((acc, a) => {
+    if (a.recipeId && FULL_RECIPE_CATALOG[a.recipeId]) {
+      const r = FULL_RECIPE_CATALOG[a.recipeId];
+      acc.calories += r.macrosPerServing.calories;
+      acc.protein += r.macrosPerServing.protein;
+    }
+    return acc;
+  }, { calories: 0, protein: 0 });
 
-  // Re-calculate macros based on ACTIVE meals
-  const activePlan = {
-    ...activeDayPlan,
-    breakfast: getActiveMealId('breakfast'),
-    lunch: getActiveMealId('lunch'),
-    dinner: getActiveMealId('dinner'),
-  };
-  const activeMacros = calculateDailyMacros(activePlan, MOCK_RECIPES);
-
-  const handleSwap = (type: 'breakfast' | 'lunch' | 'dinner') => {
-    const currentId = getActiveMealId(type);
-    const alternatives = MOCK_RECIPES.filter(r => r.id !== currentId);
-    const newRecipe = alternatives[Math.floor(Math.random() * Math.min(alternatives.length, 5))];
-    
-    setSwappedMeals(prev => ({ 
-      ...prev, 
-      [displayedDayIndex]: { 
-        ...(prev[displayedDayIndex] || {}), 
-        [type]: newRecipe.id 
-      } 
-    }));
+  const handleSwap = (type: string) => {
+    // Phase 14A handles swaps via a full workspace action if needed, 
+    // but for now we just log it since the orchestrator output is static-returned.
+    console.log(`Swap requested for ${type} on day ${displayedDayIndex}`);
   };
 
   const [tasteProfileTags, setTasteProfileTags] = useState(['High-protein', 'Spicy', 'Quick meals']);
@@ -133,13 +116,13 @@ export default function DashboardScreen() {
       <View testID="week-selector-container">
         {/* Day pills — Row of 7 rounded day capsules/cards */}
         <View testID="week-selector-pills" className="flex-row gap-1.5 mb-5">
-          {weeklyPlan.map((day, idx) => {
+          {DAYS.map((day, idx) => {
             const isSelected = currentDayIndex === idx;
             const isToday = todayIndex === idx;
             return (
               <TouchableOpacity
                 key={idx}
-                testID={`week-selector-day-${days[idx].toLowerCase()}`}
+                testID={`week-selector-day-${day.toLowerCase()}`}
                 onPress={() => switchDay(idx)}
                 className={`flex-1 items-center justify-center py-2.5 rounded-[12px] transition-all duration-300 border ${
                   isSelected
@@ -150,7 +133,7 @@ export default function DashboardScreen() {
                 <Text className={`font-semibold text-[10px] uppercase tracking-widest mb-1 ${
                   isSelected ? 'text-[#24332D] dark:text-darktextMain' : 'text-textSec dark:text-darktextSec opacity-70'
                 }`}>
-                  {days[idx]}
+                  {day}
                 </Text>
                 <Text className={`font-medium text-[16px] leading-none ${
                   isSelected ? 'text-[#24332D] dark:text-darktextMain' : 'text-textMain dark:text-darktextMain'
@@ -171,7 +154,9 @@ export default function DashboardScreen() {
             <Text testID="dashboard-current-date-heading" className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight mb-1">
               {fullDays[currentDayIndex]}
             </Text>
-            <Text className="text-textMain dark:text-darktextMain text-[20px] font-medium tracking-tight mr-4">{days[currentDayIndex]} (3 meals planned)</Text>
+            <Text className="text-textMain dark:text-darktextMain text-[20px] font-medium tracking-tight mr-4">
+              {days[currentDayIndex]} ({dayAssignments.length} slots)
+            </Text>
           </View>
           {/* Day Summary Chips */}
           <View className="flex-row gap-2">
@@ -222,7 +207,7 @@ export default function DashboardScreen() {
             <View className="flex-row justify-between items-end mb-4 pt-1">
               <View>
                 <Text className="text-textSec text-[11px] font-medium tracking-[0.15em] mb-1 opacity-80 uppercase">Morning,</Text>
-                <Text className="text-textMain dark:text-darktextMain text-[32px] font-medium tracking-tight leading-none">{mockUser.name}</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[32px] font-medium tracking-tight leading-none">Liam</Text>
               </View>
               
               {/* Top-right aligned week strip label */}
@@ -245,83 +230,85 @@ export default function DashboardScreen() {
             {/* Meal Feed — routine-aware */}
             <Animated.View testID="dashboard-meal-feed" className="mt-2" style={{ opacity: mealFadeAnim }}>
 
-              {/* Breakfast */}
-              {isPlanned(routine[currentDayKey].breakfast)
-                ? getRecipe(getActiveMealId('breakfast')) && (
-                    <View key={`breakfast-${displayedDayIndex}`} className="mb-6">
-                      <RecipeCard
-                        recipe={getRecipe(getActiveMealId('breakfast'))!}
-                        slotLabel="Breakfast"
-                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
-                        slot="Breakfast"
-                        onSwipe={() => handleSwap('breakfast')}
-                      />
-                    </View>
-                  )
-                : (
-                  <View key={`breakfast-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
-                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="coffee" size={16} color="#9DCD8B" />
-                    </View>
-                    <View>
-                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('breakfast', routine[currentDayKey].breakfast)}</Text>
-                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
-                    </View>
-                  </View>
-                )
-              }
+              {['breakfast', 'lunch', 'dinner'].map(slotStr => {
+                const slot = slotStr as 'breakfast' | 'lunch' | 'dinner';
+                const dayRoutine = routine[currentDayKey] as any;
+                const vm = getSlotViewModel(slot);
+                const isPlannedSlot = isPlanned(dayRoutine[slot]);
 
-              {/* Lunch */}
-              {isPlanned(routine[currentDayKey].lunch)
-                ? getRecipe(getActiveMealId('lunch')) && (
-                    <View key={`lunch-${displayedDayIndex}`} className="mb-6">
-                      <RecipeCard
-                        recipe={getRecipe(getActiveMealId('lunch'))!}
-                        slotLabel="Lunch"
-                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
-                        slot="Lunch"
-                        onSwipe={() => handleSwap('lunch')}
-                      />
+                if (!isPlannedSlot) {
+                  const icon = slot === 'breakfast' ? 'coffee' : slot === 'lunch' ? 'utensils' : 'moon';
+                  return (
+                    <View key={`${slot}-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-4 md:mb-5 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
+                      <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
+                        <FontAwesome5 name={icon} size={16} color="#9DCD8B" />
+                      </View>
+                      <View>
+                        <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel(slot, dayRoutine[slot])}</Text>
+                        <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
+                      </View>
                     </View>
-                  )
-                : (
-                  <View key={`lunch-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
-                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="utensils" size={16} color="#9DCD8B" />
-                    </View>
-                    <View>
-                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('lunch', routine[currentDayKey].lunch)}</Text>
-                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
-                    </View>
-                  </View>
-                )
-              }
+                  );
+                }
 
-              {/* Dinner */}
-              {isPlanned(routine[currentDayKey].dinner)
-                ? getRecipe(getActiveMealId('dinner')) && (
-                    <View key={`dinner-${displayedDayIndex}`} className="mb-6">
-                      <RecipeCard
-                        recipe={getRecipe(getActiveMealId('dinner'))!}
-                        slotLabel="Dinner"
-                        day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
-                        slot="Dinner"
-                        onSwipe={() => handleSwap('dinner')}
-                      />
+                if (!vm || !vm.recipeId) {
+                  const isTrulyGenerating = vm?.state === 'generating' || workspace.status === 'generating';
+                  return (
+                    <View key={`${slot}-loading-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-10 mb-4 md:mb-5 border border-dashed border-primary/20 items-center justify-center">
+                      {isTrulyGenerating ? (
+                        <>
+                          <ActivityIndicator color="#9DCD8B" />
+                          <Text className="text-textSec dark:text-darktextSec text-[12px] mt-3">Planning {slot}...</Text>
+                        </>
+                      ) : (
+                        <>
+                          <FontAwesome5 name="cloud-meatball" size={24} color="#A3B3A9" />
+                          <Text className="text-textSec dark:text-darktextSec text-[12px] mt-3 font-medium">No suitable recipe found</Text>
+                          <TouchableOpacity onPress={() => handleSwap(slot)} className="mt-2 px-4 py-1.5 bg-primary/10 rounded-full">
+                             <Text className="text-primary text-[11px] font-bold">Try Manual Search</Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
                     </View>
-                  )
-                : (
-                  <View key={`dinner-empty-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-8 shadow-sm dark:shadow-none border border-black/[0.02] dark:border-darksoftBorder flex-row items-center gap-4">
-                    <View className="w-12 h-12 rounded-full bg-sageTint dark:bg-darksageTint items-center justify-center flex-shrink-0">
-                      <FontAwesome5 name="moon" size={16} color="#9DCD8B" />
+                  );
+                }
+
+                const recipe = vm.recipeId ? FULL_RECIPE_CATALOG[vm.recipeId] : undefined;
+                
+                if (vm.recipeId && !recipe) {
+                  return (
+                    <View key={`${slot}-missing-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-4 md:mb-5 border border-red-200 dark:border-red-900/30 flex-row items-center gap-4">
+                      <View className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/10 items-center justify-center flex-shrink-0">
+                        <FontAwesome5 name="exclamation-triangle" size={16} color="#ef4444" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-textMain dark:text-darktextMain text-[16px] font-semibold tracking-tight">Recipe Not Found</Text>
+                        <Text className="text-textSec dark:text-darktextSec text-[11px] mt-1 opacity-80">Reference ID: {vm.recipeId}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => handleSwap(slot)} className="px-4 py-2 bg-black/5 dark:bg-white/5 rounded-full">
+                        <Text className="text-[11px] font-medium">Re-Plan</Text>
+                      </TouchableOpacity>
                     </View>
-                    <View>
-                      <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel('dinner', routine[currentDayKey].dinner)}</Text>
-                      <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
-                    </View>
+                  );
+                }
+
+                return (
+                  <View key={`${slot}-${displayedDayIndex}`} className="mb-4 md:mb-4">
+                    <RecipeCard
+                      recipe={{
+                        ...recipe,
+                        calories: vm.calories || 0,
+                        protein: (recipe as any).macrosPerServing?.protein || (recipe as any).macros?.protein || 0,
+                        tags: vm.tags || [],
+                      } as any}
+                      slotLabel={vm.slotType.charAt(0).toUpperCase() + vm.slotType.slice(1)}
+                      day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
+                      slot={vm.slotType}
+                      onSwipe={() => handleSwap(vm.slotType)}
+                    />
                   </View>
-                )
-              }
+                );
+              })}
 
             </Animated.View>
           </View>
@@ -358,10 +345,10 @@ export default function DashboardScreen() {
                       <View>
                         <View className="flex-row justify-between items-baseline mb-2">
                           <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Calories</Text>
-                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.calories)} <Text className="text-textSec font-normal opacity-70">/ {mockUser.targetMacros.calories}</Text></Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.calories)} <Text className="text-textSec font-normal opacity-70">/ 2400</Text></Text>
                         </View>
                         <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-                          <View className="h-full bg-peach dark:bg-[#C48F5D] rounded-full" style={{ width: `${Math.min((activeMacros.calories / mockUser.targetMacros.calories) * 100, 100)}%` }} />
+                          <View className="h-full bg-peach dark:bg-[#C48F5D] rounded-full" style={{ width: `${Math.min((activeMacros.calories / 2400) * 100, 100)}%` }} />
                         </View>
                       </View>
                       
@@ -369,10 +356,10 @@ export default function DashboardScreen() {
                       <View>
                         <View className="flex-row justify-between items-baseline mb-2">
                           <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Protein</Text>
-                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.protein)}g <Text className="text-textSec font-normal opacity-70">/ {mockUser.targetMacros.protein}g</Text></Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.protein)}g <Text className="text-textSec font-normal opacity-70">/ 160g</Text></Text>
                         </View>
                         <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-                          <View className="h-full bg-lime dark:bg-[#A9B86D] rounded-full" style={{ width: `${Math.min((activeMacros.protein / mockUser.targetMacros.protein) * 100, 100)}%` }} />
+                          <View className="h-full bg-lime dark:bg-[#A9B86D] rounded-full" style={{ width: `${Math.min((activeMacros.protein / 160) * 100, 100)}%` }} />
                         </View>
                       </View>
                     </View>
@@ -385,11 +372,22 @@ export default function DashboardScreen() {
             <View testID="dashboard-weekly-budget-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
               <View className="flex-row justify-between items-start mb-6">
                 <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Grocery Budget</Text>
-                <Text className="text-textSec dark:text-[#A3B0A7] text-[10px] font-medium uppercase tracking-widest bg-sageTint/50 dark:bg-darksageTint px-2 py-1 rounded">On Track</Text>
+                {(() => {
+                  const isOver = weeklyMetrics.estimatedTotalCostGBP > 50;
+                  return (
+                    <Text className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${
+                      isOver 
+                        ? 'bg-red-500/10 text-red-500' 
+                        : 'bg-sageTint/50 text-[#A3B0A7] dark:text-[#A3B0A7] dark:bg-darksageTint'
+                    }`}>
+                      {isOver ? 'Over Budget' : 'On Track'}
+                    </Text>
+                  );
+                })()}
               </View>
               <View className="flex-row items-baseline">
-                <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£34</Text>
-                <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £{mockUser.budgetWeekly}</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£{Math.round(weeklyMetrics.estimatedTotalCostGBP)}</Text>
+                <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £50</Text>
               </View>
             </View>
 
@@ -401,7 +399,9 @@ export default function DashboardScreen() {
             >
               <View className="flex-1 mr-4">
                 <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-widest mb-1.5">Weekly Prep</Text>
-                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">12 ingredients needed</Text>
+                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">
+                  {workspace.output?.assignments.filter(a => !!a.recipeId).length || 0} meals planned
+                </Text>
               </View>
               <View className="w-10 h-10 rounded-full bg-white dark:bg-white/10 items-center justify-center shadow-sm">
                 <FontAwesome5 name="arrow-right" size={14} color="#9DCD8B" />
