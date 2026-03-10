@@ -216,10 +216,10 @@ export default function CalibrationScreen() {
                 <FontAwesome5 name="check" size={32} color="white" />
               ) : (
                 <>
-                  <ActivityIndicator size="small" color="#9DCD8B" style={{ transform: [{ scale: 1.2 }] }} />
-                  {/* Leaf icon in center stays subtle */}
-                  <View className="absolute w-9 h-9 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
-                    <FontAwesome5 name="leaf" size={12} color="#9DCD8B" />
+                  <ActivityIndicator size="large" color="#9DCD8B" />
+                  {/* Leaf icon in center stays subtle, matching ImportRecipeModal scale */}
+                  <View className="absolute w-8 h-8 bg-surface dark:bg-[#2A332E] rounded-full items-center justify-center shadow-sm border border-black/[0.04] dark:border-white/10">
+                    <FontAwesome5 name="leaf" size={14} color="#9DCD8B" />
                   </View>
                 </>
               )}
