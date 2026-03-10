@@ -158,6 +158,8 @@ function generateShoppingList(workspaceAssignments: any[] = []): CategorizedList
   
   workspaceAssignments.forEach((assignment) => {
     if (!assignment.recipeId) return;
+    if (assignment.state === 'skipped') return; // Ignore skipped meals completely
+    
     const recipe = FULL_RECIPE_CATALOG[assignment.recipeId];
     if (recipe) {
       recipe.ingredients.forEach(ing => {

@@ -3,7 +3,7 @@ import { MOCK_INGREDIENTS } from './seed';
 import { ShoppingListItem } from '../app/(tabs)/shop';
 
 export type PantryItemState = 'in_stock' | 'low' | 'out' | 'need_checking';
-export type PantryItemSource = 'added' | 'past_shop' | 'inferred';
+export type PantryItemSource = 'added' | 'past_shop' | 'inferred' | 'skipped_meal';
 export type TrackMode = 'state' | 'quantity';
 
 export interface PantryItem {
@@ -34,6 +34,7 @@ interface PantryContextType {
   updateItemState: (id: string, newState: PantryItemState) => void;
   updateItemQuantity: (id: string, delta: number) => void;
   addManualItem: (name: string) => void;
+  addSkippedIngredients: (ingredients: { ingredientId: string; amount: number; unit: string }[]) => void;
 }
 
 const PantryContext = createContext<PantryContextType | undefined>(undefined);
@@ -66,6 +67,51 @@ export function PantryProvider({ children }: { children: ReactNode }) {
       lastUpdated: 'Just now'
     };
     setPantryItems(prev => [newItem, ...prev]);
+  };
+
+  const addSkippedIngredients = (ingredients: { ingredientId: string; amount: number; unit: string }[]) => {
+    setPantryItems(prevPantry => {
+      const nextPantry = [...prevPantry];
+      
+      ingredients.forEach(ing => {
+        const ingredientDef = MOCK_INGREDIENTS.find(i => i.id === ing.ingredientId);
+        if (!ingredientDef) return;
+
+        const canonicalName = ingredientDef.name;
+        
+        // Check if item already exists
+        const existingIndex = nextPantry.findIndex(p => p.id === ing.ingredientId || p.name.toLowerCase() === canonicalName.toLowerCase());
+
+        if (existingIndex >= 0) {
+          const existing = nextPantry[existingIndex];
+          if (existing.trackMode === 'quantity') {
+            const currentQ = existing.quantity || 0;
+            existing.quantity = currentQ + ing.amount;
+            existing.state = 'in_stock';
+          } else {
+            existing.state = 'in_stock';
+          }
+          existing.source = 'skipped_meal';
+          existing.lastUpdated = 'Just now';
+        } else {
+          // Create new explicitly tracked item
+          const newItem: PantryItem = {
+            id: ing.ingredientId,
+            name: canonicalName,
+            trackMode: 'quantity',
+            state: 'in_stock',
+            source: 'skipped_meal',
+            confidence: 'high',
+            quantity: ing.amount,
+            unit: ing.unit,
+            lastUpdated: 'Just now'
+          };
+          nextPantry.unshift(newItem);
+        }
+      });
+      
+      return nextPantry;
+    });
   };
 
   const confirmShop = (purchasedItems: ShoppingListItem[]) => {
@@ -133,7 +179,7 @@ export function PantryProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PantryContext.Provider value={{ pantryItems, setPantryItems, confirmShop, updateItemState, updateItemQuantity, addManualItem }}>
+    <PantryContext.Provider value={{ pantryItems, setPantryItems, confirmShop, updateItemState, updateItemQuantity, addManualItem, addSkippedIngredients }}>
       {children}
     </PantryContext.Provider>
   );

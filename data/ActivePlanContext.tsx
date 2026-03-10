@@ -10,6 +10,8 @@ import { PlannerInput } from './plannerSchema';
 import { buildPlannerSetup, CalibrationPayload } from './planner/buildPlannerInput';
 import { runActivePlan } from './planner/runActivePlan';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
+import { usePantry } from './PantryContext';
+import { NormalizedRecipe } from './planner/plannerTypes';
 
 export interface ActiveWorkspace {
   id: string | null;
@@ -25,6 +27,8 @@ interface ActivePlanContextType {
   workspace: ActiveWorkspace;
   regenerateWorkspace: (payload: CalibrationPayload) => Promise<void>;
   clearWorkspace: () => void;
+  skipAssignment: (assignmentId: string) => void;
+  skipAndKeepIngredients: (assignmentId: string, recipe: NormalizedRecipe) => void;
 }
 
 const STORAGE_KEY = 'provision_active_workspace_v1';
@@ -45,6 +49,7 @@ const ActivePlanContext = createContext<ActivePlanContextType | undefined>(undef
 export function ActivePlanProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<ActiveWorkspace>(INITIAL_WORKSPACE);
   const { routine } = useWeeklyRoutine();
+  const { addSkippedIngredients } = usePantry();
 
   // ─── Hydration ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -117,8 +122,43 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  const skipAssignment = (assignmentId: string) => {
+    setWorkspace(prev => {
+      if (!prev.output) return prev;
+      return {
+        ...prev,
+        output: {
+          ...prev.output,
+          assignments: prev.output.assignments.map(a => 
+            a.id === assignmentId ? { ...a, state: 'skipped' } : a
+          )
+        }
+      };
+    });
+  };
+
+  const skipAndKeepIngredients = (assignmentId: string, recipe: NormalizedRecipe) => {
+    // 1. Mark assignment as skipped
+    skipAssignment(assignmentId);
+    
+    // 2. Transfer ingredients to pantry
+    if (recipe && recipe.ingredients) {
+      addSkippedIngredients(recipe.ingredients.map(ing => ({
+        ingredientId: ing.canonicalIngredientId || ing.name, // Fallback to name if ID is missing
+        amount: ing.amount,
+        unit: ing.unit
+      })));
+    }
+  };
+
   return (
-    <ActivePlanContext.Provider value={{ workspace, regenerateWorkspace, clearWorkspace }}>
+    <ActivePlanContext.Provider value={{ 
+      workspace, 
+      regenerateWorkspace, 
+      clearWorkspace,
+      skipAssignment,
+      skipAndKeepIngredients
+    }}>
       {children}
     </ActivePlanContext.Provider>
   );

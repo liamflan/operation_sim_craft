@@ -22,8 +22,11 @@ type Props = {
   day?: string;
   /** Slot string forwarded as query param, e.g. 'Dinner' */
   slot?: string;
+  isSkipped?: boolean;
   onPress?: () => void;
   onSwipe?: () => void;
+  onSkip?: () => void;
+  onSkipAndKeep?: () => void;
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -112,7 +115,7 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
   );
 }
 
-export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSwipe }: Props) {
+export default function RecipeCard({ recipe, slotLabel, day, slot, isSkipped, onPress, onSwipe, onSkip, onSkipAndKeep }: Props) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
   // Track whether the remote image has failed so we can suppress the broken-img UI entirely
@@ -180,8 +183,8 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
     >
       <Pressable
         testID="recipe-card-pressable"
-        onPress={onPress}
-        className="w-full h-56 md:h-[220px] rounded-3xl overflow-hidden active:scale-[0.99] transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder"
+        onPress={isSkipped ? undefined : onPress}
+        className={`w-full h-56 md:h-[220px] rounded-3xl overflow-hidden transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder ${isSkipped ? 'opacity-50 grayscale' : 'active:scale-[0.99]'}`}
       >
         {/* Premium fallback — always renders first, image crossfades over it once loaded */}
         <FallbackCard recipe={recipe} isDark={isDarkMode} />
@@ -207,18 +210,41 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
             </View>
           ) : <View />}
 
-          {onSwipe && (
-            <Pressable
-              testID="recipe-card-swap-desktop-btn"
-              onPress={(e) => {
-                e.stopPropagation();
-                onSwipe();
-              }}
-              className="bg-black/20 hover:bg-black/30 dark:bg-black/40 dark:hover:bg-black/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all pointer-events-auto"
-            >
-              <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
-              <Text className="text-white font-medium text-[13px] tracking-wide">Swap</Text>
-            </Pressable>
+          {onSwipe && !isSkipped && (
+            <View className="flex-row items-center gap-2 pointer-events-auto">
+              <Pressable
+                testID="recipe-card-swap-desktop-btn"
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onSwipe();
+                }}
+                className="bg-black/20 hover:bg-black/30 dark:bg-black/40 dark:hover:bg-black/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
+              >
+                <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
+                <Text className="text-white font-medium text-[13px] tracking-wide">Swap</Text>
+              </Pressable>
+              
+              {onSkip && (
+                <Pressable
+                  testID="recipe-card-skip-btn"
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onSkip();
+                  }}
+                  className="bg-red-500/20 hover:bg-red-500/30 dark:bg-red-900/40 dark:hover:bg-red-900/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
+                >
+                  <FontAwesome5 name="fast-forward" size={12} color="white" className="mr-2" />
+                  <Text className="text-white font-medium text-[13px] tracking-wide">Skip</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+          
+          {isSkipped && (
+            <View className="bg-red-500/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
+               <FontAwesome5 name="ban" size={10} color="white" className="mr-2" />
+               <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Skipped</Text>
+            </View>
           )}
         </View>
 
@@ -265,14 +291,27 @@ export default function RecipeCard({ recipe, slotLabel, day, slot, onPress, onSw
               </View>
             </View>
 
-            <Pressable
-              testID="recipe-card-view-recipe-btn"
-              onPress={(e) => { e.stopPropagation(); handleViewRecipe(); }}
-              className="flex-row items-center opacity-90 bg-white/15 backdrop-blur-sm px-3.5 py-2 rounded-full border border-white/20 hover:bg-white/25 active:scale-95 transition-all pointer-events-auto"
-            >
-              <Text className="text-white font-medium text-[13px] mr-2">View Recipe</Text>
-              <FontAwesome5 name="arrow-right" size={10} color="rgba(255,255,255,0.9)" />
-            </Pressable>
+            {!isSkipped && (
+              <Pressable
+                testID="recipe-card-view-recipe-btn"
+                onPress={(e) => { e.stopPropagation(); handleViewRecipe(); }}
+                className="flex-row items-center opacity-90 bg-white/15 backdrop-blur-sm px-3.5 py-2 rounded-full border border-white/20 hover:bg-white/25 active:scale-95 transition-all pointer-events-auto"
+              >
+                <Text className="text-white font-medium text-[13px] mr-2">View Recipe</Text>
+                <FontAwesome5 name="arrow-right" size={10} color="rgba(255,255,255,0.9)" />
+              </Pressable>
+            )}
+            
+            {isSkipped && onSkipAndKeep && (
+              <Pressable
+                testID="recipe-card-keep-ingredients-btn"
+                onPress={(e) => { e.stopPropagation(); onSkipAndKeep(); }}
+                className="flex-row items-center opacity-90 bg-sageTint/20 backdrop-blur-sm px-4 py-2 rounded-full border border-sageTint/40 hover:bg-sageTint/30 active:scale-95 transition-all pointer-events-auto"
+              >
+                <FontAwesome5 name="box-open" size={10} color="#9DCD8B" className="mr-2" />
+                <Text className="text-[#9DCD8B] font-medium text-[13px]">Add Groceries to Pantry</Text>
+              </Pressable>
+            )}
           </View>
         </LinearGradient>
       </Pressable>

@@ -20,7 +20,7 @@ export default function DashboardScreen() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
   const [importModalVisible, setImportModalVisible] = useState(false);
-  const { workspace } = useActivePlan();
+  const { workspace, skipAssignment, skipAndKeepIngredients } = useActivePlan();
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
@@ -86,6 +86,18 @@ export default function DashboardScreen() {
     // Phase 14A handles swaps via a full workspace action if needed, 
     // but for now we just log it since the orchestrator output is static-returned.
     console.log(`Swap requested for ${type} on day ${displayedDayIndex}`);
+  };
+
+  const handleSkip = (assignmentId: string) => {
+    skipAssignment(assignmentId);
+  };
+
+  const handleSkipAndKeep = (assignmentId: string, recipeId?: string) => {
+    if (!recipeId) return;
+    const recipe = FULL_RECIPE_CATALOG[recipeId];
+    if (recipe) {
+      skipAndKeepIngredients(assignmentId, recipe);
+    }
   };
 
   const [tasteProfileTags, setTasteProfileTags] = useState(['High-protein', 'Spicy', 'Quick meals']);
@@ -304,7 +316,10 @@ export default function DashboardScreen() {
                       slotLabel={vm.slotType.charAt(0).toUpperCase() + vm.slotType.slice(1)}
                       day={['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][displayedDayIndex]}
                       slot={vm.slotType}
+                      isSkipped={vm.isSkipped}
                       onSwipe={() => handleSwap(vm.slotType)}
+                      onSkip={() => handleSkip(vm.assignmentId)}
+                      onSkipAndKeep={() => handleSkipAndKeep(vm.assignmentId, vm.recipeId || undefined)}
                     />
                   </View>
                 );

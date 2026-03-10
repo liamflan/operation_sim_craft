@@ -28,6 +28,7 @@ export interface MealCardViewModel {
   isLocked: boolean;
   isRescue: boolean;
   isGenerating: boolean;
+  isSkipped: boolean;
   
   // Rescue / Autofill Diagnostics
   autofillActor: string | null;
@@ -62,6 +63,7 @@ export function getMealCardViewModel(
     isLocked: assignment.state === 'locked',
     isRescue,
     isGenerating,
+    isSkipped: assignment.state === 'skipped',
     
     autofillActor: assignment.metrics.autoFilledBy || null,
     rescueTiersTriggered: assignment.rescueData?.tierTriggered || null
@@ -90,6 +92,8 @@ export function getWeeklyMetrics(
   const weekAssignments = assignments;
 
   weekAssignments.forEach(a => {
+    if (a.state === 'skipped') return; // Ignore skipped meals completely
+    
     if (a.recipeId && recipes[a.recipeId]) {
       populatedSlots++;
       const recipe = recipes[a.recipeId];
