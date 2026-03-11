@@ -7,6 +7,7 @@ import ImportRecipeModal from '../../components/ImportRecipeModal';
 import { slotLabel, isPlanned, DAYS } from '../../data/weeklyRoutine';
 import { useActivePlan } from '../../data/ActivePlanContext';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
+import { useDebug } from '../../data/DebugContext';
 import { getMealCardViewModel, getAssignmentsForDay, getWeeklyMetrics } from '../../data/planner/selectors';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 
@@ -20,7 +21,8 @@ export default function DashboardScreen() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
   const [importModalVisible, setImportModalVisible] = useState(false);
-  const { workspace, skipAssignment, unskipAssignment, skipAndKeepIngredients, replaceSlot, regenerateDay, regenerateWeek } = useActivePlan();
+  const { workspace, skipAssignment, unskipAssignment, skipAndKeepIngredients, replaceSlot, regenerateDay, regenerateWeek, slotLoading, dayLoading, weekLoading } = useActivePlan();
+  const { updateDebugData } = useDebug();
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
@@ -63,6 +65,12 @@ export default function DashboardScreen() {
     ? getWeeklyMetrics(workspace.output.assignments, planId, FULL_RECIPE_CATALOG)
     : { totalCalories: 0, totalProtein: 0, estimatedTotalCostGBP: 0, populatedSlots: 0, totalSlots: 0 };
 
+  // Sync displayed budget into debug overlay — must be in an effect, never during render
+  const weeklyBudget = workspace.input?.payload?.budgetWeekly ?? 50;
+  useEffect(() => {
+    updateDebugData({ dashboardDisplayedBudget: weeklyBudget });
+  }, [weeklyBudget, updateDebugData]);
+
   // Helper to get view model for a specific slot
   const getSlotViewModel = (type: string) => {
     const assignment = dayAssignments.find(a => a.slotType === type);
@@ -83,9 +91,8 @@ export default function DashboardScreen() {
   }, { calories: 0, protein: 0 });
 
   const handleSwap = (type: string) => {
-    // Phase 14A handles swaps via a full workspace action if needed, 
-    // but for now we just log it since the orchestrator output is static-returned.
-    console.log(`Swap requested for ${type} on day ${displayedDayIndex}`);
+    // Unify with handleReplace to ensure the action is correctly dispatched
+    replaceSlot(displayedDayIndex, type as any);
   };
 
   const handleSkip = (assignmentId: string) => {
@@ -140,10 +147,10 @@ export default function DashboardScreen() {
            <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium tracking-widest uppercase ml-1">This Week</Text>
            <TouchableOpacity 
               onPress={() => regenerateWeek()}
-              disabled={workspace.status === 'generating'}
+              disabled={weekLoading}
               className="flex-row items-center opacity-70 hover:opacity-100 active:scale-95 transition-all"
             >
-              <FontAwesome5 name="sync-alt" size={10} className={workspace.status === 'generating' ? 'animate-spin mr-2 text-textMain dark:text-white' : 'mr-2 text-textMain dark:text-white'} />
+              <FontAwesome5 name="sync-alt" size={10} className={weekLoading ? 'animate-spin mr-2 text-textMain dark:text-white' : 'mr-2 text-textMain dark:text-white'} />
               <Text className="text-textMain dark:text-darktextMain font-bold text-[10px] uppercase tracking-widest">Regenerate Week</Text>
             </TouchableOpacity>
         </View>
@@ -203,10 +210,10 @@ export default function DashboardScreen() {
             </View>
             <TouchableOpacity 
               onPress={() => regenerateDay(displayedDayIndex)}
-              disabled={workspace.status === 'generating'}
+              disabled={!!dayLoading[displayedDayIndex]}
               className="flex-row items-center mt-3 opacity-70 hover:opacity-100 active:scale-95 transition-all"
             >
-              <FontAwesome5 name="sync-alt" size={10} className={workspace.status === 'generating' ? 'animate-spin mr-2 text-textSec dark:text-darktextSec' : 'mr-2 text-textSec dark:text-darktextSec'} />
+              <FontAwesome5 name="sync-alt" size={10} className={dayLoading[displayedDayIndex] ? 'animate-spin mr-2 text-textSec dark:text-darktextSec' : 'mr-2 text-textSec dark:text-darktextSec'} />
               <Text className="text-textSec dark:text-darktextSec font-bold text-[10px] uppercase tracking-widest">Regenerate Day</Text>
             </TouchableOpacity>
           </View>
@@ -309,10 +316,11 @@ export default function DashboardScreen() {
                         <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 leading-[18px]">{collapseMsg}</Text>
                         <TouchableOpacity
                           onPress={() => handleReplace(slot)}
-                          className="mt-3 flex-row items-center gap-2 self-start px-4 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-full border border-amber-200 dark:border-amber-800/30"
+                          disabled={!!slotLoading[`${displayedDayIndex}_${slot}`]}
+                          className="mt-3 flex-row items-center gap-2 self-start px-4 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-full border border-amber-200 dark:border-amber-800/30 disabled:opacity-40"
                         >
-                          <FontAwesome5 name="sync-alt" size={10} color="#f59e0b" />
-                          <Text className="text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-widest">Try Swap</Text>
+                          <FontAwesome5 name={slotLoading[`${displayedDayIndex}_${slot}`] ? 'spinner' : 'sync-alt'} size={10} color="#f59e0b" />
+                          <Text className="text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-widest">{slotLoading[`${displayedDayIndex}_${slot}`] ? 'Swapping...' : 'Try Swap'}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -444,12 +452,13 @@ export default function DashboardScreen() {
             </View>
 
             {/* Weekly Budget Card — Airy */}
-            <View testID="dashboard-weekly-budget-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
-              <View className="flex-row justify-between items-start mb-6">
-                <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Grocery Budget</Text>
-                {(() => {
-                  const isOver = weeklyMetrics.estimatedTotalCostGBP > 50;
-                  return (
+            {(() => {
+              const spent = weeklyMetrics.estimatedTotalCostGBP;
+              const isOver = spent > weeklyBudget;
+              return (
+                <View testID="dashboard-weekly-budget-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
+                  <View className="flex-row justify-between items-start mb-6">
+                    <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">Grocery Budget</Text>
                     <Text className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded ${
                       isOver 
                         ? 'bg-red-500/10 text-red-500' 
@@ -457,14 +466,14 @@ export default function DashboardScreen() {
                     }`}>
                       {isOver ? 'Over Budget' : 'On Track'}
                     </Text>
-                  );
-                })()}
-              </View>
-              <View className="flex-row items-baseline">
-                <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£{Math.round(weeklyMetrics.estimatedTotalCostGBP)}</Text>
-                <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £50</Text>
-              </View>
-            </View>
+                  </View>
+                  <View className="flex-row items-baseline">
+                    <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£{Math.round(spent)}</Text>
+                    <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £{weeklyBudget}</Text>
+                  </View>
+                </View>
+              );
+            })()}
 
             {/* Next Action — Sage Card */}
             <TouchableOpacity

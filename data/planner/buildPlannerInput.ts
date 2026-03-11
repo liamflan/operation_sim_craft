@@ -20,6 +20,7 @@ export interface CalibrationPayload {
   budgetWeekly?: number;
   targetProtein?: number;
   targetCalories?: number;
+  profileExclusions?: string[]; // Normalized (lowercase, trimmed). Profile metadata only — not yet planner-consumed.
 }
 
 const DEFAULT_BUDGET = 50;

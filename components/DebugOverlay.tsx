@@ -37,11 +37,24 @@ export default function DebugOverlay() {
   const renderField = (label: string, value: any) => (
     <View style={styles.field} key={label}>
       <Text style={styles.label}>{label}:</Text>
-      <Text style={[styles.value, typeof value === 'boolean' && { color: value ? '#4ade80' : '#f87171' }]}>
+      <Text style={[
+        styles.value,
+        typeof value === 'boolean' && { color: value ? '#4ade80' : '#f87171' },
+        value === null || value === undefined ? { color: '#4b5563' } : null,
+      ]}>
         {value === null ? 'null' : value === undefined ? 'n/a' : String(value)}
       </Text>
     </View>
   );
+
+  const phaseColor = (phase: string | null | undefined) => {
+    if (!phase) return '#6b7280';
+    if (phase === 'complete') return '#4ade80';
+    if (phase === 'error') return '#f87171';
+    if (phase === 'action_ignored') return '#fbbf24';
+    if (phase === 'planner_running') return '#60a5fa';
+    return '#d1d5db';
+  };
 
   return (
     <View style={[styles.container, expanded && styles.containerExpanded]}>
@@ -53,7 +66,11 @@ export default function DebugOverlay() {
         >
           <FontAwesome5 name="bug" size={12} color="#9DCD8B" />
           <Text style={styles.headerText}>
-            Planner Debug: {debugData.actionSource} | {debugData.executionMeta?.enginePath || 'idle'}
+            🐛 {debugData.lastActionIntent ?? debugData.actionSource} | phase:{' '}
+            <Text style={{ color: phaseColor(debugData.lastActionPhase) }}>
+              {debugData.lastActionPhase ?? 'idle'}
+            </Text>
+            {' '}| {debugData.executionMeta?.enginePath ?? 'no-engine'}
           </Text>
           <FontAwesome5 name={expanded ? 'chevron-down' : 'chevron-up'} size={12} color="#8C9A90" />
         </TouchableOpacity>
@@ -66,6 +83,63 @@ export default function DebugOverlay() {
       {/* Expandable Details */}
       {expanded && (
         <ScrollView style={styles.details} contentContainerStyle={styles.detailsContent}>
+
+          {/* ─── Last Action ──────────────────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>Last Action</Text>
+          {renderField('Intent', debugData.lastActionIntent)}
+          {renderField('RunId', debugData.lastActionRunId)}
+          <View style={styles.field} key="phase-color">
+            <Text style={styles.label}>Phase:</Text>
+            <Text style={[styles.value, { color: phaseColor(debugData.lastActionPhase) }]}>
+              {debugData.lastActionPhase ?? 'n/a'}
+            </Text>
+          </View>
+          {renderField('ClickAt', debugData.lastClickAt)}
+          {renderField('IgnoredReason', debugData.actionIgnoredReason)}
+
+          {/* ─── Planner Lifecycle ────────────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>Planner Lifecycle</Text>
+          {renderField('ExecutionSource', debugData.lastPlannerExecutionSource)}
+          {renderField('PlannerStart', debugData.lastPlannerStartAt)}
+          {renderField('PlannerEnd', debugData.lastPlannerEndAt)}
+          {renderField('PersistEnd', debugData.lastPersistEndAt)}
+          {renderField('LoadingCleared', debugData.loadingCleared)}
+
+          {/* ─── Swap Target ─────────────────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>Swap Target</Text>
+          {renderField('TargetDay', debugData.lastSwapTargetDay)}
+          {renderField('TargetSlot', debugData.lastSwapTargetSlot)}
+          {renderField('CurrentRecipeId', debugData.lastSwapCurrentRecipeId)}
+          {renderField('CardStateBefore', debugData.cardStateBefore)}
+          {renderField('CardStateAfter', debugData.cardStateAfter)}
+          {renderField('ResultChanged', debugData.resultChanged)}
+          {renderField('UnchangedReason', debugData.unchangedReason)}
+
+          {/* ─── Collapse Context ─────────────────────────────────────────── */}
+          {debugData.collapseContext ? (
+            <>
+              <Text style={styles.sectionTitle}>Collapse Context</Text>
+              {renderField('Reason', debugData.collapseContext.reason)}
+              {renderField('CandidateCount', debugData.collapseContext.candidateCount)}
+              {renderField('CommittedCost £', debugData.collapseContext.committedCost)}
+              {renderField('RemainingBudget £', debugData.collapseContext.remainingBudget)}
+              {renderField('UserMessage', debugData.collapseContext.userMessage)}
+            </>
+          ) : (
+            <>
+              <Text style={styles.sectionTitle}>Collapse Context</Text>
+              <Text style={styles.emptyText}>None for this action.</Text>
+            </>
+          )}
+
+          {/* ─── Budget Trace ─────────────────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>Budget Trace</Text>
+          {renderField('OnboardingSelected £', debugData.selectedOnboardingBudget)}
+          {renderField('PersistedWorkspace £', debugData.persistedWorkspaceBudget)}
+          {renderField('PlannerInput £', debugData.plannerInputBudget)}
+          {renderField('DashboardDisplayed £', debugData.dashboardDisplayedBudget)}
+
+          {/* ─── Context State (Diet) ─────────────────────────────────────── */}
           <Text style={styles.sectionTitle}>Context State</Text>
           {renderField('Current Route', debugData.currentRoute)}
           {renderField('Action Source', debugData.actionSource)}
@@ -74,16 +148,18 @@ export default function DebugOverlay() {
           {renderField('Planner Input Diet', debugData.plannerInputDiet)}
           {renderField('Logic Fired', debugData.plannerLogicFiredThisView)}
 
+          {/* ─── Planner Execution Meta ───────────────────────────────────── */}
           <Text style={styles.sectionTitle}>Planner Execution</Text>
           {debugData.executionMeta ? (
             <>
+              {renderField('RunId', debugData.executionMeta.runId)}
               {renderField('Engine Path', debugData.executionMeta.enginePath)}
               {renderField('Planning Mode', debugData.executionMeta.planningMode)}
               {renderField('Hard Rules Valid', debugData.executionMeta.isHardRuleValid)}
               {renderField('Target Feasible', debugData.executionMeta.isTargetFeasible)}
               {renderField('Timestamp', debugData.executionMeta.timestamp)}
               
-              <Text style={styles.subSectionTitle}>Candidate Counts</Text>
+              <Text style={styles.subSectionTitle}>Candidate Counts by Slot</Text>
               {Object.entries(debugData.executionMeta.candidateCountsBySlot).map(([slot, count]) => (
                 renderField(slot, count)
               ))}
@@ -118,7 +194,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   containerExpanded: {
-    height: 400,
+    height: 480,
   },
   header: {
     flexDirection: 'row',
@@ -138,6 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flex: 1,
   },
   copyBtn: {
     padding: 8,
@@ -156,8 +233,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
-    marginTop: 12,
+    marginTop: 16,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   subSectionTitle: {
     color: '#8C9A90',
@@ -172,17 +250,22 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#2d332f',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   label: {
     color: '#8C9A90',
     fontSize: 12,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flexShrink: 0,
   },
   value: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    flexShrink: 1,
+    textAlign: 'right',
   },
   warningText: {
     color: '#fca5a5',
