@@ -39,9 +39,31 @@ export default function TabLayout() {
   const { clearWorkspace } = useActivePlan();
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to reset your entire plan and account baseline? This cannot be undone.')) {
-      clearWorkspace();
-      router.replace('/calibration');
+    const message = 'Are you sure you want to reset your entire plan and account baseline? This cannot be undone.';
+    
+    if (Platform.OS === 'web') {
+      if (window.confirm(message)) {
+        clearWorkspace();
+        router.replace('/calibration');
+      }
+    } else {
+      import('react-native').then(({ Alert }) => {
+        Alert.alert(
+          'Reset System',
+          message,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Reset', 
+              style: 'destructive',
+              onPress: () => {
+                clearWorkspace();
+                router.replace('/calibration');
+              }
+            }
+          ]
+        );
+      });
     }
   };
 

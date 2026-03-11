@@ -454,7 +454,10 @@ export default function DashboardScreen() {
             {/* Weekly Budget Card — Airy */}
             {(() => {
               const spent = weeklyMetrics.estimatedTotalCostGBP;
-              const isOver = spent > weeklyBudget;
+              // Fix: 50.01 would display as 50 but trigger 'OVER BUDGET' under strict float > 50.
+              // We round both the display and the logic check to ensure UI truthfulness.
+              const displayedSpent = Math.round(spent);
+              const isOver = displayedSpent > weeklyBudget;
               return (
                 <View testID="dashboard-weekly-budget-card" className="bg-surface dark:bg-darksurface rounded-3xl p-5 mb-4 shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none border border-black/[0.03] dark:border-darksoftBorder">
                   <View className="flex-row justify-between items-start mb-6">
@@ -468,7 +471,7 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                   <View className="flex-row items-baseline">
-                    <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£{Math.round(spent)}</Text>
+                    <Text className="text-textMain dark:text-darktextMain text-[28px] font-medium tracking-tight leading-none">£{displayedSpent}</Text>
                     <Text className="text-[14px] font-medium text-textSec dark:text-darktextSec opacity-60 ml-1.5">/ £{weeklyBudget}</Text>
                   </View>
                 </View>

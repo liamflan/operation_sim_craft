@@ -21,6 +21,7 @@ const KNOWN_PLACEHOLDERS = [
  */
 export function getImageFingerprint(url: string | undefined): string | undefined {
   if (!url) return undefined;
+  if (typeof url !== 'string') return `local_asset:${url}`; // Handle require() numbers
 
   try {
     const parsed = new URL(url);
@@ -56,7 +57,7 @@ export function auditRecipeImage(
   const fingerprint = getImageFingerprint(imageUrl);
 
   // 1. Missing Check
-  if (!imageUrl || imageUrl.trim() === '') {
+  if (!imageUrl || (typeof imageUrl === 'string' && imageUrl.trim() === '')) {
     reasons.push(IMAGE_AUDIT_REASONS.MISSING_URL);
     return {
       sourceType: 'fallback',
@@ -76,20 +77,22 @@ export function auditRecipeImage(
     }
   }
 
-  // 3. Keyword Weak Mismatch Check
-  const titleWords = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').filter(w => w.length > 3);
-  const urlLower = imageUrl.toLowerCase();
-  
-  const hasKeywordMatch = titleWords.some(word => urlLower.includes(word));
-  if (titleWords.length > 0 && !hasKeywordMatch) {
-    reasons.push(IMAGE_AUDIT_REASONS.KEYWORD_MISMATCH_WEAK);
-    // We don't mark as suspect on weak keyword mismatch alone, 
-    // but we record the reason for potential review.
+  // 3. Keyword Weak Mismatch Check (only for strings)
+  if (typeof imageUrl === 'string') {
+    const titleWords = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(' ').filter(w => w.length > 3);
+    const urlLower = imageUrl.toLowerCase();
+    
+    const hasKeywordMatch = titleWords.some(word => urlLower.includes(word));
+    if (titleWords.length > 0 && !hasKeywordMatch) {
+      reasons.push(IMAGE_AUDIT_REASONS.KEYWORD_MISMATCH_WEAK);
+      // We don't mark as suspect on weak keyword mismatch alone, 
+      // but we record the reason for potential review.
+    }
   }
 
   return {
-    sourceType: 'imported', // Since we have a URL
-    provider: imageUrl.includes('unsplash') ? 'unsplash' : 'unknown',
+    sourceType: typeof imageUrl === 'string' ? 'imported' : 'generated',
+    provider: typeof imageUrl === 'string' && imageUrl.includes('unsplash') ? 'unsplash' : 'internal',
     status,
     reasons,
     fingerprint,

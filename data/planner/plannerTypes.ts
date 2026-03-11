@@ -163,6 +163,8 @@ export interface SlotContract {
   };
   budgetEnvelopeGBP: number;
   dietaryBaseline: DietaryBaseline;
+  /** Normalized (lowercase, trimmed) strings from profileExclusions. Hard gate in evaluator. */
+  hardExclusions: string[];
   
   // Planner Constraints
   repeatCap: number; // Max occurrences of same recipe in plan
@@ -221,7 +223,8 @@ export type RescueFailureReason =
   | 'calorie_maximum_exceeded'
   | 'batch_cook_mismatch'
   | 'leftover_mismatch'
-  | 'dietary_mismatch';
+  | 'dietary_mismatch'
+  | 'exclusion_ingredient_match'; // Recipe contains an ingredient matching a hardExclusion from profileExclusions
 
 export interface RescueMetadata {
   tierTriggered: 1 | 2 | 3; 

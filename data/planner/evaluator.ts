@@ -25,6 +25,28 @@ export function checkHardEligibility(
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
+  // 0. Profile Exclusions (HARD) — must come first, user-trust gate
+  // Match each exclusion term against each ingredient name using word-boundary logic
+  // to avoid false positives (e.g. "salmon" should not reject a recipe with "salsa")
+  if (contract.hardExclusions && contract.hardExclusions.length > 0) {
+    const exclusionMatchFound = contract.hardExclusions.some(exclusion => {
+      // Build a word-boundary regex: \b won't work for multi-word exclusions like "blue cheese"
+      // So we use a safe substring check with surrounding non-alpha context
+      const pattern = new RegExp(`(?:^|[^a-z])${exclusion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z]|$)`, 'i');
+      return recipe.ingredients.some(ingredient => {
+        const normalizedIngredient = ingredient.name.toLowerCase().trim();
+        if (pattern.test(normalizedIngredient)) {
+          console.log(`[evaluator] exclusion match: "${exclusion}" in ingredient "${ingredient.name}" for recipe "${recipe.title}"`); 
+          return true;
+        }
+        return false;
+      });
+    });
+    if (exclusionMatchFound) {
+      failures.push('exclusion_ingredient_match');
+    }
+  }
+
   // 1. Dietary Baseline Enforcement (HARD)
   if (!isRecipeAllowedForBaselineDiet(recipe, contract.dietaryBaseline)) {
     failures.push('dietary_mismatch');

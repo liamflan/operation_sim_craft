@@ -1,3 +1,4 @@
+import { getRecipeImage } from "./planner/RecipeImages";
 import { Recipe, Ingredient } from "./schema";
 
 export const MOCK_INGREDIENTS: Ingredient[] = [
@@ -22,7 +23,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r1",
     title: "Miso Glazed Salmon Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r1", "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     cookTimeMinutes: 15,
     totalTimeMinutes: 25,
@@ -62,7 +63,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r2",
     title: "Steak & Sweet Potato Mash",
-    imageUrl: "https://images.unsplash.com/photo-1628198642732-eafbe99eb0a2?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r2", "https://images.unsplash.com/photo-1628198642732-eafbe99eb0a2?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     cookTimeMinutes: 20,
     totalTimeMinutes: 30,
@@ -102,7 +103,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r3",
     title: "Avocado & Egg Sourdough Toast",
-    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r3", "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     cookTimeMinutes: 5,
     totalTimeMinutes: 10,
@@ -140,7 +141,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r4",
     title: "Garlic Butter Chicken & Spinach",
-    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r4", "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     cookTimeMinutes: 18,
     totalTimeMinutes: 23,
@@ -180,7 +181,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r5",
     title: "Mediterranean Quinoa Salad",
-    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r5", "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
     totalTimeMinutes: 22,
@@ -220,7 +221,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r6",
     title: "Beef & Broccoli Stir-Fry",
-    imageUrl: "https://images.unsplash.com/photo-1512058560566-42724afbc2db?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r6", require('../assets/images/recipes/recipe_r6.png') as any as string),
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
     totalTimeMinutes: 22,
@@ -259,7 +260,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r7",
     title: "Blueberry Protein Pancakes",
-    imageUrl: "https://images.unsplash.com/photo-1506084868730-342b1f894493?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r7", "https://images.unsplash.com/photo-1506084868730-342b1f894493?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     cookTimeMinutes: 10,
     totalTimeMinutes: 15,
@@ -297,7 +298,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r8",
     title: "Sweet Potato & Black Bean Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r8", "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     cookTimeMinutes: 25,
     totalTimeMinutes: 35,
@@ -337,7 +338,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r9",
     title: "Avocado & Egg Toast",
-    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r9", "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 400, protein: 18, carbs: 32, fats: 22 },
     tags: ["Vegetarian", "Quick", "Breakfast"],
@@ -352,7 +353,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r10",
     title: "Greek Yogurt & Granola Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r10", "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 350, protein: 22, carbs: 45, fats: 8 },
     tags: ["Vegetarian", "Quick", "Breakfast"],
@@ -366,7 +367,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r11",
     title: "Hearty Turkey Chili",
-    imageUrl: "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r11", "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 45,
     macros: { calories: 650, protein: 45, carbs: 55, fats: 20 },
     tags: ["High Protein", "Meal Prep", "Dinner"],
@@ -382,7 +383,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r12",
     title: "Lemon Herb Salmon & Quinoa",
-    imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r12", "https://images.unsplash.com/photo-1567620905732-2d1ec7bb7445?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 25,
     macros: { calories: 600, protein: 42, carbs: 40, fats: 25 },
     tags: ["High Protein", "Healthy", "Dinner"],
@@ -398,7 +399,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r13",
     title: "Chicken Parmesan & Pasta",
-    imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r13", "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 40,
     macros: { calories: 750, protein: 55, carbs: 65, fats: 28 },
     tags: ["High Protein", "Comfort Food", "Dinner"],
@@ -414,7 +415,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r14",
     title: "Vegetarian Lentil Shepherd's Pie",
-    imageUrl: "https://images.unsplash.com/photo-1628294895950-9805252327bc?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r14", "https://images.unsplash.com/photo-1628294895950-9805252327bc?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 60,
     macros: { calories: 550, protein: 20, carbs: 85, fats: 12 },
     tags: ["Vegetarian", "Comfort Food", "Dinner"],
@@ -429,7 +430,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r15",
     title: "Pesto Pasta with Grilled Chicken",
-    imageUrl: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r15", "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 800, protein: 48, carbs: 70, fats: 32 },
     tags: ["High Protein", "Quick", "Dinner"],
@@ -444,7 +445,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r16",
     title: "Steak & Rice Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r16", "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 25,
     macros: { calories: 850, protein: 52, carbs: 58, fats: 42 },
     tags: ["High Protein", "Dinner"],
@@ -458,7 +459,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r17",
     title: "Loaded Breakfast Burrito",
-    imageUrl: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r17", "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 650, protein: 35, carbs: 60, fats: 30 },
     tags: ["High Protein", "Breakfast"],
@@ -472,7 +473,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r18",
     title: "Peanut Butter Banana Oatmeal Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r18", "https://images.unsplash.com/photo-1585032226651-759b36eb4ab9?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     macros: { calories: 580, protein: 20, carbs: 85, fats: 22 },
     tags: ["Vegetarian", "High Fiber", "Breakfast"],
@@ -486,7 +487,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r19",
     title: "Avocado Chicken Salad Sandwich",
-    imageUrl: "https://images.unsplash.com/photo-1628840042765-356cda07504e?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r19", "https://images.unsplash.com/photo-JFzI_o2JnHs?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 620, protein: 45, carbs: 55, fats: 25 },
     tags: ["High Protein", "Lunch"],
@@ -500,7 +501,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r20",
     title: "Tuna Pasta Salad",
-    imageUrl: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r20", "https://images.unsplash.com/photo-fP1Chij6dH4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 550, protein: 35, carbs: 65, fats: 18 },
     tags: ["High Protein", "Meal Prep", "Lunch"],
@@ -514,7 +515,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r21",
     title: "Smoked Salmon Bagel & Cream Cheese",
-    imageUrl: "https://images.unsplash.com/photo-1622316496357-1909bf2e2ec8?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r21", "https://images.unsplash.com/photo-94KPme-Ibb4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 500, protein: 28, carbs: 45, fats: 22 },
     tags: ["Quick", "Breakfast", "Lunch"],
@@ -528,7 +529,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r22",
     title: "Spicy Turkey Rice Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r22", "https://images.unsplash.com/photo-xd5mqeeg9qE?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 25,
     macros: { calories: 700, protein: 45, carbs: 80, fats: 25 },
     tags: ["High Protein", "Meal Prep", "Lunch"],
@@ -542,7 +543,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r23",
     title: "Scrambled Eggs & Toast (x3)",
-    imageUrl: "https://images.unsplash.com/photo-1516684732162-798a0062be99?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r23", "https://images.unsplash.com/photo-AEU9UZstCfs?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     macros: { calories: 600, protein: 36, carbs: 55, fats: 28 },
     tags: ["Vegetarian", "Quick", "Breakfast", "Budget"],
@@ -557,7 +558,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r24",
     title: "Budget Chicken Rice Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r24", "https://images.unsplash.com/photo-8LxEnrfgjgg?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 720, protein: 55, carbs: 80, fats: 18 },
     tags: ["High Protein", "Budget", "Meal Prep"],
@@ -572,7 +573,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r25",
     title: "Beans on Toast (Double Stack)",
-    imageUrl: "https://images.unsplash.com/photo-1531592937781-344ad608fabf?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r25", "https://images.unsplash.com/photo-_3iaS5NstQY?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 450, protein: 22, carbs: 72, fats: 8 },
     tags: ["Vegan", "Budget", "Quick", "Breakfast"],
@@ -587,7 +588,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r26",
     title: "Egg Fried Rice",
-    imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r26", "https://images.unsplash.com/photo-ZCOVzrYnza8?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 580, protein: 22, carbs: 90, fats: 18 },
     tags: ["Budget", "Vegetarian", "Quick"],
@@ -603,7 +604,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r27",
     title: "Chicken & Spinach Pasta",
-    imageUrl: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r27", "https://images.unsplash.com/photo-sVfMT11Rkl4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 680, protein: 50, carbs: 75, fats: 16 },
     tags: ["High Protein", "Budget"],
@@ -619,7 +620,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r28",
     title: "Mince Bolognese & Pasta",
-    imageUrl: "https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r28", "https://images.unsplash.com/photo-mypgWO69XDY?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 25,
     macros: { calories: 750, protein: 45, carbs: 80, fats: 25 },
     tags: ["High Protein", "Budget", "Dinner"],
@@ -634,7 +635,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r29",
     title: "Greek Yoghurt Protein Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r29", "https://images.unsplash.com/photo-jYF5Zid7KW0?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 420, protein: 32, carbs: 48, fats: 10 },
     tags: ["High Protein", "Budget", "Quick", "Breakfast"],
@@ -649,7 +650,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r30",
     title: "Tuna & Rice Bake",
-    imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r30", "https://images.unsplash.com/photo-vySQY2RECYM?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 30,
     macros: { calories: 650, protein: 48, carbs: 75, fats: 14 },
     tags: ["High Protein", "Budget", "Meal Prep"],
@@ -664,7 +665,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r31",
     title: "Sausage & Bean Casserole",
-    imageUrl: "https://images.unsplash.com/photo-1548943487-a2e4d43b4859?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r31", "https://images.unsplash.com/photo-X9ZeP_Zn3vg?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 40,
     macros: { calories: 680, protein: 42, carbs: 55, fats: 32 },
     tags: ["High Protein", "Budget", "Dinner"],
@@ -680,7 +681,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r32",
     title: "Cottage Cheese Protein Pancakes",
-    imageUrl: "https://images.unsplash.com/photo-1506084868730-342b1f894493?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r32", "https://images.unsplash.com/photo-Mwtmk37_0S4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 550, protein: 45, carbs: 40, fats: 22 },
     tags: ["High Protein", "Vegetarian", "Breakfast"],
@@ -695,7 +696,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r33",
     title: "Lentil & Vegetable Curry",
-    imageUrl: "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r33", "https://images.unsplash.com/photo-GTE2G2dhvWc?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 35,
     macros: { calories: 580, protein: 25, carbs: 80, fats: 16 },
     tags: ["Vegan", "Budget", "High Fiber"],
@@ -711,7 +712,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r34",
     title: "Turkey Smoked Sausage Skillet",
-    imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r34", "https://images.unsplash.com/photo-jLdDGe_V9o8?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 620, protein: 48, carbs: 60, fats: 20 },
     tags: ["High Protein", "Budget", "Quick"],
@@ -726,7 +727,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r35",
     title: "Black Bean & Corn Quesadillas",
-    imageUrl: "https://images.unsplash.com/photo-1618040996337-33ee66b4ed98?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r35", "https://images.unsplash.com/photo-D92BpULq-gk?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 700, protein: 32, carbs: 75, fats: 28 },
     tags: ["Vegetarian", "Budget", "Lunch"],
@@ -742,7 +743,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r36",
     title: "Protein Oats with Whey",
-    imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r36", "https://images.unsplash.com/photo-DsiLLwSQqZw?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 520, protein: 40, carbs: 65, fats: 12 },
     tags: ["High Protein", "Vegetarian", "Breakfast"],
@@ -757,7 +758,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r37",
     title: "Tuna Niçoise Salad",
-    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r37", "https://images.unsplash.com/photo-lMcRyBx4G50?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 550, protein: 38, carbs: 35, fats: 28 },
     tags: ["High Protein", "Budget", "Lunch"],
@@ -773,7 +774,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r38",
     title: "Pork Meatball & Pasta Bake",
-    imageUrl: "https://images.unsplash.com/photo-1621996316220-4df1b11ce1f5?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r38", "https://images.unsplash.com/photo-DVv8t5kKji4?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 45,
     macros: { calories: 800, protein: 50, carbs: 80, fats: 32 },
     tags: ["High Protein", "Budget", "Dinner"],
@@ -788,7 +789,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r39",
     title: "Omelette with Cheese & Ham",
-    imageUrl: "https://images.unsplash.com/photo-1510693062121-0eab81aa42d4?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r39", "https://images.unsplash.com/photo-WF4NYEkN8HQ?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 10,
     macros: { calories: 580, protein: 45, carbs: 10, fats: 40 },
     tags: ["High Protein", "Keto", "Breakfast"],
@@ -804,7 +805,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r40",
     title: "Budget Beef Chilli Con Carne",
-    imageUrl: "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r40", "https://images.unsplash.com/photo-e441ywMMnFw?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 40,
     macros: { calories: 720, protein: 55, carbs: 65, fats: 25 },
     tags: ["High Protein", "Budget", "Meal Prep"],
@@ -820,7 +821,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r41",
     title: "Chicken Crispy Wraps",
-    imageUrl: "https://images.unsplash.com/photo-1626200419199-391ae4be7a41?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r41", "https://images.unsplash.com/photo-R5ZtNuJVYcc?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 650, protein: 48, carbs: 55, fats: 22 },
     tags: ["High Protein", "Budget", "Lunch"],
@@ -836,7 +837,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r42",
     title: "Spicy Lentil Bolognese",
-    imageUrl: "https://images.unsplash.com/photo-1598866594230-a70fa13b3ebd?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r42", "https://images.unsplash.com/photo-6-d0Kx-reHg?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 30,
     macros: { calories: 580, protein: 28, carbs: 85, fats: 12 },
     tags: ["Vegan", "Budget", "Dinner"],
@@ -852,7 +853,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r43",
     title: "Smoky Sausage & Veggie Traybake",
-    imageUrl: "https://images.unsplash.com/photo-1432139555190-58524dae6a55?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r43", "https://images.unsplash.com/photo-pazs-Hi5mf8?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 40,
     macros: { calories: 620, protein: 35, carbs: 45, fats: 30 },
     tags: ["High Protein", "Budget", "Meal Prep"],
@@ -867,7 +868,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r44",
     title: "Cajun Chicken & Rice Bowl",
-    imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r44", "https://images.unsplash.com/photo-PUa1p2KigiQ?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 750, protein: 55, carbs: 85, fats: 18 },
     tags: ["High Protein", "Budget", "Lunch"],
@@ -883,7 +884,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r45",
     title: "Pork Strips & Noodle Stir Fry",
-    imageUrl: "https://images.unsplash.com/photo-1585032226651-759b36eb4ab9?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r45", "https://images.unsplash.com/photo-ZYN0tMhFBX8?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 600, protein: 40, carbs: 70, fats: 16 },
     tags: ["High Protein", "Budget", "Quick"],
@@ -898,7 +899,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r46",
     title: "Sardine & Tomato Pasta",
-    imageUrl: "https://images.unsplash.com/photo-1621996316220-4df1b11ce1f5?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r46", "https://images.unsplash.com/photo-wJWlp2TBeGg?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 15,
     macros: { calories: 550, protein: 35, carbs: 65, fats: 15 },
     tags: ["Pescatarian", "Budget", "Lunch"],
@@ -913,7 +914,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r47",
     title: "Turkey & Sweet Potato Mash",
-    imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r47", "https://images.unsplash.com/photo-znbOGcssIvI?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 30,
     macros: { calories: 680, protein: 50, carbs: 60, fats: 20 },
     tags: ["High Protein", "Budget", "Dinner"],
@@ -928,7 +929,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r48",
     title: "Crispy Tofu & Peanut Noodles",
-    imageUrl: "https://images.unsplash.com/photo-1585032226651-759b36eb4ab9?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r48", "https://images.unsplash.com/photo-2x8URaBq6Ik?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 20,
     macros: { calories: 600, protein: 28, carbs: 65, fats: 25 },
     tags: ["Vegan", "Budget", "Dinner"],
@@ -943,7 +944,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r49",
     title: "Chorizo & Bean Stew",
-    imageUrl: "https://images.unsplash.com/photo-1548943487-a2e4d43b4859?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r49", "https://images.unsplash.com/photo-2wpT79clpbQ?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 30,
     macros: { calories: 720, protein: 42, carbs: 50, fats: 35 },
     tags: ["High Protein", "Budget", "Meal Prep"],
@@ -958,7 +959,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r50",
     title: "Egg & Ham Sandwich Stack",
-    imageUrl: "https://images.unsplash.com/photo-1550507992-eb63ffee0224?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r50", "https://images.unsplash.com/photo-pbFoGRbcnXA?q=80&w=800&auto=format&fit=crop"),
     prepTimeMinutes: 5,
     macros: { calories: 550, protein: 35, carbs: 45, fats: 22 },
     tags: ["High Protein", "Budget", "Lunch"],
@@ -974,7 +975,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r51",
     title: "Vegan Smashed Avocado Toast",
-    imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
+    imageUrl: getRecipeImage("r51", require('../assets/images/recipes/recipe_r51.png') as any as string),
     prepTimeMinutes: 10,
     macros: { calories: 380, protein: 12, carbs: 40, fats: 20 },
     tags: ["Vegan", "Breakfast", "Budget"],

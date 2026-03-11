@@ -139,6 +139,21 @@ export default function DebugOverlay() {
           {renderField('PlannerInput £', debugData.plannerInputBudget)}
           {renderField('DashboardDisplayed £', debugData.dashboardDisplayedBudget)}
 
+          {/* ─── Exclusions Trace ─────────────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>Exclusions Trace</Text>
+          <View style={styles.field} key="excl-count">
+            <Text style={styles.label}>ActiveCount:</Text>
+            <Text style={[styles.value, (debugData.hardExclusionsActive ?? 0) > 0 ? { color: '#f87171' } : {}]}>
+              {debugData.hardExclusionsActive ?? 0}
+              {(debugData.hardExclusionsActive ?? 0) > 0 ? ' ⛔ hard gate on' : ' — none set'}
+            </Text>
+          </View>
+          {(debugData.hardExclusionValues ?? []).length > 0 ? (
+            debugData.hardExclusionValues!.map((ex, i) => renderField(`  [${i}]`, ex))
+          ) : (
+            <Text style={styles.emptyText}>No exclusions active.</Text>
+          )}
+
           {/* ─── Context State (Diet) ─────────────────────────────────────── */}
           <Text style={styles.sectionTitle}>Context State</Text>
           {renderField('Current Route', debugData.currentRoute)}

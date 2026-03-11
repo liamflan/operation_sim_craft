@@ -7,10 +7,11 @@ import { DEFAULT_ROUTINE } from '../../weeklyRoutine';
 describe('buildPlannerInput', () => {
   const mockPayload = {
     selectedVibes: ['r1', 'r2'],
-    diet: 'omnivore',
+    diet: 'Omnivore' as const,
     budgetWeekly: 60,
     targetProtein: 150,
-    targetCalories: 2200
+    targetCalories: 2200,
+    profileExclusions: []
   };
 
   test('buildPlannerSetup generates a valid planId and contracts', () => {

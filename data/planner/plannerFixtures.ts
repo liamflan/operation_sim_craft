@@ -14,7 +14,7 @@ import {
 // --- 1. PROVENANCE EXAMPLES (Raw Inputs) ---
 
 export const rawUserImport: RawRecipeInput = {
-  id: 'raw_01',
+  id: "raw_01",
   sourceFamily: 'imported',
   sourceMethod: 'url',
   requestedByActorType: 'user_manual',
@@ -25,7 +25,7 @@ export const rawUserImport: RawRecipeInput = {
 };
 
 export const rawRescueGeneration: RawRecipeInput = {
-  id: 'raw_02',
+  id: "raw_02",
   sourceFamily: 'generated',
   sourceMethod: 'gemini',
   requestedByActorType: 'rescue_operation',
@@ -44,7 +44,7 @@ export const rawRescueGeneration: RawRecipeInput = {
 // --- 2. CANONICAL DATABASE (Normalized Recipes) ---
 
 export const curatedRoast: NormalizedRecipe = {
-  id: 'rec_roast_01',
+  id: "rec_roast_01",
   sourceId: 'src_sys_01',
   status: 'approved',
   plannerUsable: true,
@@ -55,7 +55,7 @@ export const curatedRoast: NormalizedRecipe = {
   
   title: 'Classic Roast Chicken',
   description: 'A stable, hearty Sunday roast.',
-  imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-MsIX4c1aP7A?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 90, prepTimeMinutes: 15, difficulty: 'Medium', servings: 4,
   
   estimatedCostTotalGBP: 6.00,
@@ -68,7 +68,7 @@ export const curatedRoast: NormalizedRecipe = {
 };
 
 export const curatedPasta: NormalizedRecipe = {
-  id: 'rec_pasta_01',
+  id: "rec_pasta_01",
   sourceId: 'src_sys_02',
   status: 'approved',
   plannerUsable: true,
@@ -79,7 +79,7 @@ export const curatedPasta: NormalizedRecipe = {
   
   title: 'Quick Tomato Pasta',
   description: 'Fast, cheap, and easy.',
-  imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-Qp0VyysIuzs?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
   
   estimatedCostTotalGBP: 2.00,
@@ -92,51 +92,51 @@ export const curatedPasta: NormalizedRecipe = {
 };
 
 export const generatedLentilStew: NormalizedRecipe = {
-  id: 'rec_lentil_01',
+  id: "rec_lentil_01",
   sourceId: rawRescueGeneration.id,
   status: 'needs_human_review', // Generated recipes always start here
   plannerUsable: true, // But we can still allow the engine to use it if desperate
   libraryVisible: false, // Don't show in the vault until user approves it
   
-  macroConfidence: 0.60, costConfidence: 0.50, ingredientMappingConfidence: 0.80, servingConfidence: 0.90,
-  normalizationWarnings: [{ code: 'UNUSUAL_COST_VARIANCE', message: 'Estimated cost derived entirely from AI' }],
+  macroConfidence: 0.85, costConfidence: 0.90, ingredientMappingConfidence: 0.95, servingConfidence: 1.0,
+  normalizationWarnings: [],
   
   title: 'Spiced Lentil & Bean Stew',
-  description: 'A deeply savory, budget-saving protein powerhouse.',
-  imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop',
-  totalTimeMinutes: 25, prepTimeMinutes: 5, difficulty: 'Easy', servings: 2,
+  description: 'Hearty, plant-based rescue meal.',
+  imageUrl: "https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop",
+  totalTimeMinutes: 35, prepTimeMinutes: 10, difficulty: 'Easy', servings: 4,
   
-  estimatedCostTotalGBP: 1.00,
-  estimatedCostPerServingGBP: 0.50, // Extremely cheap
-  macrosTotal: { calories: 900, protein: 72, carbs: 110, fats: 10 },
-  macrosPerServing: { calories: 450, protein: 36, carbs: 55, fats: 5 }, // Hits 35g requirement easily
+  estimatedCostTotalGBP: 4.80,
+  estimatedCostPerServingGBP: 1.20,
+  macrosTotal: { calories: 1200, protein: 60, carbs: 180, fats: 20 },
+  macrosPerServing: { calories: 300, protein: 15, carbs: 45, fats: 5 },
   
-  ingredients: [], method: [], tags: ['Budget', 'Vegan'],
-  archetype: 'Staple', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner', 'lunch'],
+  ingredients: [], method: [], tags: ['Vegan', 'High-Fiber', 'Budget'],
+  archetype: 'budget_workhorse', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner', 'lunch'],
 };
 
 export const highProteinSeitan: NormalizedRecipe = {
-  id: 'rec_vegan_steak_01',
-  sourceId: 'src_sys_hp_01',
+  id: "rec_vegan_steak_01",
+  sourceId: 'src_sys_03',
   status: 'approved',
   plannerUsable: true,
   libraryVisible: true,
-  macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
+  macroConfidence: 0.90, costConfidence: 0.80, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
   normalizationWarnings: [],
   title: 'Seitan "Steak" & Garlic Mash',
-  description: 'Ultra-high protein vegan dinner using vital wheat gluten seitan.',
-  imageUrl: 'https://images.unsplash.com/photo-1628198642732-eafbe99eb0a2?q=80&w=800&auto=format&fit=crop',
+  description: 'A savory seitan steak with a balsamic glaze, served with cauliflower mash.',
+  imageUrl: "https://images.unsplash.com/photo-6DT8J3nZUPE?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 40, prepTimeMinutes: 10, difficulty: 'Medium', servings: 1,
-  estimatedCostTotalGBP: 2.50,
-  estimatedCostPerServingGBP: 2.50,
-  macrosTotal: { calories: 650, protein: 52, carbs: 45, fats: 18 },
-  macrosPerServing: { calories: 650, protein: 52, carbs: 45, fats: 18 },
-  ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
-  archetype: 'Staple', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['dinner'],
+  estimatedCostTotalGBP: 5.50,
+  estimatedCostPerServingGBP: 5.50,
+  macrosTotal: { calories: 550, protein: 52, carbs: 20, fats: 28 }, // Keto seitan is rare but possible
+  macrosPerServing: { calories: 550, protein: 52, carbs: 20, fats: 28 },
+  ingredients: [], method: [], tags: ['Vegan', 'High-Protein', 'Low-Carb'],
+  archetype: 'premium_meal', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
 };
 
 export const highProteinTempeh: NormalizedRecipe = {
-  id: 'rec_vegan_tempeh_01',
+  id: "rec_vegan_tempeh_01",
   sourceId: 'src_sys_hp_02',
   status: 'approved',
   plannerUsable: true,
@@ -145,7 +145,7 @@ export const highProteinTempeh: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Smoky Tempeh & Peanut Stir-fry',
   description: 'A nutty, high-protein vegan lunch or dinner.',
-  imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-0kD2Wp67wQk?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 20, prepTimeMinutes: 10, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 2.20,
   estimatedCostPerServingGBP: 2.20,
@@ -156,7 +156,7 @@ export const highProteinTempeh: NormalizedRecipe = {
 };
 
 export const highProteinHalloumi: NormalizedRecipe = {
-  id: 'rec_veggie_halloumi_01',
+  id: "rec_veggie_halloumi_01",
   sourceId: 'src_sys_hp_03',
   status: 'approved',
   plannerUsable: true,
@@ -165,7 +165,7 @@ export const highProteinHalloumi: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Baked Halloumi & Mediterranean Veg',
   description: 'Crispy halloumi with roasted peppers and zucchini.',
-  imageUrl: 'https://images.unsplash.com/photo-1594970544699-c88f38bb67cc?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-1594970544699-c88f38bb67cc?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 30, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 3.50,
   estimatedCostPerServingGBP: 3.50,
@@ -176,7 +176,7 @@ export const highProteinHalloumi: NormalizedRecipe = {
 };
 
 export const highProteinTofuScramble: NormalizedRecipe = {
-  id: 'rec_vegan_scramble_01',
+  id: "rec_vegan_scramble_01",
   sourceId: 'src_sys_hp_04',
   status: 'approved',
   plannerUsable: true,
@@ -185,7 +185,7 @@ export const highProteinTofuScramble: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Smoky Tofu Scramble',
   description: 'The ultimate high-protein vegan breakfast.',
-  imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-rJ-a9JlgWEc?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 1.80,
   estimatedCostPerServingGBP: 1.80,
@@ -198,7 +198,7 @@ export const highProteinTofuScramble: NormalizedRecipe = {
 // --- BATCH 1: POOL EXPANSION ---
 
 export const veganTikkaMasala: NormalizedRecipe = {
-  id: 'rec_vegan_tikka_01',
+  id: "rec_vegan_tikka_01",
   sourceId: 'src_batch1_01',
   status: 'approved',
   plannerUsable: true,
@@ -207,7 +207,7 @@ export const veganTikkaMasala: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Tofu & Chickpea Tikka Masala',
   description: 'A rich, creamy vegan curry packed with protein.',
-  imageUrl: 'https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 30, prepTimeMinutes: 10, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 2.80,
   estimatedCostPerServingGBP: 2.80,
@@ -218,7 +218,7 @@ export const veganTikkaMasala: NormalizedRecipe = {
 };
 
 export const veganMeatloaf: NormalizedRecipe = {
-  id: 'rec_vegan_meatloaf_01',
+  id: "rec_vegan_meatloaf_01",
   sourceId: 'src_batch1_02',
   status: 'approved',
   plannerUsable: true,
@@ -227,7 +227,7 @@ export const veganMeatloaf: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Lentil & Walnut "Meatloaf" with Garlic Mash',
   description: 'Savory, dense, and incredibly satisfying vegan comfort food.',
-  imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-_bILufSltJM?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 50, prepTimeMinutes: 15, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 3.20,
   estimatedCostPerServingGBP: 3.20,
@@ -238,7 +238,7 @@ export const veganMeatloaf: NormalizedRecipe = {
 };
 
 export const veganOvernightOats: NormalizedRecipe = {
-  id: 'rec_vegan_oats_01',
+  id: "rec_vegan_oats_01",
   sourceId: 'src_batch1_03',
   status: 'approved',
   plannerUsable: true,
@@ -247,7 +247,7 @@ export const veganOvernightOats: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Peanut Butter & Hemp Seed Overnight Oats',
   description: 'Creamy, high-protein breakfast that preps in 5 minutes.',
-  imageUrl: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 480, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 1.90,
   estimatedCostPerServingGBP: 1.90,
@@ -258,7 +258,7 @@ export const veganOvernightOats: NormalizedRecipe = {
 };
 
 export const veganTempehBowl: NormalizedRecipe = {
-  id: 'rec_vegan_tempeh_bowl_01',
+  id: "rec_vegan_tempeh_bowl_01",
   sourceId: 'src_batch1_04',
   status: 'approved',
   plannerUsable: true,
@@ -267,7 +267,7 @@ export const veganTempehBowl: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Tempeh "Bacon" & Avocado Power Bowl',
   description: 'A nutrient-packed bowl with smoky tempeh and healthy fats.',
-  imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-j6GwMrgeL_A?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 25, prepTimeMinutes: 10, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 3.50,
   estimatedCostPerServingGBP: 3.50,
@@ -278,7 +278,7 @@ export const veganTempehBowl: NormalizedRecipe = {
 };
 
 export const veganOmlette: NormalizedRecipe = {
-  id: 'rec_vegan_omelette_01',
+  id: "rec_vegan_omelette_01",
   sourceId: 'src_batch1_05',
   status: 'approved',
   plannerUsable: true,
@@ -287,7 +287,7 @@ export const veganOmlette: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Savory Chickpea Flour "Omelette"',
   description: 'A protein-rich vegan omelette alternative filled with veggies.',
-  imageUrl: 'https://images.unsplash.com/photo-1510693062121-0eab81aa42d4?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-PeA56-Gt7Dw?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 15, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 1.50,
   estimatedCostPerServingGBP: 1.50,
@@ -298,7 +298,7 @@ export const veganOmlette: NormalizedRecipe = {
 };
 
 export const veggieShells: NormalizedRecipe = {
-  id: 'rec_veggie_shells_01',
+  id: "rec_veggie_shells_01",
   sourceId: 'src_batch1_06',
   status: 'approved',
   plannerUsable: true,
@@ -307,7 +307,7 @@ export const veggieShells: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Cottage Cheese & Spinach Stuffed Shells',
   description: 'Classical comfort food lightened up with high-protein cottage cheese.',
-  imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-xd5mqeeg9qE?q=80&w=800&auto=format&fit=crop&uid=v60akm",
   totalTimeMinutes: 40, prepTimeMinutes: 15, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 3.00,
   estimatedCostPerServingGBP: 3.00,
@@ -318,7 +318,7 @@ export const veggieShells: NormalizedRecipe = {
 };
 
 export const veggieMutterPaneer: NormalizedRecipe = {
-  id: 'rec_veggie_mutter_paneer_01',
+  id: "rec_veggie_mutter_paneer_01",
   sourceId: 'src_batch1_07',
   status: 'approved',
   plannerUsable: true,
@@ -327,7 +327,7 @@ export const veggieMutterPaneer: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Paneer & Pea Curry (Mutter Paneer)',
   description: 'Rich and spicy curry with fried paneer and sweet peas.',
-  imageUrl: 'https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-AEU9UZstCfs?q=80&w=800&auto=format&fit=crop&uid=k5gblc",
   totalTimeMinutes: 30, prepTimeMinutes: 10, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 3.50,
   estimatedCostPerServingGBP: 3.50,
@@ -338,7 +338,7 @@ export const veggieMutterPaneer: NormalizedRecipe = {
 };
 
 export const veggieFetaWrap: NormalizedRecipe = {
-  id: 'rec_veggie_feta_wrap_01',
+  id: "rec_veggie_feta_wrap_01",
   sourceId: 'src_batch1_08',
   status: 'approved',
   plannerUsable: true,
@@ -347,7 +347,7 @@ export const veggieFetaWrap: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Greek Yogurt & Feta Protein Wraps',
   description: 'A tangy, creamy, and quick high-protein lunch.',
-  imageUrl: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=800&auto=format&fit=crop",
   totalTimeMinutes: 10, prepTimeMinutes: 10, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 2.50,
   estimatedCostPerServingGBP: 2.50,
@@ -358,7 +358,7 @@ export const veggieFetaWrap: NormalizedRecipe = {
 };
 
 export const pesciSeabass: NormalizedRecipe = {
-  id: 'rec_pesci_seabass_01',
+  id: "rec_pesci_seabass_01",
   sourceId: 'src_batch1_09',
   status: 'approved',
   plannerUsable: true,
@@ -367,7 +367,7 @@ export const pesciSeabass: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Pan-Seared Seabass with Cannellini Bean Mash',
   description: 'Elegant Fish dinner with a high-protein bean base.',
-  imageUrl: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop&uid=pao9f",
   totalTimeMinutes: 20, prepTimeMinutes: 5, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 5.50,
   estimatedCostPerServingGBP: 5.50,
@@ -378,7 +378,7 @@ export const pesciSeabass: NormalizedRecipe = {
 };
 
 export const pesciSalmonBagel: NormalizedRecipe = {
-  id: 'rec_pesci_salmon_bagel_01',
+  id: "rec_pesci_salmon_bagel_01",
   sourceId: 'src_batch1_10',
   status: 'approved',
   plannerUsable: true,
@@ -387,7 +387,7 @@ export const pesciSalmonBagel: NormalizedRecipe = {
   normalizationWarnings: [],
   title: 'Smoked Salmon & Cream Cheese Protein Bagel',
   description: 'Classic bagel upgraded with extra protein and healthy fats.',
-  imageUrl: 'https://images.unsplash.com/photo-1622316496357-1909bf2e2ec8?q=80&w=800&auto=format&fit=crop',
+  imageUrl: "https://images.unsplash.com/photo-8LxEnrfgjgg?q=80&w=800&auto=format&fit=crop&uid=ox1xdk",
   totalTimeMinutes: 5, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 4.50,
   estimatedCostPerServingGBP: 4.50,
@@ -409,7 +409,8 @@ export const typicalDinnerContract: SlotContract = {
   budgetEnvelopeGBP: 4.00, // Reasonable budget
   dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 1, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
-  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0
+  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
+  hardExclusions: []
 };
 
 export const exhaustedBudgetDinnerContract: SlotContract = {
@@ -421,14 +422,15 @@ export const exhaustedBudgetDinnerContract: SlotContract = {
   budgetEnvelopeGBP: 1.50, // Almost no money left in the weekly envelope!
   dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 0, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
-  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0
+  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
+  hardExclusions: []
 };
 
 
 // --- 4. ENGINE PLACEMENT STATES ---
 
 export const normalAssignment: PlannedMealAssignment = {
-  id: 'assign_mon_dinner', planId: 'week_42', dayIndex: 0, date: '2026-03-09', slotType: 'dinner',
+  id: "assign_mon_dinner", planId: 'week_42', dayIndex: 0, date: '2026-03-09', slotType: 'dinner',
   state: 'locked', candidateId: 'cand_temp_1', recipeId: curatedRoast.id,
   isBatchCookOrigin: false,
   decisionSnapshot: {
@@ -449,7 +451,7 @@ export const normalAssignment: PlannedMealAssignment = {
  * - System assigned it.
  */
 export const rescueAssignment: PlannedMealAssignment = {
-  id: 'assign_thu_dinner_rescue', planId: 'week_42', dayIndex: 3, date: '2026-03-12', slotType: 'dinner',
+  id: "assign_thu_dinner_rescue", planId: 'week_42', dayIndex: 3, date: '2026-03-12', slotType: 'dinner',
   state: 'proposed', candidateId: 'cand_lentil_1', recipeId: generatedLentilStew.id,
   isBatchCookOrigin: false,
   decisionSnapshot: {

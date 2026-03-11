@@ -26,6 +26,7 @@ import {
   pesciSeabass,
   pesciSalmonBagel
 } from './plannerFixtures';
+import { getRecipeImage } from './RecipeImages';
 import { auditRecipeImage } from './RecipeImageAuditor';
 
 /**
@@ -33,6 +34,7 @@ import { auditRecipeImage } from './RecipeImageAuditor';
  */
 export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
   const servings = recipe.servings || 1;
+  const imageUrl = getRecipeImage(recipe.id, recipe.imageUrl);
   
   // Basic normalization for legacy fields
   return {
@@ -46,11 +48,11 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     servingConfidence: 1.0,
     normalizationWarnings: [],
     
-    imageMetadata: auditRecipeImage(recipe.title, recipe.imageUrl),
+    imageMetadata: auditRecipeImage(recipe.title, imageUrl),
     
     title: recipe.title,
     description: recipe.description || '',
-    imageUrl: recipe.imageUrl,
+    imageUrl: imageUrl,
     totalTimeMinutes: recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
     prepTimeMinutes: recipe.prepTimeMinutes,
     difficulty: recipe.difficulty || 'Medium',
@@ -122,6 +124,11 @@ const fixtures = [
 export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
 [...normalizedLegacy, ...fixtures].forEach(r => {
+  // Enforce strict per-recipe image lookup
+  r.imageUrl = getRecipeImage(r.id, r.imageUrl);
+  // Also re-audit to ensure imageMetadata is up to date with the resolved image
+  r.imageMetadata = auditRecipeImage(r.title, r.imageUrl);
+  
   FULL_RECIPE_CATALOG[r.id] = r;
 });
 

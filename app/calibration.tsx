@@ -173,7 +173,7 @@ export default function CalibrationScreen() {
           {[
             { icon: 'piggy-bank', label: 'Budget-aware' },
             { icon: 'dna', label: 'Diet-smart' },
-            { icon: 'random', label: 'Actually varied' },
+            { icon: 'random', label: 'Varied' },
           ].map(pill => (
             <View
               key={pill.label}
