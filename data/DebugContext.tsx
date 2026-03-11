@@ -66,6 +66,12 @@ export interface DebugMetadata {
 
   // ─── Collapse context ────────────────────────────────────────────────────────
   collapseContext: SwapCollapseContext | null;
+
+  // ─── Exclusions trace ────────────────────────────────────────────────────────
+  /** Number of hardExclusions present in contracts reaching the planner (0 = no exclusions active) */
+  hardExclusionsActive: number | null;
+  /** The actual exclusion strings sent to the planner */
+  hardExclusionValues: string[] | null;
 }
 
 interface DebugContextType {
@@ -108,6 +114,8 @@ const INITIAL_DEBUG_DATA: DebugMetadata = {
   unchangedReason: null,
 
   collapseContext: null,
+  hardExclusionsActive: null,
+  hardExclusionValues: null,
 };
 
 const DebugContext = createContext<DebugContextType | undefined>(undefined);

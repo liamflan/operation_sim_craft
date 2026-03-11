@@ -27,6 +27,14 @@ export async function runActivePlan(
   
   const recipes = getApprovedRecipes();
   
+  // Log exclusions reaching the planner — diagnostic proof they are wired end-to-end
+  const exclusionsInContracts = contracts[0]?.hardExclusions ?? [];
+  if (exclusionsInContracts.length > 0) {
+    console.log(`[runActivePlan] profileExclusions active (${exclusionsInContracts.length}):`, exclusionsInContracts);
+  } else {
+    console.log('[runActivePlan] profileExclusions: none set');
+  }
+
   // Trigger the orchestrator
   // We use the initialAssignments (vibe picks) to ensure the engine respects 
   // the user's "What sounds good" choices.

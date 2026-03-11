@@ -183,11 +183,14 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'onboarding_initial_generate'
       }));
 
-      // Sync persisted budget into debug
+      // Sync persisted budget + exclusions into debug
+      const activeExclusions = (payload.profileExclusions ?? []).map(e => e.toLowerCase().trim()).filter(Boolean);
       updateDebugData({
         persistedWorkspaceBudget: finalBudget,
         selectedOnboardingBudget: payload.budgetWeekly ?? null,
         plannerInputBudget: finalBudget,
+        hardExclusionsActive: activeExclusions.length,
+        hardExclusionValues: activeExclusions.length > 0 ? activeExclusions : null,
       });
 
       console.log('[ActivePlanContext] Generation Complete. State userDiet:', finalDiet);
@@ -373,11 +376,14 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
       );
 
+      const activeExclusions = (payload.profileExclusions ?? []).map((e: string) => e.toLowerCase().trim()).filter(Boolean);
       const plannerStartAt = new Date().toISOString();
       updateDebugData({
         lastActionPhase: 'planner_running',
         lastPlannerStartAt: plannerStartAt,
         lastPlannerExecutionSource: 'swap_request',
+        hardExclusionsActive: activeExclusions.length,
+        hardExclusionValues: activeExclusions.length > 0 ? activeExclusions : null,
       });
 
       console.log(`[${runId}] planner_started`);
