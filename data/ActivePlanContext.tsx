@@ -5,23 +5,25 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { OrchestratorOutput } from './planner/orchestrator';
 import { PlannerInput } from './plannerSchema';
 import { buildPlannerSetup, buildSlotContracts, CalibrationPayload } from './planner/buildPlannerInput';
 import { runActivePlan } from './planner/runActivePlan';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
 import { usePantry } from './PantryContext';
-import { NormalizedRecipe, SlotType, DietaryBaseline } from './planner/plannerTypes';
+import { NormalizedRecipe, SlotType, DietaryBaseline, OrchestratorOutput, PlannedMealAssignment } from './planner/plannerTypes';
+import { useDebug } from './DebugContext';
 
 export interface ActiveWorkspace {
   id: string | null;
-  input: any | null; // Using any for now to avoid circular deps with Schema/Types if needed
+  input: { routine: any, payload: CalibrationPayload } | null;
   output: OrchestratorOutput | null;
   status: 'idle' | 'generating' | 'ready' | 'error';
-  error: string | null;
   generatedAt: string | null;
-  version: string;
+  version: string | null;
   userDiet: DietaryBaseline;
+  selectedOnboardingDiet?: DietaryBaseline | null;
+  actionSource?: string;
+  error: string | null;
 }
 
 interface ActivePlanContextType {
@@ -51,6 +53,8 @@ const INITIAL_WORKSPACE: ActiveWorkspace = {
   generatedAt: null,
   version: PLANNER_VERSION,
   userDiet: 'Omnivore',
+  selectedOnboardingDiet: null,
+  actionSource: 'initial_state',
 };
 
 const ActivePlanContext = createContext<ActivePlanContextType | undefined>(undefined);
@@ -59,6 +63,25 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<ActiveWorkspace>(INITIAL_WORKSPACE);
   const { routine } = useWeeklyRoutine();
   const { addSkippedIngredients } = usePantry();
+  const { updateDebugData } = useDebug();
+
+  // ─── Debug Sync ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    updateDebugData({
+      actionSource: workspace.actionSource || 'initial_state',
+      selectedOnboardingDiet: workspace.selectedOnboardingDiet || null,
+      persistedWorkspaceDiet: workspace.userDiet,
+      plannerInputDiet: workspace.input?.payload?.diet || workspace.userDiet,
+      executionMeta: workspace.output?.executionMeta,
+    });
+  }, [
+    workspace.output?.executionMeta, 
+    workspace.actionSource, 
+    workspace.selectedOnboardingDiet, 
+    workspace.userDiet, 
+    workspace.input?.payload?.diet,
+    updateDebugData
+  ]);
 
   // ─── Hydration ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -99,10 +122,26 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     setWorkspace(prev => ({ ...prev, status: 'generating', error: null }));
 
     try {
+      // 1. Diagnostic Alignment Check
+      const workspaceDiet = workspace.userDiet;
+      const payloadDiet = payload.diet;
+      
+      console.log(`[ActivePlanContext] ONBOARDING FLOW DIAGNOSTIC:`);
+      console.log(` - Onboarding (Payload) Diet: ${payloadDiet || 'Not Provided'}`);
+      console.log(` - Workspace (DB) Diet: ${workspaceDiet}`);
+      
+      // We prioritize the payload diet during calibration as it's the most recent user intent
+      // But we ensure it's synced to the workspace diet for the actual generation
+      // If none provided, we fall back to workspace diet first, then Omnivore
+      const finalDiet = payloadDiet || workspaceDiet || 'Omnivore';
+      console.log(` - Planner Input (Final) Diet: ${finalDiet}`);
+
       // 1. Build the setup (Contracts + Initial Vibe Assignments)
       console.log('[ActivePlanContext] Regenerating with routine:', Object.keys(routine));
-      console.log('[ActivePlanContext] Payload Diet:', payload.diet);
-      const { planId, contracts, vibeAssignments } = buildPlannerSetup(routine, payload);
+      const { planId, contracts, vibeAssignments } = buildPlannerSetup(routine, {
+        ...payload,
+        diet: finalDiet
+      });
       console.log('[ActivePlanContext] Contracts built:', contracts.length, 'Example diet:', contracts[0]?.dietaryBaseline);
 
       // 2. Run the plan execution
@@ -112,13 +151,14 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       setWorkspace(prev => ({
         ...prev,
         id: planId,
-        input: { routine, payload },
+        input: { routine, payload: { ...payload, diet: finalDiet } },
         output,
         status: 'ready',
         error: null,
         generatedAt: new Date().toISOString(),
         version: PLANNER_VERSION,
-        // userDiet is preserved from the previous state automatically by ...prev
+        userDiet: finalDiet, // Explicitly sync to ensure persistence
+        actionSource: 'onboarding_initial_generate'
       }));
       console.log('[ActivePlanContext] Generation Complete. State userDiet:', workspace.userDiet); // Note: still might show stale in this log
     } catch (err) {
@@ -169,7 +209,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         ...prev,
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             a.id === assignmentId ? { ...a, state: 'skipped' } : a
           )
         }
@@ -184,7 +224,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         ...prev,
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             a.id === assignmentId ? { ...a, state: 'locked' } : a
           )
         }
@@ -200,7 +240,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         ...prev,
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             a.id === assignmentId ? { ...a, state: 'skipped', pantryTransferStatus: 'transferred' } : a
           )
         }
@@ -230,7 +270,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         status: 'generating', // In-flight interaction guard
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             (a.dayIndex === dayIndex && a.slotType === slotType) 
               ? { ...a, state: 'generating' } 
               : a
@@ -244,16 +284,17 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       const contracts = buildSlotContracts(workspace.id!, routine, payload);
       
       const preservedAssignments = previousWorkspace.output!.assignments.filter(
-        a => !(a.dayIndex === dayIndex && a.slotType === slotType)
+        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments);
+      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request');
 
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
         output,
         generatedAt: new Date().toISOString(),
+        actionSource: 'swap_request'
       }));
 
     } catch (err) {
@@ -275,7 +316,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         status: 'generating',
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             (a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped') 
               ? { ...a, state: 'generating' } 
               : a
@@ -290,16 +331,17 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       
       // Preserve all except non-locked/non-skipped on target day
       const preservedAssignments = previousWorkspace.output!.assignments.filter(
-        a => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
+        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments);
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request');
 
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
         output,
         generatedAt: new Date().toISOString(),
+        actionSource: 'regenerate_day'
       }));
 
     } catch (err) {
@@ -321,7 +363,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         status: 'generating',
         output: {
           ...prev.output,
-          assignments: prev.output.assignments.map(a => 
+          assignments: prev.output.assignments.map((a: PlannedMealAssignment) => 
             (a.state !== 'locked' && a.state !== 'skipped') 
               ? { ...a, state: 'generating' } 
               : a
@@ -335,16 +377,17 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       const contracts = buildSlotContracts(workspace.id!, routine, payload);
       
       const preservedAssignments = previousWorkspace.output!.assignments.filter(
-        a => a.state === 'locked' || a.state === 'skipped'
+        (a: PlannedMealAssignment) => a.state === 'locked' || a.state === 'skipped'
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments);
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request');
 
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
         output,
         generatedAt: new Date().toISOString(),
+        actionSource: 'regenerate_week'
       }));
 
     } catch (err) {

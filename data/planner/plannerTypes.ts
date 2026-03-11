@@ -51,7 +51,18 @@ export interface MacroTarget {
   fats: number;
 }
 
-export type RecipeArchetype = 'Staple' | 'Splurge' | 'Quick_Fix' | 'Batch_Cook';
+export type RecipeArchetype = 
+  | 'Staple' 
+  | 'Splurge' 
+  | 'Quick_Fix' 
+  | 'Batch_Cook'
+  | 'protein_breakfast'
+  | 'high_protein_anchor'
+  | 'budget_breakfast'
+  | 'budget_workhorse'
+  | 'variety_anchor'
+  | 'premium_meal'
+  | 'calorie_dense';
 
 export interface NormalizedRecipe {
   id: string;
@@ -155,7 +166,7 @@ export interface SlotContract {
   
   // Planner Constraints
   repeatCap: number; // Max occurrences of same recipe in plan
-  archetypeCaps: Record<RecipeArchetype, number>; // Max allowed uses of archetypes (e.g., max 1 Splurge)
+  archetypeCaps: Partial<Record<RecipeArchetype, number>>; // Max allowed uses of archetypes (e.g., max 1 Splurge)
   leftoverPreference: 'prefer_fresh' | 'accept_leftover' | 'require_leftover';
   batchCookPreference: 'allowed' | 'discouraged' | 'required';
   rescueThresholdScore: number; // 0-100 threshold
@@ -252,4 +263,33 @@ export interface PlannedMealAssignment {
   
   rescueData?: RescueMetadata;
   pantryTransferStatus?: 'transferred';
+}
+
+export interface SlotDiagnostic {
+  slotId: string; // "dayIndex_slotType"
+  totalConsidered: number;
+  eligibleCount: number;
+  rejectedCount: number;
+  topFailureReasons: Partial<Record<RescueFailureReason, number>>;
+  rescueTriggered: boolean;
+  actionTaken: 'filled_normally' | 'soft_rescue' | 'gemini_generation_needed' | 'hard_fallback' | 'failed_completely';
+  assignedCandidateId: string | null;
+  bestScoreAchieved: number | null;
+}
+
+export interface PlannerExecutionDiagnostic {
+  runId: string;
+  timestamp: string;
+  enginePath: 'deterministic_local' | 'real_gemini' | 'fallback_mock';
+  planningMode: 'normal' | 'degraded_due_to_infeasible_protein_target';
+  isHardRuleValid: boolean;
+  isTargetFeasible: boolean;
+  candidateCountsBySlot: Record<string, number>; // "dayIndex_slotType" -> count
+  topWarnings: string[];
+}
+
+export interface OrchestratorOutput {
+  assignments: PlannedMealAssignment[];
+  diagnostics: SlotDiagnostic[];
+  executionMeta?: PlannerExecutionDiagnostic;
 }

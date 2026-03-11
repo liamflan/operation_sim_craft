@@ -10,7 +10,9 @@ import {
   PlannedMealAssignment,
   PlannerCandidate,
   RescueFailureReason,
-  ActorType
+  ActorType,
+  SlotDiagnostic,
+  OrchestratorOutput
 } from './plannerTypes';
 
 import {
@@ -23,22 +25,6 @@ import {
   regenerateSlot
 } from './actions';
 
-export interface SlotDiagnostic {
-  slotId: string; // "dayIndex_slotType"
-  totalConsidered: number;
-  eligibleCount: number;
-  rejectedCount: number;
-  topFailureReasons: Partial<Record<RescueFailureReason, number>>;
-  rescueTriggered: boolean;
-  actionTaken: 'filled_normally' | 'soft_rescue' | 'gemini_generation_needed' | 'hard_fallback' | 'failed_completely';
-  assignedCandidateId: string | null;
-  bestScoreAchieved: number | null;
-}
-
-export interface OrchestratorOutput {
-  assignments: PlannedMealAssignment[];
-  diagnostics: SlotDiagnostic[];
-}
 
 /**
  * Creates empty proposed assignments from slot contracts.
@@ -79,11 +65,14 @@ export function generatePlan(
   // Track cumulative wallet constraints
   let remainingGlobalBudget = globalBudget; // Dynamic wallet
 
-  // Pre-fill metrics from already locked/cooked assignments
+  // ─── Phase 1: Pre-tally Metrics ───
+  // We deduct budget and tally repeats for ALL provided assignments that have a recipeId.
+  // This ensures the engine respects "What's already there" (locked, cooked, or just kept).
   existingAssignments.forEach(a => {
-    if (a.recipeId && (a.state === 'locked' || a.state === 'cooked' || a.state === 'skipped')) {
+    if (a.recipeId && a.recipeId !== 'generating' && a.state !== 'generating') {
       const recipe = recipes.find(r => r.id === a.recipeId);
       
+      // We count repeats and archetypes for anything that isn't skipped
       if (a.state !== 'skipped') {
         runningRepeatCounts[a.recipeId] = (runningRepeatCounts[a.recipeId] || 0) + 1;
         if (recipe?.archetype) {
@@ -91,8 +80,7 @@ export function generatePlan(
         }
       }
       
-      // Locked/cooked meals *always* deduct their actual real cost from the cumulative weekly budget
-      // Skipped meals deduct £0, effectively freeing up their envelope for the rest of the week
+      // Deduct cost from the cumulative weekly budget for anything that isn't skipped
       if (recipe && a.state !== 'skipped') {
          remainingGlobalBudget -= recipe.estimatedCostPerServingGBP;
       }
@@ -103,11 +91,44 @@ export function generatePlan(
     const assignment = assignments[i];
     const contract = contracts.find(c => c.dayIndex === assignment.dayIndex && c.slotType === assignment.slotType)!;
     
+    // ─── Phase 2: Slot Process Loop ───
+    // Check if this slot should be preserved (fixed) or re-rolled.
+    const preservedAssignment = existingAssignments.find(ea => 
+      Number(ea.dayIndex) === Number(contract.dayIndex) && ea.slotType === contract.slotType &&
+      ea.recipeId && ea.state !== 'generating'
+    );
+
+    if (preservedAssignment) {
+      // Use the preserved assignment as-is
+      assignments[i] = { ...preservedAssignment };
+      
+      diagnostics.push({
+        slotId: `${contract.dayIndex}_${contract.slotType}`,
+        totalConsidered: 0,
+        eligibleCount: 0,
+        rejectedCount: 0,
+        topFailureReasons: {},
+        rescueTriggered: false,
+        actionTaken: 'filled_normally',
+        assignedCandidateId: preservedAssignment.recipeId,
+        bestScoreAchieved: 100,
+      });
+
+      continue;
+    }
+
     // Dynamically limit the budget envelope based on what is actually left in the wallet
-    // Divide remaining stringently by the slots left to fill
-    const remainingSlotsToFill = assignments.length - i;
-    // We allow 20% flex on the dynamic envelope to permit some meals to be slightly richer
-    const dynamicBudgetEnvelope = (remainingGlobalBudget / remainingSlotsToFill) * 1.2; 
+    // Calculate slots remaining that AREN'T fixed
+    const remainingContractsToFill = contracts.slice(i).filter(c => 
+      !existingAssignments.some(ea => 
+        Number(ea.dayIndex) === Number(c.dayIndex) && ea.slotType === c.slotType &&
+        (ea.state === 'locked' || ea.state === 'cooked' || ea.state === 'skipped')
+      )
+    ).length;
+
+    const dynamicBudgetEnvelope = remainingContractsToFill > 0 
+      ? (remainingGlobalBudget / remainingContractsToFill) * 1.2
+      : 0;
     
     // We update the contract specifically for this evaluation pass so insights/scores match the reality
     const runtimeContract = {
@@ -223,5 +244,29 @@ export function generatePlan(
     diagnostics.push(diagnostic);
   }
 
-  return { assignments, diagnostics };
+  // ─── Phase 3: Post-Plan Diagnostics ───
+  const candidateCountsBySlot: Record<string, number> = {};
+  diagnostics.forEach(d => {
+    candidateCountsBySlot[d.slotId] = d.eligibleCount;
+  });
+
+  const isHardRuleValid = !diagnostics.some(d => d.actionTaken === 'failed_completely');
+  const isTargetFeasible = !diagnostics.some(d => d.rescueTriggered);
+
+  const topWarnings: string[] = [];
+  if (!isHardRuleValid) topWarnings.push('Hard rules were violated for some slots.');
+  if (!isTargetFeasible) topWarnings.push('Rescue operations were triggered to maintain plan integrity.');
+
+  const executionMeta = {
+    runId: `run_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+    timestamp: new Date().toISOString(),
+    enginePath: 'deterministic_local' as const, // Currently always local in MVP
+    planningMode: 'normal' as const, // Future: detect degraded due to protein
+    isHardRuleValid,
+    isTargetFeasible,
+    candidateCountsBySlot,
+    topWarnings,
+  };
+
+  return { assignments, diagnostics, executionMeta };
 }

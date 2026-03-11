@@ -4,9 +4,10 @@ import { Image } from 'expo-image';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { MOCK_RECIPES } from '../data/seed';
+import { FULL_RECIPE_LIST } from '../data/planner/recipeRegistry';
 import { useActivePlan } from '../data/ActivePlanContext';
 import { DietaryBaseline } from '../data/planner/plannerTypes';
+import { isRecipeAllowedForBaselineDiet } from '../data/planner/dietRules';
 
 export default function CalibrationScreen() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function CalibrationScreen() {
   };
 
   const handleDebugSkip = () => {
-    setSelectedVibes([MOCK_RECIPES[0].id, MOCK_RECIPES[1].id, MOCK_RECIPES[2].id]);
+    setSelectedVibes([FULL_RECIPE_LIST[0].id, FULL_RECIPE_LIST[1].id, FULL_RECIPE_LIST[2].id]);
     const skipDiet = 'Omnivore';
     setDietLocal(skipDiet);
     updateUserDiet(skipDiet);
@@ -99,7 +100,11 @@ export default function CalibrationScreen() {
         </View>
 
         <View className="flex-row flex-wrap justify-between gap-y-4 md:gap-y-6">
-          {MOCK_RECIPES.slice(0, 6).map((recipe) => {
+          {/* Show a diverse cross-section from the unified registry */}
+          {FULL_RECIPE_LIST
+            .filter(r => r.libraryVisible && r.plannerUsable && isRecipeAllowedForBaselineDiet(r, workspace.userDiet))
+            .slice(0, 12) // Show more for better diversity
+            .map((recipe) => {
             const isSelected = selectedVibes.includes(recipe.id);
             return (
               <TouchableOpacity
@@ -170,7 +175,18 @@ export default function CalibrationScreen() {
                 <TouchableOpacity
                   key={option.label}
                   testID={`calibration-diet-card-${option.label.toLowerCase()}`}
-                  onPress={() => setDietLocal(option.label as DietaryBaseline)}
+                  onPress={() => {
+                    const newDiet = option.label as DietaryBaseline;
+                    setDietLocal(newDiet);
+                    updateUserDiet(newDiet);
+                    
+                    // Prune incompatible selected vibes immediately
+                    setSelectedVibes(prev => prev.filter(vibeId => {
+                      const recipe = FULL_RECIPE_LIST.find(r => r.id === vibeId);
+                      if (!recipe) return false;
+                      return isRecipeAllowedForBaselineDiet(recipe, newDiet);
+                    }));
+                  }}
                   activeOpacity={0.8}
                   className={`p-6 md:p-7 rounded-[28px] w-full md:w-[48.5%] transition-all border ${
                     isActive

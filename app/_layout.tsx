@@ -13,6 +13,8 @@ import { ThemeProvider, useTheme } from '../components/ThemeContext';
 import { WeeklyRoutineProvider } from '../data/WeeklyRoutineContext';
 import { PantryProvider } from '../data/PantryContext';
 import { ActivePlanProvider } from '../data/ActivePlanContext';
+import { DebugProvider } from '../data/DebugContext';
+import DebugOverlay from '../components/DebugOverlay';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +35,7 @@ function RootApp() {
           <Stack.Screen name="recipe/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="+not-found" />
         </Stack>
+        <DebugOverlay />
       </View>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
     </NavThemeProvider>
@@ -58,9 +61,11 @@ export default function RootLayout() {
     <ThemeProvider>
       <WeeklyRoutineProvider>
         <PantryProvider>
-          <ActivePlanProvider>
-            <RootApp />
-          </ActivePlanProvider>
+          <DebugProvider>
+            <ActivePlanProvider>
+              <RootApp />
+            </ActivePlanProvider>
+          </DebugProvider>
         </PantryProvider>
       </WeeklyRoutineProvider>
     </ThemeProvider>

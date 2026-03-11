@@ -17,6 +17,15 @@ import {
   PlannerCompliance,
 } from './plannerSchema';
 import { isRecipeAllowedForBaselineDiet } from './planner/dietRules';
+import { FULL_RECIPE_CATALOG } from './planner/recipeRegistry';
+
+/**
+ * Common hallucinations or legacy IDs that should be deterministically corrected
+ * before the main validation/repair flow kicks in.
+ */
+const RECIPE_ID_ALIASES: Record<string, string> = {
+  'rec_vegan_halloumi_01': 'rec_veggie_halloumi_01', // Gemini sometimes hallucinating vegan prefix for this vegetarian staple
+};
 
 const VALID_DAYS  = new Set<PlannerDay>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 const VALID_SLOTS = new Set<PlannerSlot>(['breakfast', 'lunch', 'dinner']);
@@ -307,10 +316,21 @@ export function validatePlannerOutput(
 
     if (filledSlots.has(slotKey)) continue; // Gemini emitted duplicate slots
 
+    // Apply any ID Aliases (e.g., Halloumi fix)
+    if (RECIPE_ID_ALIASES[a.recipeId]) {
+      const originalId = a.recipeId;
+      a.recipeId = RECIPE_ID_ALIASES[a.recipeId];
+      warnings.push(`Alias applied: corrected hallucinated ID "${originalId}" to "${a.recipeId}"`);
+    }
+
     const candidate = candidateMap.get(a.recipeId);
     if (!candidate) {
-      warnings.push(`Invalid recipeId "${a.recipeId}" for ${a.day} ${a.slot} - treating as missing`);
-      toReassign.push({ day: a.day, slot: a.slot, originalId: undefined }); // originalId is undefined because it was invalid
+      // Check if it exists in the FULL_RECIPE_CATALOG (even if it wasn't in the input pool)
+      const inCatalog = FULL_RECIPE_CATALOG[a.recipeId] !== undefined;
+      const integrityNote = inCatalog ? " (exists in catalog but not in current candidate pool)" : " (does not exist in unified catalog)";
+      
+      warnings.push(`Invalid recipeId "${a.recipeId}" for ${a.day} ${a.slot}${integrityNote} - triggering repair`);
+      toReassign.push({ day: a.day, slot: a.slot, originalId: undefined });
       filledSlots.add(slotKey);
       continue;
     }

@@ -14,7 +14,17 @@ import {
   highProteinSeitan,
   highProteinTempeh,
   highProteinHalloumi,
-  highProteinTofuScramble 
+  highProteinTofuScramble,
+  veganTikkaMasala,
+  veganMeatloaf,
+  veganOvernightOats,
+  veganTempehBowl,
+  veganOmlette,
+  veggieShells,
+  veggieMutterPaneer,
+  veggieFetaWrap,
+  pesciSeabass,
+  pesciSalmonBagel
 } from './plannerFixtures';
 import { auditRecipeImage } from './RecipeImageAuditor';
 
@@ -93,7 +103,17 @@ const fixtures = [
   highProteinSeitan,
   highProteinTempeh,
   highProteinHalloumi,
-  highProteinTofuScramble
+  highProteinTofuScramble,
+  veganTikkaMasala,
+  veganMeatloaf,
+  veganOvernightOats,
+  veganTempehBowl,
+  veganOmlette,
+  veggieShells,
+  veggieMutterPaneer,
+  veggieFetaWrap,
+  pesciSeabass,
+  pesciSalmonBagel
 ];
 
 /**
