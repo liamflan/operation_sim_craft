@@ -5,8 +5,8 @@
  */
 
 export const UNIQUE_RECIPE_IMAGES: Record<string, any> = {
-  'r6': require('../../assets/images/recipes/recipe_r6.png'),
-  'r51': require('../../assets/images/recipes/recipe_r51.png'),
+  'r6': '',
+  'r51': '',
 };
 
 /**

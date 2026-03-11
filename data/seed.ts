@@ -221,7 +221,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r6",
     title: "Beef & Broccoli Stir-Fry",
-    imageUrl: getRecipeImage("r6", require('../assets/images/recipes/recipe_r6.png') as any as string),
+    imageUrl: getRecipeImage("r6", ''),
     prepTimeMinutes: 10,
     cookTimeMinutes: 12,
     totalTimeMinutes: 22,
@@ -459,7 +459,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r17",
     title: "Loaded Breakfast Burrito",
-    imageUrl: getRecipeImage("r17", "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?q=80&w=800&auto=format&fit=crop"),
+    imageUrl: getRecipeImage("r17", ""),
     prepTimeMinutes: 15,
     macros: { calories: 650, protein: 35, carbs: 60, fats: 30 },
     tags: ["High Protein", "Breakfast"],
@@ -975,7 +975,7 @@ export const MOCK_RECIPES: Recipe[] = [
   {
     id: "r51",
     title: "Vegan Smashed Avocado Toast",
-    imageUrl: getRecipeImage("r51", require('../assets/images/recipes/recipe_r51.png') as any as string),
+    imageUrl: getRecipeImage("r51", ''),
     prepTimeMinutes: 10,
     macros: { calories: 380, protein: 12, carbs: 40, fats: 20 },
     tags: ["Vegan", "Breakfast", "Budget"],
