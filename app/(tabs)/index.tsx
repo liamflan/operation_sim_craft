@@ -70,6 +70,9 @@ export default function DashboardScreen() {
 
   // Sync displayed budget into debug overlay — must be in an effect, never during render
   const weeklyBudget = workspace.input?.payload?.budgetWeekly ?? 50;
+  const targetCalories = workspace.input?.payload?.targetCalories ?? 2000;
+  const targetProtein = workspace.input?.payload?.targetProtein ?? 160;
+
   useEffect(() => {
     updateDebugData({ dashboardDisplayedBudget: weeklyBudget });
   }, [weeklyBudget, updateDebugData]);
@@ -94,9 +97,11 @@ export default function DashboardScreen() {
   }, { calories: 0, protein: 0 });
 
   const handleSwap = async (type: string) => {
-    // Unify with handleReplace to ensure the action is correctly dispatched
     const result = await replaceSlot(displayedDayIndex, type as any);
-    if (result && !result.changed && result.message) {
+    if (result && result.changed) {
+      const label = slotLabel(type as any);
+      showToast(`${label} swapped`, 'success');
+    } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
   };
@@ -110,24 +115,36 @@ export default function DashboardScreen() {
   };
 
   const handleReplace = async (type: string) => {
-    // Determine the exact slot dynamically based on current selected day index
-    // Note: If type is 'breakfast' etc. we can pass the day index directly
     const result = await replaceSlot(displayedDayIndex, type as any);
-    if (result && !result.changed && result.message) {
+    if (result && result.changed) {
+      const label = slotLabel(type as any);
+      showToast(`${label} swapped`, 'success');
+    } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
   };
 
   const handleRegenDay = async (dayIndex: number) => {
     const result = await regenerateDay(dayIndex);
-    if (result && !result.changed && result.message) {
+    if (result && result.changed && result.changeSummary) {
+      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
+      showToast(`${dayName} regenerated - ${result.changeSummary.changedSlotCount} meals updated`, 'success');
+    } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
   };
 
   const handleRegenWeek = async () => {
     const result = await regenerateWeek();
-    if (result && !result.changed && result.message) {
+    if (result && result.changed && result.changeSummary) {
+      const count = result.changeSummary.changedSlotCount;
+      const dayNames = result.changeSummary.changedDayIndexes.map(i => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]);
+      let daysList = dayNames.join(', ');
+      if (dayNames.length > 2) {
+        daysList = `${dayNames.slice(0, -1).join(', ')} and ${dayNames[dayNames.length - 1]}`;
+      }
+      showToast(`Week regenerated - ${count} meals updated across ${daysList}`, 'success');
+    } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
   };
@@ -451,10 +468,10 @@ export default function DashboardScreen() {
                       <View>
                         <View className="flex-row justify-between items-baseline mb-2">
                           <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Calories</Text>
-                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.calories)} <Text className="text-textSec font-normal opacity-70">/ 2400</Text></Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.calories)} <Text className="text-textSec font-normal opacity-70">/ {targetCalories}</Text></Text>
                         </View>
                         <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-                          <View className="h-full bg-peach dark:bg-[#C48F5D] rounded-full" style={{ width: `${Math.min((activeMacros.calories / 2400) * 100, 100)}%` }} />
+                          <View className="h-full bg-peach dark:bg-[#C48F5D] rounded-full" style={{ width: `${Math.min((activeMacros.calories / targetCalories) * 100, 100)}%` }} />
                         </View>
                       </View>
                       
@@ -462,10 +479,10 @@ export default function DashboardScreen() {
                       <View>
                         <View className="flex-row justify-between items-baseline mb-2">
                           <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium">Protein</Text>
-                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.protein)}g <Text className="text-textSec font-normal opacity-70">/ 160g</Text></Text>
+                          <Text className="text-textMain dark:text-darktextMain text-[12px] font-semibold tracking-tight">{Math.round(activeMacros.protein)}g <Text className="text-textSec font-normal opacity-70">/ {targetProtein}g</Text></Text>
                         </View>
                         <View className="h-1.5 bg-black/[0.04] dark:bg-white/[0.04] rounded-full overflow-hidden">
-                          <View className="h-full bg-lime dark:bg-[#A9B86D] rounded-full" style={{ width: `${Math.min((activeMacros.protein / 160) * 100, 100)}%` }} />
+                          <View className="h-full bg-lime dark:bg-[#A9B86D] rounded-full" style={{ width: `${Math.min((activeMacros.protein / targetProtein) * 100, 100)}%` }} />
                         </View>
                       </View>
                     </View>

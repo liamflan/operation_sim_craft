@@ -8,7 +8,8 @@ import {
   NormalizedRecipe,
   SlotContract,
   PlannedMealAssignment,
-  RawRecipeInput
+  RawRecipeInput,
+  TasteProfile
 } from './plannerTypes';
 
 // --- 1. PROVENANCE EXAMPLES (Raw Inputs) ---
@@ -400,6 +401,14 @@ export const pesciSalmonBagel: NormalizedRecipe = {
 
 // --- 3. HARD SLOT CONTRACTS ---
 
+const NEUTRAL_TASTE_PROFILE: TasteProfile = {
+  anchorCount: 0,
+  totalTagWeight: 0,
+  totalArchetypeWeight: 0,
+  preferredTags: {},
+  preferredArchetypes: {},
+};
+
 export const typicalDinnerContract: SlotContract = {
   planId: 'week_42', dayIndex: 0, date: '2026-03-09', slotType: 'dinner',
   macroTargets: {
@@ -410,7 +419,8 @@ export const typicalDinnerContract: SlotContract = {
   dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 1, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
   leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
-  hardExclusions: []
+  hardExclusions: [],
+  tasteProfile: NEUTRAL_TASTE_PROFILE
 };
 
 export const exhaustedBudgetDinnerContract: SlotContract = {
@@ -423,7 +433,8 @@ export const exhaustedBudgetDinnerContract: SlotContract = {
   dietaryBaseline: 'Omnivore',
   repeatCap: 1, archetypeCaps: { 'Splurge': 0, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
   leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
-  hardExclusions: []
+  hardExclusions: [],
+  tasteProfile: NEUTRAL_TASTE_PROFILE
 };
 
 

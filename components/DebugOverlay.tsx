@@ -116,6 +116,7 @@ export default function DebugOverlay() {
           {renderField('PlannerEnd', debugData.lastPlannerEndAt)}
           {renderField('PersistEnd', debugData.lastPersistEndAt)}
           {renderField('LoadingCleared', debugData.loadingCleared)}
+          {renderField('PantryMatchCount', debugData.debugPlannerInputPantryCount)}
 
           {/* ─── Swap Target ─────────────────────────────────────────────── */}
           <Text style={styles.sectionTitle}>Swap Target</Text>
@@ -188,6 +189,41 @@ export default function DebugOverlay() {
           {renderField('Workspace Diet', debugData.persistedWorkspaceDiet)}
           {renderField('Planner Input Diet', debugData.plannerInputDiet)}
           {renderField('Logic Fired', debugData.plannerLogicFiredThisView)}
+
+          {/* ─── Profile Freshness (Reliability Pass) ─────────────────────── */}
+          <Text style={styles.sectionTitle}>Profile Freshness</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>Freshness State:</Text>
+            <Text style={[styles.value, debugData.debugUsedLatestProfileForRun ? { color: '#4ade80' } : { color: '#fbbf24' }]}>
+              {debugData.debugUsedLatestProfileForRun ? 'LATEST' : 'STALE (SNAPSHOT)'}
+            </Text>
+          </View>
+          {debugData.debugProfileMismatchReasons && (
+             <Text style={styles.warningText}>Mismatches: {debugData.debugProfileMismatchReasons.join(', ')}</Text>
+          )}
+          {renderField('Current Version', debugData.debugProfileVersion)}
+          {renderField('Planner Run Version', debugData.debugPlannerInputProfileVersion)}
+          {renderField('Input Source', debugData.debugPlannerInputSource)}
+          {renderField('Used Defaults?', debugData.debugUsedDefaultsForRun)}
+          {debugData.debugDefaultedFields && debugData.debugDefaultedFields.length > 0 && (
+             <Text style={styles.warningText}>Defaulted: {debugData.debugDefaultedFields.join(', ')}</Text>
+          )}
+
+          <Text style={styles.subSectionTitle}>Effective Profile (Latest Truth)</Text>
+          {renderField('Diet', debugData.debugCurrentUserDiet)}
+          {renderField('Budget £', debugData.debugCurrentBudgetWeekly)}
+          {renderField('Calories', debugData.debugCurrentTargetCalories)}
+          {renderField('Protein', debugData.debugCurrentTargetProteinG)}
+          {renderField('Anchors', (debugData.debugCurrentSelectedVibes ?? []).length)}
+          {renderField('Exclusions', (debugData.debugCurrentProfileExclusions ?? []).length)}
+
+          <Text style={styles.subSectionTitle}>Planner Input (Most Recent Run)</Text>
+          {renderField('Diet', debugData.debugPlannerInputDiet)}
+          {renderField('Budget £', debugData.debugPlannerInputBudgetWeekly)}
+          {renderField('Calories', debugData.debugPlannerInputTargetCalories)}
+          {renderField('Protein', debugData.debugPlannerInputTargetProteinG)}
+          {renderField('Anchors', (debugData.debugPlannerInputSelectedVibes ?? []).length)}
+          {renderField('Exclusions', (debugData.debugPlannerInputExclusions ?? []).length)}
 
           {/* ─── Planner Execution Meta ───────────────────────────────────── */}
           <Text style={styles.sectionTitle}>Planner Execution</Text>

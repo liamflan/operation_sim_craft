@@ -12,6 +12,9 @@ import {
   VarietyContext
 } from './plannerTypes';
 import { isRecipeAllowedForBaselineDiet } from './dietRules';
+import { PantryItem } from '../PantryContext';
+
+const PANTRY_STOPLIST = ['salt', 'pepper', 'water', 'oil', 'olive oil', 'vegetable oil', 'black pepper', 'sea salt'];
 
 /**
  * Validates if a recipe passes hard, non-negotiable eligibility constraints for a slot.
@@ -112,7 +115,8 @@ export function checkHardEligibility(
 export function scoreCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  varietyCtx: VarietyContext
+  varietyCtx: VarietyContext,
+  pantryItems: PantryItem[] = []
 ): { scores: PlannerCandidate['scores']; penalties: PlannerCandidate['penalties'] } {
   
   // Macro Fit: How close to the ideal target?
@@ -126,9 +130,73 @@ export function scoreCandidate(
   // Budget Fit: Cheaper is better, up to 100 if it's free. Envelopes are guaranteed by hard eligibility.
   const budgetFitScore = Math.round(Math.max(0, 100 - (recipe.estimatedCostPerServingGBP / contract.budgetEnvelopeGBP) * 50));
 
-  // Taste & Pantry (Mocked external dimension hooks for now)
-  const tasteFitScore = 85; 
-  const pantryFitScore = recipe.archetype === 'Staple' ? 95 : 40;
+  // Taste Scoring (P1)
+  let tasteFitScore = 50; // Neutral default
+  let tagAffinity = 0;
+  let archetypeAffinity = 0;
+  
+  if (contract.tasteProfile && contract.tasteProfile.anchorCount > 0) {
+    let matchedTagWeight = 0;
+    recipe.tags.forEach(tag => {
+      if (contract.tasteProfile.preferredTags[tag]) {
+        matchedTagWeight += contract.tasteProfile.preferredTags[tag];
+      }
+    });
+    
+    let matchedArchetypeWeight = 0;
+    if (recipe.archetype && contract.tasteProfile.preferredArchetypes[recipe.archetype]) {
+      matchedArchetypeWeight += contract.tasteProfile.preferredArchetypes[recipe.archetype];
+    }
+    
+    tagAffinity = contract.tasteProfile.totalTagWeight > 0 
+      ? matchedTagWeight / contract.tasteProfile.totalTagWeight 
+      : 0;
+      
+    archetypeAffinity = contract.tasteProfile.totalArchetypeWeight > 0 
+      ? matchedArchetypeWeight / contract.tasteProfile.totalArchetypeWeight 
+      : 0;
+      
+    tasteFitScore = Math.min(100, Math.max(0, Math.round(40 + (tagAffinity * 40) + (archetypeAffinity * 20))));
+  }
+
+  // Pantry Scoring (P3)
+  const meaningfulIngredients = recipe.ingredients.filter(ing => {
+    const normalized = ing.name.toLowerCase().trim();
+    return !PANTRY_STOPLIST.some(stop => normalized.includes(stop));
+  });
+
+  const pantryMetrics = {
+    matches: 0,
+    weightedScore: 0,
+    totalMeaningful: meaningfulIngredients.length || 1 // Avoid div by zero
+  };
+
+  meaningfulIngredients.forEach(ing => {
+    const normalizedName = ing.name.toLowerCase().trim();
+    // Try to match by canonical ID first, then by name
+    const matches = pantryItems.filter(p => 
+      (ing.canonicalIngredientId && p.id === ing.canonicalIngredientId) ||
+      p.name.toLowerCase().trim() === normalizedName
+    );
+
+    if (matches.length > 0) {
+      // Use the best match state
+      const bestMatch = matches.reduce((best, curr) => {
+        const scores = { in_stock: 1.0, low: 0.5, out: 0.0, need_checking: 0.0 };
+        return (scores[curr.state] || 0) > (scores[best.state] || 0) ? curr : best;
+      });
+
+      if (bestMatch.state === 'in_stock') {
+        pantryMetrics.weightedScore += 1.0;
+        pantryMetrics.matches++;
+      } else if (bestMatch.state === 'low') {
+        pantryMetrics.weightedScore += 0.5;
+        pantryMetrics.matches++;
+      }
+    }
+  });
+
+  const pantryFitScore = Math.round(Math.min(100, (pantryMetrics.weightedScore / pantryMetrics.totalMeaningful) * 100));
   
   // Slot
   const slotFitScore = recipe.archetype === 'Quick_Fix' && contract.slotType === 'lunch' ? 100 : 70;
@@ -241,13 +309,14 @@ export function generateInsights(scores: PlannerCandidate['scores'], recipe: Nor
 export function evaluateCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  varietyCtx: VarietyContext
+  varietyCtx: VarietyContext,
+  pantryItems: PantryItem[] = []
 ): { candidate: PlannerCandidate | null, failureReasons: RescueFailureReason[] } {
   
   const failures = checkHardEligibility(recipe, contract, varietyCtx);
   if (failures.length > 0) return { candidate: null, failureReasons: failures }; // Complete rejection
 
-  const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx);
+  const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx, pantryItems);
 
   const candidate: PlannerCandidate = {
     id: `cand_${recipe.id}_${contract.dayIndex}_${contract.slotType}`,

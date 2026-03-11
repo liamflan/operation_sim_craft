@@ -145,6 +145,14 @@ export interface RecipeImageMetadata {
   lastCheckedAt?: string; // ISO
 }
 
+export interface TasteProfile {
+  anchorCount: number;
+  totalTagWeight: number;
+  totalArchetypeWeight: number;
+  preferredTags: Record<string, number>;
+  preferredArchetypes: Record<string, number>;
+}
+
 // ---------------------------------------------------------------------------
 // SLOT CONTRACTS & EVALUATION DEFS
 // ---------------------------------------------------------------------------
@@ -166,6 +174,7 @@ export interface SlotContract {
   dietaryBaseline: DietaryBaseline;
   /** Normalized (lowercase, trimmed) strings from profileExclusions. Hard gate in evaluator. */
   hardExclusions: string[];
+  tasteProfile: TasteProfile;
   
   // Planner Constraints
   repeatCap: number; // Max occurrences of same recipe in plan
@@ -178,9 +187,10 @@ export interface SlotContract {
 export interface InsightMetadata {
   type: 'macro_fit' | 'budget_fit' | 'pantry_match' | 'taste_match' | 'variety_fit' | 'prep_warning' | 'rescue_action';
   score: number; // 0.0 to 1.0 
+  icon: string;
   label: string;
   detail: string;
-  icon: string;
+  debug?: Record<string, any>; // Optional payload for inspectable reasons
 }
 
 export interface PlannerCandidate {
