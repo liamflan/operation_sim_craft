@@ -12,6 +12,7 @@ import { useWeeklyRoutine } from './WeeklyRoutineContext';
 import { usePantry } from './PantryContext';
 import { NormalizedRecipe, SlotType, DietaryBaseline, OrchestratorOutput, PlannedMealAssignment } from './planner/plannerTypes';
 import { useDebug } from './DebugContext';
+import { StorageService } from './storage';
 
 export interface ActiveWorkspace {
   id: string | null;
@@ -229,7 +230,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const hydrate = async () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved = await StorageService.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           
@@ -254,7 +255,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   // ─── Persist ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (workspace.status === 'ready' || workspace.status === 'idle') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace));
+      StorageService.setItem(STORAGE_KEY, JSON.stringify(workspace)).catch(console.error);
     }
   }, [workspace]);
 
@@ -425,8 +426,12 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   };
 
   const clearWorkspace = () => {
-    setWorkspace(INITIAL_WORKSPACE);
-    localStorage.removeItem(STORAGE_KEY);
+    setWorkspace({
+      ...INITIAL_WORKSPACE,
+      status: 'idle',
+      error: null
+    });
+    StorageService.removeItem(STORAGE_KEY).catch(console.error);
   };
 
   const skipAssignment = (assignmentId: string) => {

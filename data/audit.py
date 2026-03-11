@@ -1,8 +1,9 @@
 import re
 import json
+from typing import Any, Dict
 
-def get_counts(text):
-    data = {"diet": {"Omnivore": 0, "Pescatarian": 0, "Vegetarian": 0, "Vegan": 0}, 
+def get_counts(text: str) -> Dict[str, Any]:
+    data: Dict[str, Any] = {"diet": {"Omnivore": 0, "Pescatarian": 0, "Vegetarian": 0, "Vegan": 0}, 
             "slots": {"breakfast": 0, "lunch": 0, "dinner": 0, "snack_am": 0, "snack_pm": 0, "dessert": 0},
             "archetype": {},
             "budgetBands": {"under2": 0, "under4": 0, "over4": 0},
@@ -11,7 +12,7 @@ def get_counts(text):
             "images": {"has_unsplash": 0, "has_internal": 0}}
     
     recipes_blocks = text.split('id: "')
-    for block in recipes_blocks[1:]:
+    for block in recipes_blocks[1:]: # type: ignore
         # diets
         if "Vegan" in block: data["diet"]["Vegan"] += 1
         elif "Vegetarian" in block: data["diet"]["Vegetarian"] += 1
@@ -22,7 +23,7 @@ def get_counts(text):
         slots = re.findall(r"suitableFor:\s*\[([^\]]+)\]", block)
         if slots:
             for s in ["breakfast", "lunch", "dinner", "snack_am", "snack_pm", "dessert"]:
-                if s in slots[0]: data["slots"][s] += 1
+                if s in slots[0]: data["slots"][s] += 1 # type: ignore
                 
         # archetypes
         arch = re.search(r"archetype:\s*'([^']+)'", block)
@@ -72,11 +73,11 @@ with open("planner/plannerFixtures.ts", "r") as f: p_data = f.read()
 s_res = get_counts(seed_data)
 p_res = get_counts(p_data)
 
-final = {"diet": {}, "slots": {}, "archetype": {}, "budgetBands": {}, "calorieBands": {}, "proteinBands": {}, "images": {}}
+final: Dict[str, Any] = {"diet": {}, "slots": {}, "archetype": {}, "budgetBands": {}, "calorieBands": {}, "proteinBands": {}, "images": {}}
 for k in final.keys():
     for sub_k in s_res[k].keys():
         final[k][sub_k] = s_res[k].get(sub_k, 0) + p_res[k].get(sub_k, 0)
 
-final["total"] = final["diet"]["Vegan"] + final["diet"]["Vegetarian"] + final["diet"]["Pescatarian"] + final["diet"]["Omnivore"]
+final["total"] = final["diet"]["Vegan"] + final["diet"]["Vegetarian"] + final["diet"]["Pescatarian"] + final["diet"]["Omnivore"] # type: ignore
 
 print(json.dumps(final, indent=2))
