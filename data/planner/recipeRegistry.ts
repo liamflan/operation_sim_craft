@@ -29,6 +29,7 @@ import {
 import { getRecipeImage } from './RecipeImages';
 import { auditRecipeImage } from './RecipeImageAuditor';
 import { WAVE1_FIXTURES } from './wave1Fixtures';
+import { WAVE2_FIXTURES } from './wave2Fixtures';
 
 /**
  * Converts a legacy Recipe object (from seed.ts) into the rigorous NormalizedRecipe format.
@@ -124,7 +125,8 @@ const fixtures = [
   veggieFetaWrap,
   pesciSeabass,
   pesciSalmonBagel,
-  ...WAVE1_FIXTURES
+  ...WAVE1_FIXTURES,
+  ...WAVE2_FIXTURES
 ];
 
 /**
