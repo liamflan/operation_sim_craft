@@ -4,7 +4,7 @@
  * Handles persistence, loading states, and coordination of the hybrid orchestrator.
  */
 
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { PlannerInput } from './plannerSchema';
 import { buildPlannerSetup, buildSlotContracts, CalibrationPayload } from './planner/buildPlannerInput';
 import { runActivePlan } from './planner/runActivePlan';
@@ -22,6 +22,7 @@ export interface ActiveWorkspace {
   version: string | null;
   userDiet: DietaryBaseline;
   selectedOnboardingDiet?: DietaryBaseline | null;
+  profileVersion: number;
   actionSource?: string;
   error: string | null;
 }
@@ -34,6 +35,11 @@ export type PlannerActionResult = {
   runId?: string;
   targetDay?: number;
   targetSlot?: SlotType | null;
+  changeSummary?: {
+    changedSlotCount: number;
+    changedDayIndexes: number[];
+    firstChangedDayIndex: number | null;
+  };
 };
 
 interface ActivePlanContextType {
@@ -42,6 +48,9 @@ interface ActivePlanContextType {
   updateUserDiet: (diet: DietaryBaseline) => void;
   updateBudget: (budget: number) => void;
   updateCalories: (calories: number) => void;
+  updateProtein: (protein: number) => void;
+  updateVibes: (vibes: string[]) => void;
+  updateExclusions: (exclusions: string[]) => void;
   clearWorkspace: () => void;
   skipAssignment: (assignmentId: string) => void;
   unskipAssignment: (assignmentId: string) => void;
@@ -70,6 +79,7 @@ const INITIAL_WORKSPACE: ActiveWorkspace = {
   version: PLANNER_VERSION,
   userDiet: 'Omnivore',
   selectedOnboardingDiet: null,
+  profileVersion: 1,
   actionSource: 'initial_state',
 };
 
@@ -83,30 +93,135 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   const [weekLoading, setWeekLoading] = useState(false);
 
   const { routine } = useWeeklyRoutine();
-  const { addSkippedIngredients } = usePantry();
+  const { pantryItems, addSkippedIngredients } = usePantry();
   const { updateDebugData } = useDebug();
 
   // Stable ref to prevent stale closure reads in async handlers
   const workspaceRef = useRef(workspace);
   useEffect(() => { workspaceRef.current = workspace; }, [workspace]);
 
+  const calculatePlanDiff = (oldOutput: OrchestratorOutput | null, newOutput: OrchestratorOutput | null) => {
+    if (!oldOutput || !newOutput) return { changedSlotCount: 0, changedDayIndexes: [], firstChangedDayIndex: null };
+    
+    const changedAssignments = newOutput.assignments.filter(newA => {
+      const oldA = oldOutput.assignments.find(oa => oa.dayIndex === newA.dayIndex && oa.slotType === newA.slotType);
+      // Compare by recipeId. If one is null and other isn't, it's a change.
+      return oldA?.recipeId !== newA.recipeId;
+    });
+
+    const changedDayIndexes = Array.from(new Set(changedAssignments.map(a => Number(a.dayIndex)))).sort((a,b) => a - b);
+
+    return {
+      changedSlotCount: changedAssignments.length,
+      changedDayIndexes,
+      firstChangedDayIndex: changedDayIndexes.length > 0 ? changedDayIndexes[0] : null
+    };
+  };
+
+  /**
+   * CENTRALIZED TRUTH HELPER
+   * Builds the latest effective planner input from the workspace truth.
+   * Priority:
+   * 1. Latest workspace profile fields (userDiet, etc.)
+   * 2. Existing input payload if present
+   * 3. Safe defaults for anything still missing
+   */
+  const buildLatestEffectivePlannerInput = useCallback(() => {
+    const ws = workspaceRef.current;
+    
+    const defaultedFields: string[] = [];
+    let source: 'latest_workspace' | 'workspace_plus_defaults' | 'existing_input_snapshot' = 'existing_input_snapshot';
+
+    // 1. Safe Defaults
+    const DEFAULT_DIET: DietaryBaseline = 'Omnivore';
+    const DEFAULT_VIBES: string[] = [];
+    const DEFAULT_EXCLUSIONS: string[] = [];
+    const DEFAULT_BUDGET = 50.00;
+    const DEFAULT_CALORIES = 2000;
+    const DEFAULT_PROTEIN = 160;
+
+    // 2. Base from Existing Payload
+    const base = ws.input?.payload;
+
+    if (!base) {
+      source = 'workspace_plus_defaults';
+      defaultedFields.push('input_snapshot_missing');
+    }
+
+    // 3. Merge Truth
+    // a) Diet is always in ws.userDiet
+    const diet = ws.userDiet || base?.diet || DEFAULT_DIET;
+    if (!ws.userDiet && !base?.diet) defaultedFields.push('diet');
+
+    // b) Vibes
+    const selectedVibes = base?.selectedVibes || DEFAULT_VIBES;
+    if (!base?.selectedVibes) defaultedFields.push('selectedVibes');
+
+    // c) Exclusions
+    const profileExclusions = base?.profileExclusions || DEFAULT_EXCLUSIONS;
+    if (!base?.profileExclusions) defaultedFields.push('profileExclusions');
+
+    // d) Targets (Budget, Cals, Protein)
+    const budgetWeekly = base?.budgetWeekly ?? DEFAULT_BUDGET;
+    if (base?.budgetWeekly === undefined) defaultedFields.push('budgetWeekly');
+
+    const targetCalories = base?.targetCalories ?? DEFAULT_CALORIES;
+    if (base?.targetCalories === undefined) defaultedFields.push('targetCalories');
+    
+    const targetProtein = base?.targetProtein ?? DEFAULT_PROTEIN;
+    if (base?.targetProtein === undefined) defaultedFields.push('targetProtein');
+
+    // If source started as snapshot but diet (our main truth) changed, mark as latest_workspace
+    if (source === 'existing_input_snapshot' && ws.userDiet !== base?.diet) {
+        source = 'latest_workspace';
+    }
+
+    const latestPayload: CalibrationPayload = {
+      diet,
+      selectedVibes,
+      profileExclusions,
+      budgetWeekly,
+      targetCalories,
+      targetProtein
+    };
+
+    return {
+      payload: latestPayload,
+      routineValue: ws.input?.routine || routine, // fallback to current context routine if workspace is empty
+      source,
+      usedDefaults: defaultedFields.length > 0,
+      defaultedFields
+    };
+  }, [routine]);
+
   // ─── Debug Sync ──────────────────────────────────────────────────────────────
   useEffect(() => {
+    const inputPayload = workspace.input?.payload;
+
     updateDebugData({
       actionSource: workspace.actionSource || 'initial_state',
       selectedOnboardingDiet: workspace.selectedOnboardingDiet || null,
       persistedWorkspaceDiet: workspace.userDiet,
-      plannerInputDiet: workspace.input?.payload?.diet || workspace.userDiet,
+      plannerInputDiet: inputPayload?.diet || workspace.userDiet,
       executionMeta: workspace.output?.executionMeta,
-      persistedWorkspaceBudget: workspace.input?.payload?.budgetWeekly ?? null,
+      persistedWorkspaceBudget: inputPayload?.budgetWeekly ?? null,
+      
+      // Freshness Trace fields
+      debugCurrentUserDiet: workspace.userDiet,
+      debugCurrentSelectedVibes: inputPayload?.selectedVibes || [],
+      debugCurrentProfileExclusions: inputPayload?.profileExclusions || [],
+      debugCurrentBudgetWeekly: inputPayload?.budgetWeekly || 50.00,
+      debugCurrentTargetCalories: inputPayload?.targetCalories || 2400,
+      debugCurrentTargetProteinG: inputPayload?.targetProtein || 160,
+      debugProfileVersion: workspace.profileVersion,
     });
   }, [
     workspace.output?.executionMeta, 
     workspace.actionSource, 
     workspace.selectedOnboardingDiet, 
     workspace.userDiet, 
-    workspace.input?.payload?.diet,
-    workspace.input?.payload?.budgetWeekly,
+    workspace.input?.payload,
+    workspace.profileVersion,
     updateDebugData
   ]);
 
@@ -190,6 +305,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         generatedAt: new Date().toISOString(),
         version: PLANNER_VERSION,
         userDiet: finalDiet,
+        profileVersion: prev.profileVersion + 1,
         actionSource: 'onboarding_initial_generate'
       }));
 
@@ -214,30 +330,98 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   };
   
   const updateUserDiet = (diet: DietaryBaseline) => {
-    setWorkspace(prev => ({
-      ...prev,
-      userDiet: diet
-    }));
+    setWorkspace(prev => {
+      if (prev.userDiet === diet) return prev;
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      return {
+        ...prev,
+        userDiet: diet,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, diet }
+        }
+      };
+    });
   };
 
   const updateBudget = (budget: number) => {
-    setWorkspace(prev => ({
-      ...prev,
-      input: prev.input ? {
-        ...prev.input,
-        payload: { ...prev.input.payload, budgetWeekly: budget }
-      } : prev.input
-    }));
+    setWorkspace(prev => {
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      if (latestPayload.budgetWeekly === budget) return prev;
+      return {
+        ...prev,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, budgetWeekly: budget }
+        }
+      };
+    });
   };
 
   const updateCalories = (calories: number) => {
-    setWorkspace(prev => ({
-      ...prev,
-      input: prev.input ? {
-        ...prev.input,
-        payload: { ...prev.input.payload, targetCalories: calories }
-      } : prev.input
-    }));
+    setWorkspace(prev => {
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      if (latestPayload.targetCalories === calories) return prev;
+      return {
+        ...prev,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, targetCalories: calories }
+        }
+      };
+    });
+  };
+
+  const updateProtein = (protein: number) => {
+    setWorkspace(prev => {
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      if (latestPayload.targetProtein === protein) return prev;
+      return {
+        ...prev,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, targetProtein: protein }
+        }
+      };
+    });
+  };
+
+  const updateVibes = (vibes: string[]) => {
+    setWorkspace(prev => {
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      const currentVibes = latestPayload.selectedVibes || [];
+      if (currentVibes.length === vibes.length && currentVibes.every((v, i) => v === vibes[i])) return prev;
+      
+      return {
+        ...prev,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, selectedVibes: vibes }
+        }
+      };
+    });
+  };
+
+  const updateExclusions = (exclusions: string[]) => {
+    setWorkspace(prev => {
+      const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+      const currentExclusions = latestPayload.profileExclusions || [];
+      if (currentExclusions.length === exclusions.length && currentExclusions.every((v, i) => v === exclusions[i])) return prev;
+
+      return {
+        ...prev,
+        profileVersion: prev.profileVersion + 1,
+        input: {
+          routine: routineValue,
+          payload: { ...latestPayload, profileExclusions: exclusions }
+        }
+      };
+    });
   };
 
   const clearWorkspace = () => {
@@ -342,15 +526,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
     }
 
-    if (!workspaceRef.current.output || !workspaceRef.current.input) {
-      const ignoredReason = 'no_workspace_output';
+    if (!workspaceRef.current.input && !workspaceRef.current.userDiet) {
+      const ignoredReason = 'no_input_context';
       console.log(`[${runId}] ACTION_IGNORED: ${ignoredReason}`);
       updateDebugData({
         lastActionPhase: 'action_ignored',
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan to swap.', runId } as PlannerActionResult;
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no profile data to build plan.', runId } as PlannerActionResult;
     }
 
     // Lock this slot
@@ -379,14 +563,16 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }, 15000);
 
     try {
-      const { routine, payload } = workspaceRef.current.input!;
-      const contracts = buildSlotContracts(workspaceRef.current.id!, routine, payload);
-      
-      const preservedAssignments = previousWorkspace.output!.assignments.filter(
-        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
-      );
+      // ── REBUID INPUT FROM CENTRALIZED HELPER ──
+      const { payload: latestPayload, routineValue, source, usedDefaults, defaultedFields } = buildLatestEffectivePlannerInput();
 
-      const activeExclusions = (payload.profileExclusions ?? []).map((e: string) => e.toLowerCase().trim()).filter(Boolean);
+      const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_swap', routineValue, latestPayload);
+      
+      const preservedAssignments = previousWorkspace.output?.assignments.filter(
+        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
+      ) || [];
+
+      const activeExclusions = (latestPayload.profileExclusions ?? []).map((e: string) => e.toLowerCase().trim()).filter(Boolean);
       const plannerStartAt = new Date().toISOString();
       updateDebugData({
         lastActionPhase: 'planner_running',
@@ -394,11 +580,24 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         lastPlannerExecutionSource: 'swap_request',
         hardExclusionsActive: activeExclusions.length,
         hardExclusionValues: activeExclusions.length > 0 ? activeExclusions : null,
+
+        // Final Truth telemetry
+        debugPlannerInputDiet: latestPayload.diet,
+        debugPlannerInputSelectedVibes: latestPayload.selectedVibes,
+        debugPlannerInputExclusions: latestPayload.profileExclusions,
+        debugPlannerInputBudgetWeekly: latestPayload.budgetWeekly,
+        debugPlannerInputTargetCalories: latestPayload.targetCalories,
+        debugPlannerInputTargetProteinG: latestPayload.targetProtein,
+        debugPlannerInputProfileVersion: workspaceRef.current.profileVersion,
+        debugUsedLatestProfileForRun: true,
+        debugPlannerInputSource: source,
+        debugUsedDefaultsForRun: usedDefaults,
+        debugDefaultedFields: defaultedFields,
       });
 
       console.log(`[${runId}] planner_started`);
       const plannerStartTime = Date.now();
-      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request', payload.budgetWeekly ?? 50.00);
+      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
       const plannerDuration = Date.now() - plannerStartTime;
       const plannerEndAt = new Date().toISOString();
 
@@ -406,6 +605,8 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       const newRecipeId = newAssignment?.recipeId ?? null;
       const newState = newAssignment?.state ?? null;
       const isUnchanged = originalRecipeId === newRecipeId;
+
+      const diff = calculatePlanDiff(previousWorkspace.output, output);
 
       // Determine unchanged reason from planner output
       let unchangedReason: import('./DebugContext').UnchangedReason | null = null;
@@ -538,15 +739,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       });
       return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
     }
-    if (!workspaceRef.current.output || !workspaceRef.current.input) {
-      const ignoredReason = 'no_workspace_output';
+    if (!workspaceRef.current.input && !workspaceRef.current.userDiet) {
+      const ignoredReason = 'no_input_context';
       console.log(`[${runId}] ACTION_IGNORED: ${ignoredReason}`);
       updateDebugData({
         lastActionPhase: 'action_ignored',
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan available.', runId } as PlannerActionResult;
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no profile data available.', runId } as PlannerActionResult;
     }
 
     // Lock this day
@@ -576,15 +777,17 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }, 15000);
 
     try {
-      const { routine, payload } = workspaceRef.current.input!;
-      const contracts = buildSlotContracts(workspaceRef.current.id!, routine, payload);
+      // ── REBUID INPUT FROM CENTRALIZED HELPER ──
+      const { payload: latestPayload, routineValue, source, usedDefaults, defaultedFields } = buildLatestEffectivePlannerInput();
+
+      const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_regen_day', routineValue, latestPayload);
       
-      const preservedAssignments = previousWorkspace.output!.assignments.filter(
+      const preservedAssignments = previousWorkspace.output?.assignments.filter(
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
-      );
+      ) || [];
 
       const rerollSlotsCount = previousWorkspace.output!.assignments.length - preservedAssignments.length;
-      console.log(`[${runId}] built_target_slots`, { 
+      console.log(`[${runId}] built_target_slots. Version: ${workspaceRef.current.profileVersion}`, { 
         fixedSlotsCount: preservedAssignments.length, 
         rerollSlotsCount,
         remainingBudgetContext: contracts[0]?.budgetEnvelopeGBP ?? 0
@@ -610,11 +813,24 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         lastActionPhase: 'planner_running',
         lastPlannerStartAt: plannerStartAt,
         lastPlannerExecutionSource: 'regenerate_request',
+
+        // Final Truth telemetry
+        debugPlannerInputDiet: latestPayload.diet,
+        debugPlannerInputSelectedVibes: latestPayload.selectedVibes,
+        debugPlannerInputExclusions: latestPayload.profileExclusions,
+        debugPlannerInputBudgetWeekly: latestPayload.budgetWeekly,
+        debugPlannerInputTargetCalories: latestPayload.targetCalories,
+        debugPlannerInputTargetProteinG: latestPayload.targetProtein,
+        debugPlannerInputProfileVersion: workspaceRef.current.profileVersion,
+        debugUsedLatestProfileForRun: true,
+        debugPlannerInputSource: source,
+        debugUsedDefaultsForRun: usedDefaults,
+        debugDefaultedFields: defaultedFields,
       });
 
       console.log(`[${runId}] planner_started`);
       const plannerStartTime = Date.now();
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', payload.budgetWeekly ?? 50.00);
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
       const plannerDuration = Date.now() - plannerStartTime;
       const plannerEndAt = new Date().toISOString();
 
@@ -655,6 +871,8 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       
       const persistEndAt = new Date().toISOString();
 
+      const diff = calculatePlanDiff(previousWorkspace.output, output);
+
       updateDebugData({
         lastPersistEndAt: persistEndAt,
         lastActionPhase: 'complete',
@@ -664,6 +882,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         earlyReturnReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
         targetDayCandidateCounts: output.executionMeta?.candidateCountsBySlot ?? null,
         targetDayNoopReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidates_than_current' : null,
+        debugPlannerInputPantryCount: pantryItems.length
       });
       
       if (hasCollapse) {
@@ -678,7 +897,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         return { ok: true, changed: false, reason: 'no_better_candidate', message: "No better day alternative found under current constraints.", runId, targetDay: dayIndex } as PlannerActionResult;
       }
 
-      return { ok: true, changed: true, runId, targetDay: dayIndex } as PlannerActionResult;
+      return { ok: true, changed: true, runId, targetDay: dayIndex, changeSummary: diff } as PlannerActionResult;
 
     } catch (err) {
       console.error(`[${runId}] error:`, err);
@@ -725,14 +944,14 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       });
       return { ok: true, changed: false, reason: 'action_ignored', runId };
     }
-    if (!workspaceRef.current.output || !workspaceRef.current.input) {
-      console.log(`[${runId}] ACTION_IGNORED: No workspace output or input available.`);
+    if (!workspaceRef.current.input && !workspaceRef.current.userDiet) {
+      console.log(`[${runId}] ACTION_IGNORED: No profile input available.`);
       updateDebugData({
         lastActionPhase: 'action_ignored',
-        actionIgnoredReason: 'no_workspace_output',
+        actionIgnoredReason: 'no_input_context',
         unchangedReason: 'action_ignored',
       });
-      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan available.', runId };
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no profile data available.', runId };
     }
 
     setWeekLoading(true);
@@ -760,14 +979,16 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }, 15000);
 
     try {
-      const { routine, payload } = workspaceRef.current.input!;
-      const contracts = buildSlotContracts(workspaceRef.current.id!, routine, payload);
-      
-      const preservedAssignments = previousWorkspace.output!.assignments.filter(
-        (a: PlannedMealAssignment) => a.state === 'locked' || a.state === 'skipped'
-      );
+      // ── REBUID INPUT FROM CENTRALIZED HELPER ──
+      const { payload: latestPayload, routineValue, source, usedDefaults, defaultedFields } = buildLatestEffectivePlannerInput();
 
-      console.log(`[${runId}] planner_started`);
+      const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_regen_week', routineValue, latestPayload);
+      
+      const preservedAssignments = previousWorkspace.output?.assignments.filter(
+        (a: PlannedMealAssignment) => a.state === 'locked' || a.state === 'skipped'
+      ) || [];
+
+      console.log(`[${runId}] planner_started. Using profile version: ${workspaceRef.current.profileVersion}`);
       const plannerStartTime = Date.now();
       
       const plannerStartAt = new Date().toISOString();
@@ -775,9 +996,23 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         lastActionPhase: 'planner_running',
         lastPlannerStartAt: plannerStartAt,
         lastPlannerExecutionSource: 'regenerate_week_request',
+        
+        // Final Truth telemetry
+        debugPlannerInputDiet: latestPayload.diet,
+        debugPlannerInputSelectedVibes: latestPayload.selectedVibes,
+        debugPlannerInputExclusions: latestPayload.profileExclusions,
+        debugPlannerInputBudgetWeekly: latestPayload.budgetWeekly,
+        debugPlannerInputTargetCalories: latestPayload.targetCalories,
+        debugPlannerInputTargetProteinG: latestPayload.targetProtein,
+        debugPlannerInputProfileVersion: workspaceRef.current.profileVersion,
+        debugUsedLatestProfileForRun: true,
+        debugPlannerInputSource: source,
+        debugUsedDefaultsForRun: usedDefaults,
+        debugDefaultedFields: defaultedFields,
+        debugProfileMismatchReasons: latestPayload.diet !== workspaceRef.current.userDiet ? ['diet_mismatch'] : null,
       });
       
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_week_request', payload.budgetWeekly ?? 50.00);
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_week_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
       const plannerDuration = Date.now() - plannerStartTime;
       const plannerEndAt = new Date().toISOString();
 
@@ -792,7 +1027,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       });
       
       // Determine explicit unchanged or collapse states for the week
-      const previousWeekIds = previousWorkspace.output!.assignments.map(a => `${a.dayIndex}_${a.slotType}_${a.recipeId}`).sort().join(',');
+      const previousWeekIds = previousWorkspace.output?.assignments.map(a => `${a.dayIndex}_${a.slotType}_${a.recipeId}`).sort().join(',') || '';
       const newWeekIds = output.assignments.map(a => `${a.dayIndex}_${a.slotType}_${a.recipeId}`).sort().join(',');
       const isUnchanged = previousWeekIds === newWeekIds;
       
@@ -805,6 +1040,8 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
 
       const persistEndAt = new Date().toISOString();
       
+      const diff = calculatePlanDiff(previousWorkspace.output, output);
+
       updateDebugData({
         lastPersistEndAt: persistEndAt,
         lastActionPhase: 'complete',
@@ -812,6 +1049,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         unchangedReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
         earlyReturn: hasCollapse || isUnchanged,
         earlyReturnReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
+        debugPlannerInputPantryCount: pantryItems.length
       });
 
       if (hasCollapse) {
@@ -835,7 +1073,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       }));
 
       console.log(`[${runId}] persist_returned`);
-      return { ok: true, changed: true, runId };
+      return { ok: true, changed: true, runId, changeSummary: diff };
       
     } catch (err) {
       console.error(`[${runId}] error:`, err);
@@ -857,6 +1095,9 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       updateUserDiet,
       updateBudget,
       updateCalories,
+      updateProtein,
+      updateVibes,
+      updateExclusions,
       clearWorkspace,
       skipAssignment,
       unskipAssignment,

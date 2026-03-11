@@ -80,6 +80,31 @@ export interface DebugMetadata {
   hardExclusionsActive: number | null;
   /** The actual exclusion strings sent to the planner */
   hardExclusionValues: string[] | null;
+
+  // ─── Freshness Trace (Phase: Reliability Pass) ──────────────────────────────
+  debugCurrentUserDiet: DietaryBaseline | null;
+  debugCurrentSelectedVibes: string[] | null;
+  debugCurrentProfileExclusions: string[] | null;
+  debugCurrentBudgetWeekly: number | null;
+  debugCurrentTargetCalories: number | null;
+  debugCurrentTargetProteinG: number | null;
+
+  debugPlannerInputDiet: DietaryBaseline | null;
+  debugPlannerInputSelectedVibes: string[] | null;
+  debugPlannerInputExclusions: string[] | null;
+  debugPlannerInputBudgetWeekly: number | null;
+  debugPlannerInputTargetCalories: number | null;
+  debugPlannerInputTargetProteinG: number | null;
+
+  debugUsedLatestProfileForRun: boolean | null;
+  debugProfileMismatchReasons: string[] | null;
+  debugProfileVersion: number | null;
+  debugPlannerInputProfileVersion: number | null;
+
+  debugPlannerInputSource: 'latest_workspace' | 'workspace_plus_defaults' | 'existing_input_snapshot' | null;
+  debugUsedDefaultsForRun: boolean | null;
+  debugDefaultedFields: string[] | null;
+  debugPlannerInputPantryCount: number | null;
 }
 
 interface DebugContextType {
@@ -130,6 +155,30 @@ const INITIAL_DEBUG_DATA: DebugMetadata = {
 
   hardExclusionsActive: null,
   hardExclusionValues: null,
+
+  debugCurrentUserDiet: null,
+  debugCurrentSelectedVibes: null,
+  debugCurrentProfileExclusions: null,
+  debugCurrentBudgetWeekly: null,
+  debugCurrentTargetCalories: null,
+  debugCurrentTargetProteinG: null,
+
+  debugPlannerInputDiet: null,
+  debugPlannerInputSelectedVibes: null,
+  debugPlannerInputExclusions: null,
+  debugPlannerInputBudgetWeekly: null,
+  debugPlannerInputTargetCalories: null,
+  debugPlannerInputTargetProteinG: null,
+
+  debugUsedLatestProfileForRun: null,
+  debugProfileMismatchReasons: null,
+  debugProfileVersion: null,
+  debugPlannerInputProfileVersion: null,
+
+  debugPlannerInputSource: null,
+  debugUsedDefaultsForRun: null,
+  debugDefaultedFields: null,
+  debugPlannerInputPantryCount: null,
 };
 
 const DebugContext = createContext<DebugContextType | undefined>(undefined);

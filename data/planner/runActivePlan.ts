@@ -7,6 +7,7 @@
 import { generatePlan } from './orchestrator';
 import { FULL_RECIPE_LIST } from './recipeRegistry';
 import { SlotContract, PlannedMealAssignment, NormalizedRecipe, ActorType, OrchestratorOutput } from './plannerTypes';
+import { PantryItem } from '../PantryContext';
 
 /**
  * Returns the current pool of "Planner-Approved" recipes.
@@ -22,7 +23,8 @@ export async function runActivePlan(
   contracts: SlotContract[],
   initialAssignments: PlannedMealAssignment[] = [],
   actor: ActorType = 'planner_autofill',
-  globalBudget: number = 50.00
+  globalBudget: number = 50.00,
+  pantryItems: PantryItem[] = []
 ): Promise<OrchestratorOutput> {
   
   const recipes = getApprovedRecipes();
@@ -42,7 +44,7 @@ export async function runActivePlan(
   console.log('[runActivePlan] Initial assignments (vibes):', initialAssignments.length);
 
   // Trigger the orchestrator
-  const result = generatePlan(contracts, recipes, actor, initialAssignments, globalBudget);
+  const result = generatePlan(contracts, recipes, actor, initialAssignments, globalBudget, pantryItems);
   
   console.log('[runActivePlan] Orchestrator assignments produced:', result.assignments.length);
 

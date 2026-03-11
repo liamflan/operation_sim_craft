@@ -315,18 +315,27 @@ export default function TasteProfileScreen() {
     { id: '2', title: 'Spicy Black Bean Burger', domain: 'bbcgoodfood.com', macros: '+18g Protein, Vegan', date: 'Yesterday', tags: ['Spicy', 'Vegan', 'Dinner'] },
   ]);
 
-  const { workspace, updateUserDiet, updateBudget, updateCalories } = useActivePlan();
+  const { 
+    workspace, 
+    updateUserDiet, 
+    updateBudget, 
+    updateCalories,
+    updateProtein,
+    updateExclusions,
+    updateVibes
+  } = useActivePlan();
   
   const diet = workspace.userDiet;
   const budget = workspace.input?.payload.budgetWeekly ?? 50;
-  const calorieGoal = workspace.input?.payload.targetCalories ?? 2400;
+  const calorieGoal = workspace.input?.payload.targetCalories ?? 2000;
+  const proteinGoal = workspace.input?.payload.targetProtein ?? 160;
 
-  // New Dietary Goals & Restrictions state
   const [selectedGoals, setSelectedGoals] = useState<string[]>(['High Protein']);
   const [customGoalText, setCustomGoalText] = useState('');
   const [isAddingGoal, setIsAddingGoal] = useState(false);
 
-  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
+  const currentExclusions = workspace.input?.payload.profileExclusions || [];
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>(currentExclusions);
   const [customRestrictionText, setCustomRestrictionText] = useState('');
   const [isAddingRestriction, setIsAddingRestriction] = useState(false);
 
@@ -485,6 +494,14 @@ export default function TasteProfileScreen() {
                     color="bg-danger" 
                     onPress={() => setEditingRule({ title: 'Daily calorie target', value: calorieGoal.toString(), type: 'number', suffix: 'kcal', onSave: (v) => updateCalories(Number(v) || calorieGoal) })} 
                   />
+                  <InfoRow 
+                    testID="taste-profile-protein-row"
+                    label="Protein Target" 
+                    value={`${proteinGoal}g`} 
+                    icon="dumbbell" 
+                    color="bg-blueberry" 
+                    onPress={() => setEditingRule({ title: 'Daily protein target', value: proteinGoal.toString(), type: 'number', suffix: 'g', onSave: (v) => updateProtein(Number(v) || proteinGoal) })} 
+                  />
                 </View>
               </View>
 
@@ -500,7 +517,11 @@ export default function TasteProfileScreen() {
                   <ChipSelector 
                     options={PREDEFINED_GOALS}
                     selected={selectedGoals}
-                    onToggle={(goal: string) => setSelectedGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal])}
+                    onToggle={(goal: string) => {
+                      const newGoals = selectedGoals.includes(goal) ? selectedGoals.filter(g => g !== goal) : [...selectedGoals, goal];
+                      setSelectedGoals(newGoals);
+                      // If 'High Protein' is toggled, we could sync updateProtein here too, but for now let's keep it purely as a tag.
+                    }}
                     customText={customGoalText}
                     setCustomText={setCustomGoalText}
                     isAddingCustom={isAddingGoal}
@@ -526,14 +547,23 @@ export default function TasteProfileScreen() {
                   <ChipSelector 
                     options={PREDEFINED_RESTRICTIONS}
                     selected={selectedRestrictions}
-                    onToggle={(restriction: string) => setSelectedRestrictions(prev => prev.includes(restriction) ? prev.filter(r => r !== restriction) : [...prev, restriction])}
+                    onToggle={(restriction: string) => {
+                      const newRest = selectedRestrictions.includes(restriction) 
+                        ? selectedRestrictions.filter(r => r !== restriction) 
+                        : [...selectedRestrictions, restriction];
+                      setSelectedRestrictions(newRest);
+                      updateExclusions(newRest);
+                    }}
                     customText={customRestrictionText}
                     setCustomText={setCustomRestrictionText}
                     isAddingCustom={isAddingRestriction}
                     setIsAddingCustom={setIsAddingRestriction}
                     onAddCustom={() => {
-                      if (customRestrictionText.trim() && !selectedRestrictions.includes(customRestrictionText.trim())) {
-                        setSelectedRestrictions([...selectedRestrictions, customRestrictionText.trim()]);
+                      const trimmed = customRestrictionText.trim();
+                      if (trimmed && !selectedRestrictions.includes(trimmed)) {
+                        const newRest = [...selectedRestrictions, trimmed];
+                        setSelectedRestrictions(newRest);
+                        updateExclusions(newRest);
                       }
                       setCustomRestrictionText('');
                       setIsAddingRestriction(false);

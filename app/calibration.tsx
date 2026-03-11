@@ -56,7 +56,16 @@ const PROTEIN_PRESETS: { label: string; value: ProteinPreset; sub: string }[] = 
 
 export default function CalibrationScreen() {
   const router = useRouter();
-  const { regenerateWorkspace, workspace, updateUserDiet } = useActivePlan();
+  const { 
+    regenerateWorkspace, 
+    workspace, 
+    updateUserDiet, 
+    updateProtein, 
+    updateVibes, 
+    updateExclusions, 
+    updateBudget, 
+    updateCalories 
+  } = useActivePlan();
 
   const [step, setStep] = useState(1);
 
@@ -142,10 +151,19 @@ export default function CalibrationScreen() {
   };
 
   const handleDebugSkip = () => {
-    setSelectedVibes([FULL_RECIPE_LIST[0].id, FULL_RECIPE_LIST[1].id, FULL_RECIPE_LIST[2].id]);
+    const skipVibes = [FULL_RECIPE_LIST[0].id, FULL_RECIPE_LIST[1].id, FULL_RECIPE_LIST[2].id];
+    setSelectedVibes(skipVibes);
     const skipDiet = 'Omnivore';
     setDietLocal(skipDiet);
+
+    // Propagate baseline state to context
     updateUserDiet(skipDiet);
+    updateVibes(skipVibes);
+    updateBudget(55);
+    updateCalories(2200);
+    updateProtein(160);
+    updateExclusions([]);
+
     router.replace('/(tabs)');
   };
 

@@ -84,10 +84,23 @@ export interface NormalizedRecipe {
   title: string;
   description: string;
   imageUrl?: string;
-  totalTimeMinutes: number;
-  prepTimeMinutes: number;
+  // Canonical Phase 21 Time & Effort (Required for all new recipes)
+  // Legacy recipes rely on fallback mapping to populate these dynamically
+  activePrepMinutes: number;
+  totalMinutes: number;
+  complexityScore: number; // 1-5 scale
+  
+  // Phase 21 Optional Enrichments
+  cleanupBurden?: 'Low' | 'Medium' | 'High';
+  equipmentRequired?: string[];
+  batchFriendly?: boolean;
+  leftoverFriendly?: boolean; 
+  
+  // Legacy Time & Effort (Preserved temporarily for progressive backfill)
+  totalTimeMinutes?: number;
+  prepTimeMinutes?: number;
   cookTimeMinutes?: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty?: 'Easy' | 'Medium' | 'Hard';
   servings: number;
   estimatedCostTotalGBP: number;
   estimatedCostPerServingGBP: number;
@@ -145,6 +158,14 @@ export interface RecipeImageMetadata {
   lastCheckedAt?: string; // ISO
 }
 
+export interface TasteProfile {
+  anchorCount: number;
+  totalTagWeight: number;
+  totalArchetypeWeight: number;
+  preferredTags: Record<string, number>;
+  preferredArchetypes: Record<string, number>;
+}
+
 // ---------------------------------------------------------------------------
 // SLOT CONTRACTS & EVALUATION DEFS
 // ---------------------------------------------------------------------------
@@ -166,6 +187,7 @@ export interface SlotContract {
   dietaryBaseline: DietaryBaseline;
   /** Normalized (lowercase, trimmed) strings from profileExclusions. Hard gate in evaluator. */
   hardExclusions: string[];
+  tasteProfile: TasteProfile;
   
   // Planner Constraints
   repeatCap: number; // Max occurrences of same recipe in plan
@@ -178,9 +200,10 @@ export interface SlotContract {
 export interface InsightMetadata {
   type: 'macro_fit' | 'budget_fit' | 'pantry_match' | 'taste_match' | 'variety_fit' | 'prep_warning' | 'rescue_action';
   score: number; // 0.0 to 1.0 
+  icon: string;
   label: string;
   detail: string;
-  icon: string;
+  debug?: Record<string, any>; // Optional payload for inspectable reasons
 }
 
 export interface PlannerCandidate {

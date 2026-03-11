@@ -10,9 +10,11 @@ import {
   PlannedMealAssignment, 
   RecipeArchetype,
   ActorType,
-  DietaryBaseline
+  DietaryBaseline,
+  TasteProfile
 } from './plannerTypes';
 import { WeeklyRoutine, DAYS, isPlanned } from '../weeklyRoutine';
+import { FULL_RECIPE_LIST } from './recipeRegistry';
 
 export interface CalibrationPayload {
   selectedVibes: string[]; // Recipe IDs
@@ -75,10 +77,37 @@ export function buildSlotContracts(
   const budget = payload.budgetWeekly ?? DEFAULT_BUDGET;
   const protein = payload.targetProtein ?? DEFAULT_PROTEIN;
   const calories = payload.targetCalories ?? DEFAULT_CALORIES;
-  // Normalize exclusions once here so we don't repeat the work per slot
   const hardExclusions: string[] = (payload.profileExclusions ?? [])
     .map(e => e.toLowerCase().trim())
     .filter(e => e.length > 0);
+
+  // Build the TasteProfile from user's selected vibes
+  const tasteProfile: TasteProfile = {
+    anchorCount: 0,
+    totalTagWeight: 0,
+    totalArchetypeWeight: 0,
+    preferredTags: {},
+    preferredArchetypes: {}
+  };
+
+  payload.selectedVibes.forEach(vibeId => {
+    const anchorRecipe = FULL_RECIPE_LIST.find(r => r.id === vibeId);
+    if (!anchorRecipe) return;
+
+    tasteProfile.anchorCount++;
+    
+    // Add archetypes
+    if (anchorRecipe.archetype) {
+      tasteProfile.preferredArchetypes[anchorRecipe.archetype] = (tasteProfile.preferredArchetypes[anchorRecipe.archetype] || 0) + 1;
+      tasteProfile.totalArchetypeWeight++;
+    }
+
+    // Add tags
+    anchorRecipe.tags.forEach(tag => {
+      tasteProfile.preferredTags[tag] = (tasteProfile.preferredTags[tag] || 0) + 1;
+      tasteProfile.totalTagWeight++;
+    });
+  });
 
   const today = new Date();
   const startDate = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Mon of current week
@@ -125,7 +154,8 @@ export function buildSlotContracts(
           leftoverPreference: 'accept_leftover',
           batchCookPreference: 'allowed',
           rescueThresholdScore: 60,
-          dietaryBaseline: payload.diet
+          dietaryBaseline: payload.diet,
+          tasteProfile
         });
       }
     });

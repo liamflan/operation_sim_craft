@@ -28,6 +28,7 @@ import {
 } from './plannerFixtures';
 import { getRecipeImage } from './RecipeImages';
 import { auditRecipeImage } from './RecipeImageAuditor';
+import { WAVE1_FIXTURES } from './wave1Fixtures';
 
 /**
  * Converts a legacy Recipe object (from seed.ts) into the rigorous NormalizedRecipe format.
@@ -53,6 +54,13 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     title: recipe.title,
     description: recipe.description || '',
     imageUrl: imageUrl,
+    
+    // Phase 21 Fallback Mappings (Metadata Debt)
+    activePrepMinutes: recipe.prepTimeMinutes,
+    totalMinutes: recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
+    complexityScore: recipe.difficulty === 'Hard' ? 4 : (recipe.difficulty === 'Easy' ? 2 : 3),
+    
+    // Legacy fields preserved for backfill reference
     totalTimeMinutes: recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
     prepTimeMinutes: recipe.prepTimeMinutes,
     difficulty: recipe.difficulty || 'Medium',
@@ -115,7 +123,8 @@ const fixtures = [
   veggieMutterPaneer,
   veggieFetaWrap,
   pesciSeabass,
-  pesciSalmonBagel
+  pesciSalmonBagel,
+  ...WAVE1_FIXTURES
 ];
 
 /**

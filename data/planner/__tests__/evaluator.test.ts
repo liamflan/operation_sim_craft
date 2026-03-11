@@ -52,11 +52,66 @@ describe('Planner Evaluator', () => {
     expect(result.failureReasons).toHaveLength(0);
     
     const candidate = result.candidate!;
-    // Budget is £3 vs £4 limit = ~81 budgetFit. Macro fits well. Variety defaults 100.
-    expect(candidate.scores.totalScore).toBeGreaterThan(70);
+    // Budget is £3 vs £4 limit = ~81 budgetFit. Macro fits well. Variety defaults 100. Taste defaults 50 with no profile.
+    expect(candidate.scores.totalScore).toBeGreaterThan(65);
     expect(candidate.penalties.repeatPenalty).toBe(0);
     expect(candidate.penalties.archetypePenalty).toBe(0);
   });
+
+  // --- Taste Scoring (P1) Tests ---
+  it('assigns neutral taste score when there are no taste anchors', () => {
+    const result = evaluateCandidate(curatedRoast, typicalDinnerContract, defaultVariety);
+    expect(result.candidate!.scores.tasteFitScore).toBe(50);
+  });
+
+  it('increases taste score based on matching tags in the TasteProfile', () => {
+    const customContract = {
+      ...typicalDinnerContract,
+      tasteProfile: {
+        anchorCount: 1,
+        totalTagWeight: 2,
+        totalArchetypeWeight: 0,
+        preferredTags: { [curatedRoast.tags[0]]: 2 }, // 100% tag match
+        preferredArchetypes: {}
+      }
+    };
+    const result = evaluateCandidate(curatedRoast, customContract, defaultVariety);
+    // 40 + (1.0 * 40) + (0 * 20) = 80
+    expect(result.candidate!.scores.tasteFitScore).toBe(80);
+  });
+
+  it('increases taste score based on matching archetypes but less than tags', () => {
+    const customContract = {
+      ...typicalDinnerContract,
+      tasteProfile: {
+        anchorCount: 1,
+        totalTagWeight: 0,
+        totalArchetypeWeight: 1,
+        preferredTags: {}, 
+        preferredArchetypes: { [curatedRoast.archetype]: 1 } // 100% archetype match
+      }
+    };
+    const result = evaluateCandidate(curatedRoast, customContract, defaultVariety);
+    // 40 + (0 * 40) + (1.0 * 20) = 60
+    expect(result.candidate!.scores.tasteFitScore).toBe(60);
+  });
+
+  it('maxes out taste score when both tags and archetype perfectly match', () => {
+    const customContract = {
+      ...typicalDinnerContract,
+      tasteProfile: {
+        anchorCount: 1,
+        totalTagWeight: 1,
+        totalArchetypeWeight: 1,
+        preferredTags: { [curatedRoast.tags[0]]: 1 }, // 100% tag match
+        preferredArchetypes: { [curatedRoast.archetype]: 1 } // 100% archetype match
+      }
+    };
+    const result = evaluateCandidate(curatedRoast, customContract, defaultVariety);
+    // 40 + (1.0 * 40) + (1.0 * 20) = 100
+    expect(result.candidate!.scores.tasteFitScore).toBe(100);
+  });
+  // ---------------------------------
 
   it('applies penalties for repeating recipes, archetype density, and clustering', () => {
     const customContract = { ...typicalDinnerContract, repeatCap: 5 };

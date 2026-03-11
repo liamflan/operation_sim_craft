@@ -20,6 +20,7 @@ import {
   evaluateCandidate,
   determineRescueAction
 } from './evaluator';
+import { PantryItem } from '../PantryContext';
 
 import {
   assignCandidateToSlot,
@@ -53,7 +54,8 @@ export function generatePlan(
   recipes: NormalizedRecipe[],
   actor: ActorType = 'planner_autofill',
   existingAssignments: PlannedMealAssignment[] = [],
-  globalBudget: number = 50.00
+  globalBudget: number = 50.00,
+  pantryItems: PantryItem[] = []
 ): OrchestratorOutput {
   
   const assignments = createEmptyAssignments(contracts);
@@ -212,7 +214,7 @@ export function generatePlan(
       // So let's add recipe.ids to sameDayArchetypes.
       assignedRecipeIdsToday.forEach(id => sameDayArchetypes.add(id));
 
-      const { candidate, failureReasons } = evaluateCandidate(recipe, runtimeContract, varietyCtx);
+      const { candidate, failureReasons } = evaluateCandidate(recipe, runtimeContract, varietyCtx, pantryItems);
       
       if (candidate) {
         evaluatedCandidates.push(candidate);
