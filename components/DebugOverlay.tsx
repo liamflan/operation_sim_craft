@@ -8,6 +8,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 export default function DebugOverlay() {
   const { debugData, updateDebugData } = useDebug();
   const [expanded, setExpanded] = useState(false);
+  const [enabled, setEnabled] = useState(false);
   const pathname = usePathname();
 
   // Track route changes
@@ -57,9 +58,20 @@ export default function DebugOverlay() {
   };
 
   return (
-    <View style={[styles.container, expanded && styles.containerExpanded]}>
-      {/* Header Bar */}
-      <View style={styles.header}>
+    <>
+      {!__DEV__ && (
+        <TouchableOpacity 
+          style={styles.liveToggle}
+          onPress={() => setEnabled(!enabled)}
+        >
+          <FontAwesome5 name="bug" size={12} color={enabled ? "#9DCD8B" : "#6b7280"} />
+        </TouchableOpacity>
+      )}
+
+      {(__DEV__ || enabled) && (
+        <View style={[styles.container, expanded && styles.containerExpanded]}>
+          {/* Header Bar */}
+          <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => setExpanded(!expanded)} 
           style={styles.headerContent}
@@ -207,11 +219,27 @@ export default function DebugOverlay() {
           )}
         </ScrollView>
       )}
-    </View>
+        </View>
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  liveToggle: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 16 : 48,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(20, 24, 20, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#2d332f',
+  },
   container: {
     position: 'absolute',
     bottom: 0,
