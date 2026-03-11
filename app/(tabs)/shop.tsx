@@ -3,10 +3,9 @@ import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, Platform, Alert
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { MOCK_RECIPES, MOCK_INGREDIENTS } from '../../data/seed';
-import { UserProfile } from '../../data/schema';
+import { MOCK_INGREDIENTS } from '../../data/seed';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
-import { WeeklyRoutine, DAYS, isPlanned } from '../../data/weeklyRoutine';
+import { DAYS, isPlanned } from '../../data/weeklyRoutine';
 import { useActivePlan } from '../../data/ActivePlanContext';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 import { usePantry } from '../../data/PantryContext';
@@ -222,13 +221,15 @@ const getCategoryIcon = (cat: string) => {
   }
 };
 
+const EMPTY_ASSIGNMENTS: any[] = [];
+
 export default function ShoppingListScreen() {
   const router = useRouter();
   const { workspace } = useActivePlan();
   const { routine } = useWeeklyRoutine();
   const { confirmShop } = usePantry();
   
-  const assignments = workspace.output?.assignments || [];
+  const assignments = workspace.output?.assignments || EMPTY_ASSIGNMENTS;
 
   // 1. DERIVED DATA ONLY
   const currentList = useMemo(() => generateShoppingList(assignments), [assignments]);
@@ -315,6 +316,7 @@ export default function ShoppingListScreen() {
       link.href = url;
       link.download = "provision_fuel_list.csv";
       link.click();
+      URL.revokeObjectURL(url);
     } finally { setIsExporting(false); }
   };
 
@@ -356,8 +358,39 @@ export default function ShoppingListScreen() {
             </View>
           </View>
 
-          {workspace.status === 'generating' && <ActivityIndicator size="large" color="#9DCD8B" className="mt-20" />}
+          {/* LOADING STATE */}
+          {workspace.status === 'generating' && (
+            <View className="flex-1 items-center justify-center py-20">
+              <ActivityIndicator size="large" color="#9DCD8B" />
+              <Text className="text-textSec dark:text-darktextSec mt-4 font-medium">Generating your shopping list...</Text>
+            </View>
+          )}
 
+          {/* ERROR STATE */}
+          {workspace.status === 'error' && (
+            <View className="flex-1 items-center justify-center py-20 bg-red-50 dark:bg-red-900/10 rounded-[32px] border border-red-100 dark:border-red-900/20 px-6">
+              <FontAwesome5 name="exclamation-circle" size={32} color="#EF4444" />
+              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4 text-center">Fuel List Generation Failed</Text>
+              <Text className="text-textSec dark:text-darktextSec mt-2 text-center">{workspace.error || 'Unknown error occurred'}</Text>
+              <TouchableOpacity onPress={() => router.replace('/calibration')} className="mt-6 bg-red-500 px-8 py-3 rounded-full">
+                <Text className="text-white font-bold">Restart Onboarding</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* EMPTY STATE (No output yet) */}
+          {workspace.status === 'idle' && (
+            <View className="flex-1 items-center justify-center py-20">
+              <FontAwesome5 name="clipboard-list" size={48} color="#A3B3A9" />
+              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4">No Active Plan</Text>
+              <Text className="text-textSec dark:text-darktextSec mt-2 text-center">Complete onboarding to generate your first shopping list.</Text>
+              <TouchableOpacity onPress={() => router.replace('/calibration')} className="mt-6 bg-primary px-8 py-3 rounded-full">
+                <Text className="text-white font-bold">Start Planning</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ACTUAL LIST CONTENT */}
           {workspace.status === 'ready' && (
             <View className="gap-y-12 mt-10">
               {Object.entries(currentList).map(([category, items]) => {
@@ -405,7 +438,7 @@ export default function ShoppingListScreen() {
             </View>
           )}
 
-          {checkedCount > 0 && (
+          {checkedCount > 0 && workspace.status === 'ready' && (
             <View className="mt-12 pt-8 border-t border-black/5 items-center">
               <TouchableOpacity 
                 onPress={() => {
