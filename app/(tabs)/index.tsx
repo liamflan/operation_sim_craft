@@ -294,6 +294,31 @@ export default function DashboardScreen() {
                   );
                 }
 
+                const assignment = dayAssignments.find(a => a.slotType === slot);
+
+                // Terminal pool collapse: show a clear error message instead of an endless spinner
+                if (vm?.isPoolCollapse || assignment?.state === 'pool_collapse') {
+                  const collapseMsg = vm?.collapseUserMessage || assignment?.collapseContext?.userMessage || 'No suitable recipe found under your current constraints.';
+                  return (
+                    <View key={`${slot}-collapse-${displayedDayIndex}`} className="bg-surface dark:bg-darksurface rounded-[32px] px-6 py-6 mb-4 md:mb-5 border border-amber-200 dark:border-amber-900/30 flex-row items-start gap-4">
+                      <View className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/10 items-center justify-center flex-shrink-0 mt-0.5">
+                        <FontAwesome5 name="exclamation-circle" size={16} color="#f59e0b" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-textMain dark:text-darktextMain text-[15px] font-semibold tracking-tight">{slot.charAt(0).toUpperCase() + slot.slice(1)} — Could Not Replan</Text>
+                        <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 leading-[18px]">{collapseMsg}</Text>
+                        <TouchableOpacity
+                          onPress={() => handleReplace(slot)}
+                          className="mt-3 flex-row items-center gap-2 self-start px-4 py-2 bg-amber-50 dark:bg-amber-900/10 rounded-full border border-amber-200 dark:border-amber-800/30"
+                        >
+                          <FontAwesome5 name="sync-alt" size={10} color="#f59e0b" />
+                          <Text className="text-amber-700 dark:text-amber-400 text-[11px] font-bold uppercase tracking-widest">Try Swap</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                }
+
                 if (!vm || !vm.recipeId) {
                   const isTrulyGenerating = vm?.state === 'generating' || workspace.status === 'generating';
                   return (

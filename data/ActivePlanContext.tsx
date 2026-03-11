@@ -145,7 +145,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       console.log('[ActivePlanContext] Contracts built:', contracts.length, 'Example diet:', contracts[0]?.dietaryBaseline);
 
       // 2. Run the plan execution
-      const output = await runActivePlan(contracts, vibeAssignments);
+      const output = await runActivePlan(contracts, vibeAssignments, 'planner_autofill', payload.budgetWeekly ?? 50.00);
 
       // 3. Update status
       setWorkspace(prev => ({
@@ -287,7 +287,12 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request');
+      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request', payload.budgetWeekly ?? 50.00);
+
+      const collapseCount = output.assignments.filter(a => a.state === 'pool_collapse').length;
+      if (collapseCount > 0) {
+        console.warn('[ActivePlanContext] replaceSlot: pool_collapse detected on', collapseCount, 'slot(s)');
+      }
 
       setWorkspace(prev => ({
         ...prev,
@@ -299,13 +304,16 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
 
     } catch (err) {
       console.error('[ActivePlanContext] Replace failed, rolling back.', err);
-      setWorkspace(previousWorkspace); // Failure recovery
+      setWorkspace(previousWorkspace);
     }
   };
 
   const regenerateDay = async (dayIndex: number) => {
     if (workspace.status === 'generating') return;
     if (!workspace.output || !workspace.input) return;
+
+    const runId = `regen_day_${dayIndex}_${Date.now()}`;
+    console.log(`[${runId}] REGEN_DAY_START - target day: ${dayIndex}`);
 
     const previousWorkspace = { ...workspace };
 
@@ -325,16 +333,49 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       };
     });
 
+    const timeoutId = setTimeout(() => {
+      console.error(`[${runId}] error: TIMEOUT EXCEEDED (15s). Forcing clear loading state.`);
+      setWorkspace(prev => prev.status === 'generating' ? previousWorkspace : prev);
+    }, 15000);
+
     try {
       const { routine, payload } = workspace.input;
       const contracts = buildSlotContracts(workspace.id!, routine, payload);
       
-      // Preserve all except non-locked/non-skipped on target day
       const preservedAssignments = previousWorkspace.output!.assignments.filter(
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request');
+      const rerollSlotsCount = previousWorkspace.output!.assignments.length - preservedAssignments.length;
+      console.log(`[${runId}] built_target_slots`, { 
+        fixedSlotsCount: preservedAssignments.length, 
+        rerollSlotsCount,
+        remainingBudgetContext: contracts[0]?.budgetEnvelopeGBP ?? 0
+      });
+
+      if (rerollSlotsCount === 0) {
+        console.log(`[${runId}] No slots available to reroll. Exiting early.`);
+        setWorkspace(previousWorkspace);
+        return;
+      }
+
+      console.log(`[${runId}] planner_started`);
+      const plannerStartTime = Date.now();
+
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', payload.budgetWeekly ?? 50.00);
+
+      const plannerDuration = Date.now() - plannerStartTime;
+      console.log(`[${runId}] planner_returned. Duration: ${plannerDuration}ms`, {
+        enginePath: output.executionMeta?.enginePath,
+        planningMode: output.executionMeta?.planningMode
+      });
+
+      console.log(`[${runId}] validation_started`);
+      // Validation currently intrinsic to orchestrator (hybrid approach)
+      console.log(`[${runId}] validation_returned. Details: See orchestrator diagnostics.`);
+
+      console.log(`[${runId}] persist_started`);
+      const persistStartTime = Date.now();
 
       setWorkspace(prev => ({
         ...prev,
@@ -344,9 +385,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'regenerate_day'
       }));
 
+      const persistDuration = Date.now() - persistStartTime;
+      console.log(`[${runId}] persist_returned. Duration: ${persistDuration}ms`);
+
     } catch (err) {
-      console.error('[ActivePlanContext] Regenerate day failed, rolling back.', err);
+      console.error(`[${runId}] error:`, err);
       setWorkspace(previousWorkspace);
+    } finally {
+      clearTimeout(timeoutId);
+      console.log(`[${runId}] loading_cleared`);
     }
   };
 
@@ -380,7 +427,12 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => a.state === 'locked' || a.state === 'skipped'
       );
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request');
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', payload.budgetWeekly ?? 50.00);
+
+      const collapseCount = output.assignments.filter((a: PlannedMealAssignment) => a.state === 'pool_collapse').length;
+      if (collapseCount > 0) {
+        console.warn(`[ActivePlanContext] regenerateWeek: pool_collapse on ${collapseCount} slot(s). Total budget: £${payload.budgetWeekly ?? 50}. Fixed slots committed cost unavailable in this context.`);
+      }
 
       setWorkspace(prev => ({
         ...prev,

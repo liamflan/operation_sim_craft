@@ -205,7 +205,7 @@ export interface PlannerCandidate {
   insights: InsightMetadata[];
 }
 
-export type AssignmentState = 'proposed' | 'locked' | 'cooked' | 'skipped' | 'leftover_consumption' | 'generating';
+export type AssignmentState = 'proposed' | 'locked' | 'cooked' | 'skipped' | 'leftover_consumption' | 'generating' | 'pool_collapse';
 
 export type RescueFailureReason = 
   | 'not_planner_usable'
@@ -263,6 +263,15 @@ export interface PlannedMealAssignment {
   
   rescueData?: RescueMetadata;
   pantryTransferStatus?: 'transferred';
+
+  // Set when state === 'pool_collapse' — carries the reason and UI-ready message
+  collapseContext?: {
+    reasons: RescueFailureReason[];
+    availableCandidatesBeforeCollapse: number;
+    committedBudgetGBP: number;
+    remainingBudgetEnvelopeGBP: number;
+    userMessage: string;
+  };
 }
 
 export interface SlotDiagnostic {

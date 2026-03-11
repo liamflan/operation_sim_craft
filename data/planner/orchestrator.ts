@@ -233,12 +233,48 @@ export function generatePlan(
       diagnostic.bestScoreAchieved = bestCandidate.scores.totalScore;
 
     } else if (rescueAnalysis.action === 'gemini_generation_needed') {
-      // Tier 2 Rescue Trigger: The pool collapsed.
+      // Tier 2: Pool completely collapsed. Background Gemini fallback is not yet wired.
+      // We do NOT leave the slot in 'generating' — that causes a permanent spinner.
+      // Instead, record a 'pool_collapse' terminal state with full diagnostics.
       diagnostic.rescueTriggered = true;
       diagnostic.actionTaken = 'gemini_generation_needed';
-      
-      // This leaves the assignment in 'generating' state and logs the prior failures into context
-      assignments[i] = regenerateSlot(assignment, rescueAnalysis.reasons);
+
+      const topReasons = rescueAnalysis.reasons || ['candidate_pool_empty'];
+      const dominantReason = topReasons[0];
+
+      // Build a human-friendly message based on the primary failure reason
+      let userMessage = 'No suitable replacement found under current constraints.';
+      if (dominantReason === 'budget_delta_exceeded') {
+        userMessage = 'Could not regenerate — remaining weekly budget is too tight for this slot.';
+      } else if (dominantReason === 'dietary_mismatch') {
+        userMessage = 'Could not regenerate — no diet-compliant recipes available for this slot.';
+      } else if (dominantReason === 'protein_minimum_failed') {
+        userMessage = 'Could not regenerate — no recipes meet the protein target for this slot.';
+      } else if (dominantReason === 'no_slot_match') {
+        userMessage = 'Could not regenerate — no recipes suitable for this meal slot.';
+      }
+
+      console.warn(
+        `[orchestrator] pool_collapse on ${contract.dayIndex}_${contract.slotType}:`,
+        `budget=${runtimeContract.budgetEnvelopeGBP.toFixed(2)},`,
+        `remaining_global=${remainingGlobalBudget.toFixed(2)},`,
+        `reasons=${topReasons.join(',')}`
+      );
+
+      assignments[i] = {
+        ...assignment,
+        state: 'pool_collapse',
+        candidateId: null,
+        recipeId: null,
+        collapseContext: {
+          reasons: topReasons,
+          availableCandidatesBeforeCollapse: evaluatedCandidates.length,
+          committedBudgetGBP: globalBudget - remainingGlobalBudget,
+          remainingBudgetEnvelopeGBP: runtimeContract.budgetEnvelopeGBP,
+          userMessage,
+        },
+        metrics: { ...assignment.metrics },
+      };
     }
     
     diagnostics.push(diagnostic);

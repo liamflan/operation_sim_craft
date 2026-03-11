@@ -4,9 +4,9 @@
  * and calling the hybrid orchestrator.
  */
 
-import { generatePlan, OrchestratorOutput } from './orchestrator';
+import { generatePlan } from './orchestrator';
 import { FULL_RECIPE_LIST } from './recipeRegistry';
-import { SlotContract, PlannedMealAssignment, NormalizedRecipe, ActorType } from './plannerTypes';
+import { SlotContract, PlannedMealAssignment, NormalizedRecipe, ActorType, OrchestratorOutput } from './plannerTypes';
 
 /**
  * Returns the current pool of "Planner-Approved" recipes.
@@ -21,7 +21,8 @@ function getApprovedRecipes(): NormalizedRecipe[] {
 export async function runActivePlan(
   contracts: SlotContract[],
   initialAssignments: PlannedMealAssignment[] = [],
-  actor: ActorType = 'planner_autofill'
+  actor: ActorType = 'planner_autofill',
+  globalBudget: number = 50.00
 ): Promise<OrchestratorOutput> {
   
   const recipes = getApprovedRecipes();
@@ -33,7 +34,7 @@ export async function runActivePlan(
   console.log('[runActivePlan] Initial assignments (vibes):', initialAssignments.length);
 
   // Trigger the orchestrator
-  const result = generatePlan(contracts, recipes, actor, initialAssignments);
+  const result = generatePlan(contracts, recipes, actor, initialAssignments, globalBudget);
   
   console.log('[runActivePlan] Orchestrator assignments produced:', result.assignments.length);
 

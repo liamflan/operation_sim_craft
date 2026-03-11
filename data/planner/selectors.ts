@@ -29,6 +29,8 @@ export interface MealCardViewModel {
   isRescue: boolean;
   isGenerating: boolean;
   isSkipped: boolean;
+  isPoolCollapse: boolean;
+  collapseUserMessage: string | null;
   pantryTransferStatus: 'transferred' | null;
   
   
@@ -66,6 +68,8 @@ export function getMealCardViewModel(
     isRescue,
     isGenerating,
     isSkipped: assignment.state === 'skipped',
+    isPoolCollapse: assignment.state === 'pool_collapse',
+    collapseUserMessage: assignment.collapseContext?.userMessage || null,
     pantryTransferStatus: assignment.pantryTransferStatus || null,
     
     autofillActor: assignment.metrics.autoFilledBy || null,
