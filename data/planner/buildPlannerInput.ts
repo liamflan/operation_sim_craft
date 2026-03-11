@@ -40,26 +40,39 @@ function buildVibeAssignments(
 ): PlannedMealAssignment[] {
   const assignments: PlannedMealAssignment[] = [];
   
-  // We only fill up to the number of vibes picked
-  for (let i = 0; i < selectedVibes.length; i++) {
-    const contract = contracts[i];
-    if (!contract) break;
-
-    assignments.push({
-      id: `assign_${planId}_${contract.dayIndex}_${contract.slotType}`,
-      planId,
-      dayIndex: contract.dayIndex,
-      date: contract.date,
-      slotType: contract.slotType,
-      state: 'locked', // Vibe picks are "The Plan" so we lock them
-      candidateId: `vibe_${selectedVibes[i]}`,
-      recipeId: selectedVibes[i],
-      isBatchCookOrigin: false,
-      metrics: {
-        swappedCount: 0,
-        autoFilledBy: 'user_manual' as ActorType
-      }
-    });
+  // Keep track of which contracts we've already filled
+  const usedContractIndices = new Set<number>();
+  
+  for (const vibeId of selectedVibes) {
+    const recipe = FULL_RECIPE_LIST.find(r => r.id === vibeId);
+    if (!recipe) continue;
+    
+    // Find the first contract that matches this recipe's slot suitability
+    // and hasn't been used yet.
+    const eligibleContractIndex = contracts.findIndex((c, idx) => 
+      !usedContractIndices.has(idx) && recipe.suitableFor.includes(c.slotType)
+    );
+    
+    if (eligibleContractIndex !== -1) {
+      usedContractIndices.add(eligibleContractIndex);
+      const contract = contracts[eligibleContractIndex];
+      
+      assignments.push({
+        id: `assign_${planId}_${contract.dayIndex}_${contract.slotType}`,
+        planId,
+        dayIndex: contract.dayIndex,
+        date: contract.date,
+        slotType: contract.slotType,
+        state: 'locked', // Vibe picks are "The Plan" so we lock them
+        candidateId: `vibe_${vibeId}`,
+        recipeId: vibeId,
+        isBatchCookOrigin: false,
+        metrics: {
+          swappedCount: 0,
+          autoFilledBy: 'user_manual' as ActorType
+        }
+      });
+    }
   }
 
   return assignments;

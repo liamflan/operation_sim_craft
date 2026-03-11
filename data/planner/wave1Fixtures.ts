@@ -67,7 +67,7 @@ export const cottageCheeseSourdough: NormalizedRecipe = {
   
   title: 'Cottage Cheese & Smashed Avocado Sourdough',
   description: 'Thick sourdough toast layered with creamy cottage cheese, avocado, and chili flakes.',
-  imageUrl: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?q=80&w=800&auto=format&fit=crop",
+  imageUrl: "https://images.unsplash.com/photo-_3iaS5NstQY?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 5,
   totalMinutes: 5,
@@ -139,7 +139,7 @@ export const smokedTofuWrap: NormalizedRecipe = {
   
   title: 'Smoked Tofu, Hummus & Cucumber Wrap',
   description: 'A lightning-fast vegan wrap using pre-smoked tofu for instant flavour.',
-  imageUrl: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=800&auto=format&fit=crop", // Re-using reasonable wrap
+  imageUrl: "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 5,
   totalMinutes: 5,
@@ -176,7 +176,7 @@ export const lemonHerbChickenBowl: NormalizedRecipe = {
   
   title: 'Classic Lemon Herb Chicken & Quinoa',
   description: 'A perfectly balanced, moderate protein dinner. Not too heavy, not too light.',
-  imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?q=80&w=800&auto=format&fit=crop",
+  imageUrl: "https://images.unsplash.com/photo-8LxEnrfgjgg?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 10,
   totalMinutes: 30, // mostly simmering/baking
@@ -211,7 +211,7 @@ export const simpleChickpeaCurry: NormalizedRecipe = {
   
   title: 'Simple Coconut Chickpea & Spinach Curry',
   description: 'A warm, comforting 25-minute vegan curry using store-cupboard heroes.',
-  imageUrl: "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
+  imageUrl: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 10,
   totalMinutes: 25,
@@ -248,7 +248,7 @@ export const bakedCodMedVeg: NormalizedRecipe = {
   
   title: 'Baked Cod with Roasted Mediterranean Vegetables',
   description: 'A beautiful, light, produce-heavy weekend dinner. Low effort but feels premium.',
-  imageUrl: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=800&auto=format&fit=crop",
+  imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 15,
   totalMinutes: 40, // Mostly roasting
@@ -283,7 +283,7 @@ export const garlicButterPrawns: NormalizedRecipe = {
   
   title: 'Garlic Butter Prawns & Zucchini Noodles',
   description: 'Extremely quick, low-carb mid-week pescatarian dinner.',
-  imageUrl: "https://images.unsplash.com/photo-1625943555419-56a2bb07c862?q=80&w=800&auto=format&fit=crop",
+  imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop",
   
   activePrepMinutes: 10,
   totalMinutes: 15,
