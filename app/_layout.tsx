@@ -5,8 +5,8 @@ import 'react-native-reanimated';
 import '../global.css';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Platform, useWindowDimensions } from 'react-native';
 
 import { useColorScheme as useNavColorScheme } from '@/hooks/use-color-scheme';
 import { ThemeProvider, useTheme } from '../components/ThemeContext';
@@ -16,6 +16,7 @@ import { ActivePlanProvider } from '../data/ActivePlanContext';
 import { DebugProvider } from '../data/DebugContext';
 import { ToastProvider } from '../components/ToastContext';
 import DebugOverlay from '../components/DebugOverlay';
+import UnsupportedMobileWeb from '../components/UnsupportedMobileWeb';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,6 +57,34 @@ export default function RootLayout() {
 
   if (!loaded && !error) {
     return null;
+  }
+
+  // --- M2 Mobile Web Gate ---
+  // Desktop Web = Supported
+  // Native iOS/Android = Supported
+  // Mobile/Tablet Web = Unsupported
+  const { width } = useWindowDimensions();
+  const [bypassGate, setBypassGate] = useState(false);
+
+  const isWeb = Platform.OS === 'web';
+  const isMobileOrTabletUa = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent);
+  const isNarrowTouch = width < 1024 && typeof window !== 'undefined' && typeof navigator !== 'undefined' && ('ontouchstart' in window || navigator?.maxTouchPoints > 0);
+  
+  const isUnsupportedWeb = isWeb && (isMobileOrTabletUa || isNarrowTouch);
+
+  if (isUnsupportedWeb && !bypassGate) {
+    return (
+      <ThemeProvider>
+        <UnsupportedMobileWeb 
+          onBypass={() => setBypassGate(true)}
+          config={{
+            expoGoInstructions: "Scan the QR code from the Expo CLI using Expo Go.",
+            // These would be populated from environment variables in a real production build
+            // previewBuildUrl: "https://expo.dev/...",
+          }}
+        />
+      </ThemeProvider>
+    );
   }
 
   return (
