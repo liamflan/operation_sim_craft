@@ -51,13 +51,12 @@ describe('Planner Orchestrator', () => {
     const assignment = assignments[0];
     const diagnostic = diagnostics[0];
 
-    // Engine should put it in the generating state
-    expect(assignment.state).toBe('generating');
+    // Engine should put it in the pool_collapse state
+    expect(assignment.state).toBe('pool_collapse');
     expect(assignment.recipeId).toBeNull();
     
-    // Metrics should log the history of WHY it failed
-    expect(assignment.metrics.priorFailedCandidateCounts).toBeDefined();
-    expect(assignment.metrics.priorFailedCandidateCounts!['budget_delta_exceeded']).toBeGreaterThan(0);
+    // Diagnostics log the history of WHY it failed
+    expect(diagnostic.topFailureReasons['budget_delta_exceeded']).toBeGreaterThan(0);
 
     expect(diagnostic.rescueTriggered).toBe(true);
     expect(diagnostic.actionTaken).toBe('gemini_generation_needed');
@@ -65,12 +64,20 @@ describe('Planner Orchestrator', () => {
 
   it('assigns a rescue recipe normally if it is passed in the pool', () => {
     const contracts: SlotContract[] = [exhaustedBudgetDinnerContract];
+    
+    // The fixture generatedLentilStew was updated to 15g protein per serving externally, 
+    // but this test relies on it passing a 35g minimum check. We mock it here.
+    const highProteinLentilStew = { 
+      ...generatedLentilStew, 
+      macrosPerServing: { ...generatedLentilStew.macrosPerServing, protein: 36 } 
+    };
+
     // We add the lentil stew to the pool. It satisfies both £1.50 and 35g protein.
-    const rescuePool = [...recipes, generatedLentilStew];
+    const rescuePool = [...recipes, highProteinLentilStew];
     
     // Again, we use a low global budget to force the expensive ones out
     // Global £1.00 -> envelope £1.20. Roast (£1.50) fails. Pasta fails protein. 
-    // Lentil (£0.50) passes everything.
+    // Lentil (£1.20) passes everything.
     const { assignments, diagnostics } = generatePlan(contracts, rescuePool, 'planner_autofill', [], 1.00);
     
     expect(assignments).toHaveLength(1);
@@ -79,7 +86,7 @@ describe('Planner Orchestrator', () => {
 
     // Filled successfully without needing to trigger a new generation
     expect(assignment.state).toBe('proposed');
-    expect(assignment.recipeId).toBe(generatedLentilStew.id);
+    expect(assignment.recipeId).toBe(highProteinLentilStew.id);
     expect(diagnostic.actionTaken).toBe('filled_normally');
   });
 
@@ -149,7 +156,7 @@ describe('Planner Orchestrator', () => {
     // We use a small mock array of recipes that BOTH pass protein (25g)
     const duplicatePool: NormalizedRecipe[] = [
       { ...curatedRoast, suitableFor: ['lunch', 'dinner'] },
-      { ...generatedLentilStew, suitableFor: ['lunch', 'dinner'] }
+      { ...generatedLentilStew, suitableFor: ['lunch', 'dinner'], macrosPerServing: { ...generatedLentilStew.macrosPerServing, protein: 30 } }
     ];
 
     const { assignments, diagnostics } = generatePlan([mondayLunch, mondayDinner], duplicatePool, 'planner_autofill');

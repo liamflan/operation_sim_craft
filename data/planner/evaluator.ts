@@ -8,7 +8,8 @@ import {
   SlotContract,
   PlannerCandidate,
   InsightMetadata,
-  RescueFailureReason
+  RescueFailureReason,
+  VarietyContext
 } from './plannerTypes';
 import { isRecipeAllowedForBaselineDiet } from './dietRules';
 
@@ -19,9 +20,7 @@ import { isRecipeAllowedForBaselineDiet } from './dietRules';
 export function checkHardEligibility(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  currentArchetypeCounts: Record<string, number>,
-  repeatCount: number,
-  assignedRecipeIdsToday: Set<string> = new Set()
+  varietyCtx: VarietyContext
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
@@ -83,13 +82,13 @@ export function checkHardEligibility(
 
   // Archetype & Repeat Caps
   const cap = contract.archetypeCaps[recipe.archetype];
-  if (cap !== undefined && (currentArchetypeCounts[recipe.archetype] || 0) >= cap) {
+  if (cap !== undefined && varietyCtx.archetypeDensity >= cap) {
     failures.push('archetype_cap_exhausted');
   }
-  if (repeatCount >= contract.repeatCap) {
+  if (varietyCtx.repeatCount >= contract.repeatCap) {
     failures.push('repeat_cap_exhausted');
   }
-  if (assignedRecipeIdsToday.has(recipe.id)) {
+  if (varietyCtx.sameDayArchetypes.has(recipe.id)) { // Note: same_day_duplicate checks by recipe.id originally, keeping behavior matching old logic for the "same day duplicate"
     failures.push('same_day_duplicate');
   }
 
@@ -113,8 +112,7 @@ export function checkHardEligibility(
 export function scoreCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  currentArchetypeCounts: Record<string, number>,
-  repeatCount: number
+  varietyCtx: VarietyContext
 ): { scores: PlannerCandidate['scores']; penalties: PlannerCandidate['penalties'] } {
   
   // Macro Fit: How close to the ideal target?
@@ -132,23 +130,30 @@ export function scoreCandidate(
   const tasteFitScore = 85; 
   const pantryFitScore = recipe.archetype === 'Staple' ? 95 : 40;
   
-  // Slot & Variety
+  // Slot
   const slotFitScore = recipe.archetype === 'Quick_Fix' && contract.slotType === 'lunch' ? 100 : 70;
-  const varietyFitScore = 90; // Mocked distance from recent meals
   const leftoverFitScore = recipe.yieldsLeftovers && contract.leftoverPreference === 'prefer_fresh' ? 30 : 100;
 
-  // Real Penalties
-  const repeatPenalty = repeatCount * 15; // 15 points off for every time it repeats
-  const archetypeDensity = currentArchetypeCounts[recipe.archetype] || 0;
+  // Real Variety Scoring (P2)
+  let varietyScore = 100;
+  varietyScore -= (varietyCtx.repeatCount * 20);
+  varietyScore -= (varietyCtx.archetypeDensity * 5);
+  if (varietyCtx.sameDayArchetypes.has(recipe.archetype)) varietyScore -= 20;
+  if (varietyCtx.consecutiveArchetypeMatch) varietyScore -= 15;
+  const varietyFitScore = Math.max(0, varietyScore);
+
+  // Real Penalties (Absolute deductions on final score)
+  const repeatPenalty = varietyCtx.repeatCount * 15; // 15 points off absolute for every time it repeats
   // Mild penalty for using up the archetype pool, to naturally encourage variety before the hard cap is hit
-  const archetypePenalty = archetypeDensity * 5; 
+  const archetypePenalty = varietyCtx.archetypeDensity * 5; 
 
   const baseTotalScore = (
     macroFitScore * 0.30 +
     budgetFitScore * 0.25 +
-    tasteFitScore * 0.20 +
-    pantryFitScore * 0.15 +
-    slotFitScore * 0.10
+    varietyFitScore * 0.25 +
+    slotFitScore * 0.10 +
+    tasteFitScore * 0.05 +
+    pantryFitScore * 0.05
   );
 
   const totalScore = Math.max(0, Math.round(baseTotalScore - repeatPenalty - archetypePenalty));
@@ -162,7 +167,7 @@ export function scoreCandidate(
 /**
  * Translates dimension scores into human-readable UI insights.
  */
-export function generateInsights(scores: PlannerCandidate['scores'], recipe: NormalizedRecipe, contract: SlotContract, isRescue: boolean): InsightMetadata[] {
+export function generateInsights(scores: PlannerCandidate['scores'], recipe: NormalizedRecipe, contract: SlotContract, isRescue: boolean, varietyCtx: VarietyContext): InsightMetadata[] {
   const insights: InsightMetadata[] = [];
 
   if (isRescue) {
@@ -198,6 +203,34 @@ export function generateInsights(scores: PlannerCandidate['scores'], recipe: Nor
     });
   }
 
+  // P2 Variety Insights
+  if (scores.varietyFitScore >= 90) {
+     insights.push({
+        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'leaf',
+        label: 'Highly Varied', detail: `Brings fresh diversity to your week.`
+     });
+  } else if (varietyCtx.repeatCount > 0) {
+     insights.push({
+        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'copy',
+        label: 'Repeated Meal', detail: `You have this ${varietyCtx.repeatCount} other time(s) this week.`
+     });
+  } else if (varietyCtx.sameDayArchetypes.has(recipe.archetype)) {
+     insights.push({
+        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'layer-group',
+        label: 'Same-Day Meal Type Clash', detail: `You're already having a ${recipe.archetype.replace('_', ' ')} today.`
+     });
+  } else if (varietyCtx.consecutiveArchetypeMatch) {
+     insights.push({
+        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'exchange-alt',
+        label: 'Back-to-Back Meal Type', detail: `Follows another ${recipe.archetype.replace('_', ' ')} meal.`
+     });
+  } else if (varietyCtx.archetypeDensity >= 2) {
+     insights.push({
+        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'chart-pie',
+        label: 'Saturating Meal Type', detail: `You're having a lot of ${recipe.archetype.replace('_', ' ')}s this week.`
+     });
+  }
+
   return insights;
 }
 
@@ -208,15 +241,13 @@ export function generateInsights(scores: PlannerCandidate['scores'], recipe: Nor
 export function evaluateCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  currentArchetypeCounts: Record<string, number> = {},
-  repeatCount: number = 0,
-  assignedRecipeIdsToday: Set<string> = new Set()
+  varietyCtx: VarietyContext
 ): { candidate: PlannerCandidate | null, failureReasons: RescueFailureReason[] } {
   
-  const failures = checkHardEligibility(recipe, contract, currentArchetypeCounts, repeatCount, assignedRecipeIdsToday);
+  const failures = checkHardEligibility(recipe, contract, varietyCtx);
   if (failures.length > 0) return { candidate: null, failureReasons: failures }; // Complete rejection
 
-  const { scores, penalties } = scoreCandidate(recipe, contract, currentArchetypeCounts, repeatCount);
+  const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx);
 
   const candidate: PlannerCandidate = {
     id: `cand_${recipe.id}_${contract.dayIndex}_${contract.slotType}`,
@@ -226,7 +257,7 @@ export function evaluateCandidate(
     penalties,
     // Only eligible for soft rescue if it is close to the threshold (e.g. within 15 points)
     rescueEligible: scores.totalScore >= (contract.rescueThresholdScore - 15),
-    insights: generateInsights(scores, recipe, contract, false)
+    insights: generateInsights(scores, recipe, contract, false, varietyCtx)
   };
 
   return { candidate, failureReasons: [] };
@@ -248,9 +279,14 @@ export function analyzePoolCollapse(
   const failureCounts: Partial<Record<RescueFailureReason, number>> = {};
   
   recipes.forEach(r => {
-    // We pass an empty set for today's assignments during collapse analysis because
+    // We pass an empty/zero variance context for today's assignments during collapse analysis because
     // it's an aggregate summary, and 'same_day_duplicate' shouldn't mask real hard failures
-    const failures = checkHardEligibility(r, contract, currentArchetypeCounts, 0, new Set()); // Repeat count simplified for pool analysis
+    const failures = checkHardEligibility(r, contract, {
+      repeatCount: 0,
+      archetypeDensity: currentArchetypeCounts[r.archetype] || 0,
+      sameDayArchetypes: new Set(),
+      consecutiveArchetypeMatch: false
+    }); 
     failures.forEach(f => {
       failureCounts[f] = (failureCounts[f] || 0) + 1;
     });

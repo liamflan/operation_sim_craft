@@ -176,7 +176,7 @@ export interface SlotContract {
 }
 
 export interface InsightMetadata {
-  type: 'macro_fit' | 'budget_fit' | 'pantry_match' | 'taste_match' | 'prep_warning' | 'rescue_action';
+  type: 'macro_fit' | 'budget_fit' | 'pantry_match' | 'taste_match' | 'variety_fit' | 'prep_warning' | 'rescue_action';
   score: number; // 0.0 to 1.0 
   label: string;
   detail: string;
@@ -306,3 +306,11 @@ export interface OrchestratorOutput {
   diagnostics: SlotDiagnostic[];
   executionMeta?: PlannerExecutionDiagnostic;
 }
+
+export interface VarietyContext {
+  repeatCount: number;
+  archetypeDensity: number;
+  sameDayArchetypes: Set<string>;
+  consecutiveArchetypeMatch: boolean;
+}
+

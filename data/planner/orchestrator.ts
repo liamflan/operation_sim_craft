@@ -12,7 +12,8 @@ import {
   RescueFailureReason,
   ActorType,
   SlotDiagnostic,
-  OrchestratorOutput
+  OrchestratorOutput,
+  VarietyContext
 } from './plannerTypes';
 
 import {
@@ -136,19 +137,57 @@ export function generatePlan(
       budgetEnvelopeGBP: Math.max(0, dynamicBudgetEnvelope) // Never allow negative budget targets
     };
 
-    // Calculate Same Day duplications
-    // We look at the generated array *so far*, plus the existing locked assignments for today
     const assignedRecipeIdsToday = new Set<string>();
+    const sameDayArchetypes = new Set<string>();
+    
+    // We look at the generated array *so far*
     for (let j = 0; j < i; j++) {
       if (assignments[j].dayIndex === contract.dayIndex && assignments[j].recipeId) {
         assignedRecipeIdsToday.add(assignments[j].recipeId!);
+        const r = recipes.find(r => r.id === assignments[j].recipeId);
+        if (r) sameDayArchetypes.add(r.archetype);
       }
     }
+    
+    // Plus the existing locked assignments for today
     existingAssignments.forEach(ea => {
       if (ea.dayIndex === contract.dayIndex && ea.recipeId && ea.state !== 'skipped') {
         assignedRecipeIdsToday.add(ea.recipeId);
+        const r = recipes.find(r => r.id === ea.recipeId);
+        if (r) sameDayArchetypes.add(r.archetype);
       }
     });
+
+    // Consecutive Match (chronologically prior scheduled assignment across all days)
+    // We combine assignments so far and existing assignments, sort them by dayIndex then slot priority
+    // For simplicity, since the planner iterates chronologically over the week, `assignments[i-1]` is 
+    // usually the temporally preceding meal. However, existingAssignments might interleave.
+    // The most robust way to find the purely preceding meal is to flat-map all assignments, sort, and find the one right before current.
+    
+    // Gather all locked/generated assignments up to now
+    let allScheduled = [
+      ...existingAssignments.filter(a => a.recipeId && a.state !== 'skipped'),
+      ...assignments.slice(0, i).filter(a => a.recipeId)
+    ];
+    
+    // sort by dayIndex ascending, then by slot priority (breakfast < lunch < dinner < snacks)
+    const slotPriority: Record<string, number> = {
+      'breakfast': 1, 'snack_am': 2, 'lunch': 3, 'snack_pm': 4, 'dinner': 5, 'dessert': 6
+    };
+    allScheduled.sort((a, b) => {
+      if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+      return (slotPriority[a.slotType] || 99) - (slotPriority[b.slotType] || 99);
+    });
+
+    // Current index in this sorted list
+    // We want the last element in the sorted array that is *before* the current contract in time
+    const currentContractTimePriority = contract.dayIndex * 100 + (slotPriority[contract.slotType] || 99);
+    const precedingAssignment = allScheduled.reverse().find(a => {
+      const aTimePriority = a.dayIndex * 100 + (slotPriority[a.slotType] || 99);
+      return aTimePriority < currentContractTimePriority;
+    });
+
+    const precedingArchetype = precedingAssignment?.recipeId ? recipes.find(r => r.id === precedingAssignment.recipeId)?.archetype : null;
 
     // Evaluate all recipes for this specific contract
     const evaluatedCandidates: PlannerCandidate[] = [];
@@ -156,7 +195,24 @@ export function generatePlan(
     
     for (const recipe of recipes) {
       const repeatCount = runningRepeatCounts[recipe.id] || 0;
-      const { candidate, failureReasons } = evaluateCandidate(recipe, runtimeContract, runningArchetypeCounts, repeatCount, assignedRecipeIdsToday);
+      const archetypeDensity = runningArchetypeCounts[recipe.archetype] || 0;
+      
+      const varietyCtx: VarietyContext = {
+        repeatCount,
+        archetypeDensity,
+        sameDayArchetypes, // Note: keeping same_day_duplicate checks by recipe.id originally, sameDayArchetypes is for clustering penalty
+        consecutiveArchetypeMatch: precedingArchetype === recipe.archetype
+      };
+
+      // Since the original checkHardEligibility needs assignedRecipeIdsToday, we could temporarily bake it into sameDayArchetypes or keep it in VarietyContext.
+      // Wait, in evaluator.ts, I rewrote `checkHardEligibility` to use `varietyCtx.sameDayArchetypes.has(recipe.id)`. 
+      // I should pass assigned recipes in sameDayArchetypes or extend VarietyContext.
+      // Ah. The evaluator checks `varietyCtx.sameDayArchetypes.has(recipe.id)`!
+      // I need to make sure recipe.id is in sameDayArchetypes to satisfy strict repeat constraints today.
+      // So let's add recipe.ids to sameDayArchetypes.
+      assignedRecipeIdsToday.forEach(id => sameDayArchetypes.add(id));
+
+      const { candidate, failureReasons } = evaluateCandidate(recipe, runtimeContract, varietyCtx);
       
       if (candidate) {
         evaluatedCandidates.push(candidate);
