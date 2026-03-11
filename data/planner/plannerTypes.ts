@@ -10,7 +10,8 @@ export type ActorType =
   | 'user_manual' 
   | 'planner_autofill' 
   | 'swap_request' 
-  | 'regenerate_request' 
+  | 'regenerate_request'
+  | 'regenerate_week_request' 
   | 'rescue_operation' 
   | 'background_enrichment' 
   | 'admin_seed';

@@ -9,7 +9,9 @@ import { useActivePlan } from '../../data/ActivePlanContext';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 import { useDebug } from '../../data/DebugContext';
 import { getMealCardViewModel, getAssignmentsForDay, getWeeklyMetrics } from '../../data/planner/selectors';
+import { SlotType, PlannedMealAssignment } from '../../data/planner/plannerTypes';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
+import { useToast } from '../../components/ToastContext';
 
 // Static plan overrides are now handled by ActivePlanContext
 
@@ -22,6 +24,7 @@ export default function DashboardScreen() {
   const [displayedDayIndex, setDisplayedDayIndex] = useState(0);
   const [importModalVisible, setImportModalVisible] = useState(false);
   const { workspace, skipAssignment, unskipAssignment, skipAndKeepIngredients, replaceSlot, regenerateDay, regenerateWeek, slotLoading, dayLoading, weekLoading } = useActivePlan();
+  const { showToast } = useToast();
   const { updateDebugData } = useDebug();
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
@@ -90,9 +93,12 @@ export default function DashboardScreen() {
     return acc;
   }, { calories: 0, protein: 0 });
 
-  const handleSwap = (type: string) => {
+  const handleSwap = async (type: string) => {
     // Unify with handleReplace to ensure the action is correctly dispatched
-    replaceSlot(displayedDayIndex, type as any);
+    const result = await replaceSlot(displayedDayIndex, type as any);
+    if (result && !result.changed && result.message) {
+      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    }
   };
 
   const handleSkip = (assignmentId: string) => {
@@ -103,10 +109,27 @@ export default function DashboardScreen() {
     unskipAssignment(assignmentId);
   };
 
-  const handleReplace = (type: string) => {
+  const handleReplace = async (type: string) => {
     // Determine the exact slot dynamically based on current selected day index
     // Note: If type is 'breakfast' etc. we can pass the day index directly
-    replaceSlot(displayedDayIndex, type as any);
+    const result = await replaceSlot(displayedDayIndex, type as any);
+    if (result && !result.changed && result.message) {
+      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    }
+  };
+
+  const handleRegenDay = async (dayIndex: number) => {
+    const result = await regenerateDay(dayIndex);
+    if (result && !result.changed && result.message) {
+      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    }
+  };
+
+  const handleRegenWeek = async () => {
+    const result = await regenerateWeek();
+    if (result && !result.changed && result.message) {
+      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    }
   };
 
   const handleSkipAndKeep = (assignmentId: string, recipeId?: string) => {
@@ -146,7 +169,7 @@ export default function DashboardScreen() {
         <View className="flex-row items-center justify-between mb-3">
            <Text className="text-textSec dark:text-darktextSec text-[12px] font-medium tracking-widest uppercase ml-1">This Week</Text>
            <TouchableOpacity 
-              onPress={() => regenerateWeek()}
+              onPress={handleRegenWeek}
               disabled={weekLoading}
               className="flex-row items-center opacity-70 hover:opacity-100 active:scale-95 transition-all"
             >
@@ -209,7 +232,7 @@ export default function DashboardScreen() {
               </View>
             </View>
             <TouchableOpacity 
-              onPress={() => regenerateDay(displayedDayIndex)}
+              onPress={() => handleRegenDay(displayedDayIndex)}
               disabled={!!dayLoading[displayedDayIndex]}
               className="flex-row items-center mt-3 opacity-70 hover:opacity-100 active:scale-95 transition-all"
             >

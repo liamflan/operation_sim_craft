@@ -80,7 +80,7 @@ export default function TabLayout() {
         >
           <View className="mb-12 pl-3">
             <Text className="text-textMain dark:text-darktextMain text-[24px] font-semibold tracking-tight">Provision</Text>
-            <Text className="text-primary text-[10px] font-medium uppercase tracking-widest mt-1 opacity-80">Taste-Led Setup</Text>
+            <Text className="text-primary text-[10px] font-medium uppercase tracking-widest mt-1 opacity-80">Taste-Led Planning</Text>
           </View>
 
           <View className="flex-1">

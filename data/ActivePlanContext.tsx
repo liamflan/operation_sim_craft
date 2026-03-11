@@ -26,6 +26,16 @@ export interface ActiveWorkspace {
   error: string | null;
 }
 
+export type PlannerActionResult = {
+  ok: boolean;
+  changed: boolean;
+  reason?: 'no_better_candidate' | 'budget_delta_exceeded' | 'pool_collapse' | 'same_best_result' | 'zero_target_day_candidates' | 'action_ignored' | 'error';
+  message?: string;
+  runId?: string;
+  targetDay?: number;
+  targetSlot?: SlotType | null;
+};
+
 interface ActivePlanContextType {
   workspace: ActiveWorkspace;
   regenerateWorkspace: (payload: CalibrationPayload) => Promise<void>;
@@ -36,9 +46,9 @@ interface ActivePlanContextType {
   skipAssignment: (assignmentId: string) => void;
   unskipAssignment: (assignmentId: string) => void;
   skipAndKeepIngredients: (assignmentId: string, recipe: NormalizedRecipe) => void;
-  replaceSlot: (dayIndex: number, slotType: SlotType) => Promise<void>;
-  regenerateDay: (dayIndex: number) => Promise<void>;
-  regenerateWeek: () => Promise<void>;
+  replaceSlot: (dayIndex: number, slotType: SlotType) => Promise<PlannerActionResult>;
+  regenerateDay: (dayIndex: number) => Promise<PlannerActionResult>;
+  regenerateWeek: () => Promise<PlannerActionResult>;
   /** Per-slot in-flight guard: key = "dayIndex_slotType" */
   slotLoading: Record<string, boolean>;
   /** Per-day in-flight guard: key = dayIndex */
@@ -329,7 +339,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return;
+      return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
     }
 
     if (!workspaceRef.current.output || !workspaceRef.current.input) {
@@ -340,7 +350,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return;
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan to swap.', runId } as PlannerActionResult;
     }
 
     // Lock this slot
@@ -434,6 +444,37 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         } : null,
       });
 
+      if (isUnchanged || newState === 'pool_collapse') {
+        // NON-DESTRUCTIVE FALLBACK UX: Roll back to previous workspace.
+        console.log(`[${runId}] Swap failed/unchanged (reason: ${unchangedReason}). Reverting to preserve original meal.`);
+        setWorkspace(previousWorkspace);
+        
+        const persistEndAt = new Date().toISOString();
+        updateDebugData({
+          lastPersistEndAt: persistEndAt,
+          lastActionPhase: 'complete',
+          earlyReturn: true,
+          earlyReturnReason: unchangedReason as any, 
+        });
+        
+        let msg = "No alternative found within the remaining weekly budget.";
+        if (unchangedReason === 'pool_collapse') msg = "No valid alternative found under current constraints.";
+        if (unchangedReason === 'same_best_result') msg = "The current meal is already the best available option.";
+        if (unchangedReason === 'no_better_candidate') msg = "No better alternative found right now.";
+        if (unchangedReason === 'budget_delta_exceeded' as any) msg = "No alternative found within the remaining weekly budget."; // explicit override if it was named this
+
+        return { 
+          ok: true, 
+          changed: false, 
+          reason: (unchangedReason as PlannerActionResult['reason']) || 'no_better_candidate', 
+          message: msg, 
+          runId, 
+          targetDay: dayIndex, 
+          targetSlot: slotType 
+        };
+      }
+
+      // Successful update
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
@@ -449,10 +490,13 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       });
 
       console.log(`[${runId}] persist_returned`);
+      return { ok: true, changed: true, runId, targetDay: dayIndex, targetSlot: slotType } as PlannerActionResult;
+      
     } catch (err) {
       console.error(`[${runId}] error:`, err);
       setWorkspace(previousWorkspace);
       updateDebugData({ lastActionPhase: 'error' });
+      return { ok: false, changed: false, reason: 'error', message: 'An unexpected error occurred during swapping.', runId } as PlannerActionResult;
     } finally {
       clearTimeout(timeoutId);
       setSlotLoading(prev => { const next = { ...prev }; delete next[slotKey]; return next; });
@@ -477,6 +521,10 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       loadingCleared: null,
       resultChanged: null,
       unchangedReason: null,
+      earlyReturn: null,
+      earlyReturnReason: null,
+      targetDayNoopReason: null,
+      targetDayCandidateCounts: null,
     });
 
     // ── Per-day in-flight guard ───────────────────────────────────────────────
@@ -488,7 +536,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return;
+      return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
     }
     if (!workspaceRef.current.output || !workspaceRef.current.input) {
       const ignoredReason = 'no_workspace_output';
@@ -498,7 +546,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionIgnoredReason: ignoredReason,
         unchangedReason: 'action_ignored',
       });
-      return;
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan available.', runId } as PlannerActionResult;
     }
 
     // Lock this day
@@ -549,8 +597,12 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
           lastActionPhase: 'complete',
           resultChanged: false,
           unchangedReason: 'no_better_candidate',
+          earlyReturn: true,
+          earlyReturnReason: 'zero_target_day_candidates',
+          targetDayNoopReason: 'zero_target_day_candidates',
+          targetDayCandidateCounts: {},
         });
-        return;
+        return { ok: true, changed: false, reason: 'zero_target_day_candidates', message: "No better day alternative found under current constraints.", runId, targetDay: dayIndex } as PlannerActionResult;
       }
 
       const plannerStartAt = new Date().toISOString();
@@ -585,20 +637,54 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'regenerate_day'
       }));
 
-      const persistDuration = Date.now() - persistStartTime;
+      // Determine if result actually changed
+      // Simple heuristic: collect previously assigned recipe IDs for this day versus new ones.
+      const previousDayIds = previousWorkspace.output!.assignments
+        .filter(a => a.dayIndex === dayIndex).map(a => a.recipeId).sort().join(',');
+      const newDayIds = output.assignments
+        .filter(a => a.dayIndex === dayIndex).map(a => a.recipeId).sort().join(',');
+        
+      const isUnchanged = previousDayIds === newDayIds;
+      
+      const hasCollapse = output.assignments.some(a => a.dayIndex === dayIndex && a.state === 'pool_collapse');
+      let explicitCollapseMessage = null;
+      if (hasCollapse) {
+        const collapsedSlot = output.assignments.find(a => a.dayIndex === dayIndex && a.state === 'pool_collapse');
+        explicitCollapseMessage = collapsedSlot?.collapseContext?.userMessage || "No suitable replacement found under current constraints.";
+      }
+      
       const persistEndAt = new Date().toISOString();
-      console.log(`[${runId}] persist_returned. Duration: ${persistDuration}ms`);
 
       updateDebugData({
         lastPersistEndAt: persistEndAt,
         lastActionPhase: 'complete',
-        resultChanged: true, // Day regen always intends to produce new results
+        resultChanged: hasCollapse ? false : !isUnchanged,
+        unchangedReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
+        earlyReturn: hasCollapse || isUnchanged,
+        earlyReturnReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
+        targetDayCandidateCounts: output.executionMeta?.candidateCountsBySlot ?? null,
+        targetDayNoopReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidates_than_current' : null,
       });
+      
+      if (hasCollapse) {
+        console.log(`[${runId}] Day regeneration returned a pool collapse. Reverting to preserve original UI state.`);
+        setWorkspace(previousWorkspace);
+        return { ok: true, changed: false, reason: 'pool_collapse', message: explicitCollapseMessage || "Could not regenerate — remaining weekly budget is too tight for this day.", runId, targetDay: dayIndex } as PlannerActionResult;
+      }
+
+      if (isUnchanged) {
+        console.log(`[${runId}] Day regeneration returned identical recipes. Reverting to preserve original UI state if it had locked items.`);
+        setWorkspace(previousWorkspace);
+        return { ok: true, changed: false, reason: 'no_better_candidate', message: "No better day alternative found under current constraints.", runId, targetDay: dayIndex } as PlannerActionResult;
+      }
+
+      return { ok: true, changed: true, runId, targetDay: dayIndex } as PlannerActionResult;
 
     } catch (err) {
       console.error(`[${runId}] error:`, err);
       setWorkspace(previousWorkspace);
       updateDebugData({ lastActionPhase: 'error' });
+      return { ok: false, changed: false, reason: 'error', message: 'An unexpected error occurred during Day Regeneration.', runId, targetDay: dayIndex } as PlannerActionResult;
     } finally {
       clearTimeout(timeoutId);
       setDayLoading(prev => { const next = { ...prev }; delete next[dayIndex]; return next; });
@@ -607,17 +693,46 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const regenerateWeek = async () => {
+  const regenerateWeek = async (): Promise<PlannerActionResult> => {
     const runId = `regen_week_${Date.now()}`;
+    const clickAt = new Date().toISOString();
+    
+    // ── Phase: click_received — always emit ─────────────────────────────────
+    updateDebugData({
+      lastActionIntent: 'regenerate_week',
+      lastActionRunId: runId,
+      lastActionPhase: 'click_received',
+      lastClickAt: clickAt,
+      actionIgnoredReason: null,
+      lastSwapTargetDay: null,
+      lastSwapTargetSlot: null,
+      loadingCleared: null,
+      resultChanged: null,
+      unchangedReason: null,
+      earlyReturn: null,
+      earlyReturnReason: null,
+      targetDayNoopReason: null,
+      targetDayCandidateCounts: null,
+    });
 
     // ── Week-level guard ─────────────────────────────────────────────────────
     if (weekLoading) {
       console.log(`[${runId}] ACTION_IGNORED: week_already_loading`);
-      return;
+      updateDebugData({
+        lastActionPhase: 'action_ignored',
+        actionIgnoredReason: 'week_already_loading',
+        unchangedReason: 'action_ignored',
+      });
+      return { ok: true, changed: false, reason: 'action_ignored', runId };
     }
     if (!workspaceRef.current.output || !workspaceRef.current.input) {
       console.log(`[${runId}] ACTION_IGNORED: No workspace output or input available.`);
-      return;
+      updateDebugData({
+        lastActionPhase: 'action_ignored',
+        actionIgnoredReason: 'no_workspace_output',
+        unchangedReason: 'action_ignored',
+      });
+      return { ok: false, changed: false, reason: 'error', message: 'Internal error: no active plan available.', runId };
     }
 
     setWeekLoading(true);
@@ -654,13 +769,62 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
 
       console.log(`[${runId}] planner_started`);
       const plannerStartTime = Date.now();
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', payload.budgetWeekly ?? 50.00);
+      
+      const plannerStartAt = new Date().toISOString();
+      updateDebugData({
+        lastActionPhase: 'planner_running',
+        lastPlannerStartAt: plannerStartAt,
+        lastPlannerExecutionSource: 'regenerate_week_request',
+      });
+      
+      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_week_request', payload.budgetWeekly ?? 50.00);
       const plannerDuration = Date.now() - plannerStartTime;
+      const plannerEndAt = new Date().toISOString();
 
       console.log(`[${runId}] planner_returned. Duration: ${plannerDuration}ms`, {
         enginePath: output.executionMeta?.enginePath,
         planningMode: output.executionMeta?.planningMode
       });
+      
+      updateDebugData({
+        lastPlannerEndAt: plannerEndAt,
+        lastActionPhase: 'persist_started',
+      });
+      
+      // Determine explicit unchanged or collapse states for the week
+      const previousWeekIds = previousWorkspace.output!.assignments.map(a => `${a.dayIndex}_${a.slotType}_${a.recipeId}`).sort().join(',');
+      const newWeekIds = output.assignments.map(a => `${a.dayIndex}_${a.slotType}_${a.recipeId}`).sort().join(',');
+      const isUnchanged = previousWeekIds === newWeekIds;
+      
+      const hasCollapse = output.assignments.some(a => a.state === 'pool_collapse');
+      let explicitCollapseMessage = null;
+      if (hasCollapse) {
+         const collapsedSlot = output.assignments.find(a => a.state === 'pool_collapse');
+         explicitCollapseMessage = collapsedSlot?.collapseContext?.userMessage || "No suitable alternative found under current constraints.";
+      }
+
+      const persistEndAt = new Date().toISOString();
+      
+      updateDebugData({
+        lastPersistEndAt: persistEndAt,
+        lastActionPhase: 'complete',
+        resultChanged: hasCollapse ? false : !isUnchanged,
+        unchangedReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
+        earlyReturn: hasCollapse || isUnchanged,
+        earlyReturnReason: hasCollapse ? 'pool_collapse' : isUnchanged ? 'no_better_candidate' : null,
+      });
+
+      if (hasCollapse) {
+         console.log(`[${runId}] Week regeneration returned a pool collapse. Reverting to preserve original UI state.`);
+         setWorkspace(previousWorkspace);
+         return { ok: true, changed: false, reason: 'pool_collapse', message: explicitCollapseMessage || "Could not regenerate — remaining weekly budget is too tight.", runId };
+      }
+
+      if (isUnchanged) {
+         console.log(`[${runId}] Week regeneration returned identical recipes. Reverting to preserve original UI state.`);
+         setWorkspace(previousWorkspace);
+         return { ok: true, changed: false, reason: 'no_better_candidate', message: "No better full-week alternative found under current constraints.", runId };
+      }
 
       setWorkspace(prev => ({
         ...prev,
@@ -671,12 +835,17 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       }));
 
       console.log(`[${runId}] persist_returned`);
+      return { ok: true, changed: true, runId };
+      
     } catch (err) {
       console.error(`[${runId}] error:`, err);
       setWorkspace(previousWorkspace);
+      updateDebugData({ lastActionPhase: 'error' });
+      return { ok: false, changed: false, reason: 'error', message: 'An unexpected error occurred during Week Regeneration.', runId };
     } finally {
       clearTimeout(timeoutId);
       setWeekLoading(false);
+      updateDebugData({ loadingCleared: true });
       console.log(`[${runId}] loading_cleared`);
     }
   };

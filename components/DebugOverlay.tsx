@@ -25,8 +25,8 @@ export default function DebugOverlay() {
     }
   }, [debugData.executionMeta?.runId, updateDebugData]);
 
-  // Only show in development
-  if (!__DEV__) return null;
+  // Allow debug overlay in live mode for testing
+  // if (!__DEV__) return null;
 
   const copySnapshot = async () => {
     const text = JSON.stringify(debugData, null, 2);
@@ -114,6 +114,20 @@ export default function DebugOverlay() {
           {renderField('CardStateAfter', debugData.cardStateAfter)}
           {renderField('ResultChanged', debugData.resultChanged)}
           {renderField('UnchangedReason', debugData.unchangedReason)}
+
+          {/* ─── Phase 20G Early Returns ──────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>UX Early Return Trace</Text>
+          {renderField('Early Return Blocked?', debugData.earlyReturn)}
+          {renderField('Early Return Reason', debugData.earlyReturnReason)}
+          {renderField('Target Day No-Op Reason', debugData.targetDayNoopReason)}
+          {debugData.targetDayCandidateCounts && (
+            <>
+              <Text style={styles.subSectionTitle}>Day Candidates</Text>
+              {Object.entries(debugData.targetDayCandidateCounts).map(([slot, count]) => (
+                 renderField(slot, count)
+              ))}
+            </>
+          )}
 
           {/* ─── Collapse Context ─────────────────────────────────────────── */}
           {debugData.collapseContext ? (
