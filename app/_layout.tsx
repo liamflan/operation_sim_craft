@@ -14,6 +14,7 @@ import { WeeklyRoutineProvider } from '../data/WeeklyRoutineContext';
 import { PantryProvider } from '../data/PantryContext';
 import { ActivePlanProvider } from '../data/ActivePlanContext';
 import { DebugProvider } from '../data/DebugContext';
+import { ToastProvider } from '../components/ToastContext';
 import DebugOverlay from '../components/DebugOverlay';
 
 SplashScreen.preventAutoHideAsync();
@@ -62,9 +63,11 @@ export default function RootLayout() {
       <WeeklyRoutineProvider>
         <PantryProvider>
           <DebugProvider>
-            <ActivePlanProvider>
-              <RootApp />
-            </ActivePlanProvider>
+            <ToastProvider>
+              <ActivePlanProvider>
+                <RootApp />
+              </ActivePlanProvider>
+            </ToastProvider>
           </DebugProvider>
         </PantryProvider>
       </WeeklyRoutineProvider>

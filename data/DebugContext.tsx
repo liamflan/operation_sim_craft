@@ -5,7 +5,9 @@ export type UnchangedReason =
   | 'no_better_candidate'
   | 'pool_collapse'
   | 'action_ignored'
-  | 'same_best_result';
+  | 'same_best_result'
+  | 'budget_delta_exceeded'
+  | 'zero_target_day_candidates';
 
 export type ActionPhase =
   | 'click_received'
@@ -67,6 +69,12 @@ export interface DebugMetadata {
   // ─── Collapse context ────────────────────────────────────────────────────────
   collapseContext: SwapCollapseContext | null;
 
+  // ─── Phase 20G Additions ──────────────────────────────────────────────────────
+  earlyReturn: boolean | null;
+  earlyReturnReason: UnchangedReason | null;
+  targetDayCandidateCounts: Record<string, number> | null;
+  targetDayNoopReason: string | null;
+
   // ─── Exclusions trace ────────────────────────────────────────────────────────
   /** Number of hardExclusions present in contracts reaching the planner (0 = no exclusions active) */
   hardExclusionsActive: number | null;
@@ -114,6 +122,12 @@ const INITIAL_DEBUG_DATA: DebugMetadata = {
   unchangedReason: null,
 
   collapseContext: null,
+
+  earlyReturn: null,
+  earlyReturnReason: null,
+  targetDayCandidateCounts: null,
+  targetDayNoopReason: null,
+
   hardExclusionsActive: null,
   hardExclusionValues: null,
 };

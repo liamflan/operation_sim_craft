@@ -115,6 +115,20 @@ export default function DebugOverlay() {
           {renderField('ResultChanged', debugData.resultChanged)}
           {renderField('UnchangedReason', debugData.unchangedReason)}
 
+          {/* ─── Phase 20G Early Returns ──────────────────────────────────── */}
+          <Text style={styles.sectionTitle}>UX Early Return Trace</Text>
+          {renderField('Early Return Blocked?', debugData.earlyReturn)}
+          {renderField('Early Return Reason', debugData.earlyReturnReason)}
+          {renderField('Target Day No-Op Reason', debugData.targetDayNoopReason)}
+          {debugData.targetDayCandidateCounts && (
+            <>
+              <Text style={styles.subSectionTitle}>Day Candidates</Text>
+              {Object.entries(debugData.targetDayCandidateCounts).map(([slot, count]) => (
+                 renderField(slot, count)
+              ))}
+            </>
+          )}
+
           {/* ─── Collapse Context ─────────────────────────────────────────── */}
           {debugData.collapseContext ? (
             <>
