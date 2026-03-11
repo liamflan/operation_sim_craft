@@ -30,6 +30,7 @@ import { getRecipeImage } from './RecipeImages';
 import { auditRecipeImage } from './RecipeImageAuditor';
 import { WAVE1_FIXTURES } from './wave1Fixtures';
 import { WAVE2_FIXTURES } from './wave2Fixtures';
+import { WAVE3_FIXTURES } from './wave3Fixtures';
 
 /**
  * Converts a legacy Recipe object (from seed.ts) into the rigorous NormalizedRecipe format.
@@ -108,6 +109,9 @@ const normalizedLegacy = MOCK_RECIPES.map(normalizeLegacyRecipe);
 
 // 2. High-Fidelity Fixtures (already normalized)
 const fixtures = [
+  ...WAVE1_FIXTURES,
+  ...WAVE2_FIXTURES,
+  ...WAVE3_FIXTURES,
   curatedRoast,
   curatedPasta,
   generatedLentilStew,
@@ -124,9 +128,7 @@ const fixtures = [
   veggieMutterPaneer,
   veggieFetaWrap,
   pesciSeabass,
-  pesciSalmonBagel,
-  ...WAVE1_FIXTURES,
-  ...WAVE2_FIXTURES
+  pesciSalmonBagel
 ];
 
 /**
