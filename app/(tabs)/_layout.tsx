@@ -107,9 +107,9 @@ export default function TabLayout() {
               />
               <NavItem 
                 icon="shopping-basket" 
-                label="Fuel List" 
-                isActive={pathname === '/shop' || pathname === '/(tabs)/shop'} 
-                onPress={() => router.push('/(tabs)/shop')} 
+                label="Shopping List" 
+                isActive={pathname === '/shopping-list' || pathname === '/(tabs)/shopping-list'} 
+                onPress={() => router.push('/(tabs)/shopping-list')} 
               />
               <NavItem 
                 icon="star" 
@@ -209,9 +209,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="shop"
+        name="shopping-list"
         options={{
-          title: 'List',
+          title: 'Shopping List',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
         }}
       />

@@ -25,7 +25,7 @@ function normalizeExclusions(raw: string): string[] {
 const STEP_LABELS = [
   { number: 1, label: 'Welcome' },
   { number: 2, label: 'Dietary Baseline' },
-  { number: 3, label: 'Taste Preferences' },
+  { number: 3, label: 'Calibration' },
   { number: 4, label: 'Goals & Constraints' },
   { number: 5, label: 'Plan Setup' },
 ];

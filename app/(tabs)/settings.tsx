@@ -61,7 +61,7 @@ export default function SettingsScreen() {
           <View className="mb-8 md:mb-12 mt-4 md:mt-8 flex-row items-center justify-between">
             <View>
               <Text className="text-textMain dark:text-darktextMain text-display font-semibold tracking-tight">Settings</Text>
-              <Text className="text-textSec text-body-lg mt-2 font-medium">Manage your engine guardrails and app preferences.</Text>
+              <Text className="text-textSec text-body-lg mt-2 font-medium">Manage your taste profile and app preferences.</Text>
             </View>
             <View className="hidden md:flex flex-row items-center bg-surface dark:bg-darkgrey py-2 px-4 rounded-full border border-softBorder shadow-sm">
               <View className="w-8 h-8 rounded-full bg-primary items-center justify-center mr-3">
@@ -75,7 +75,7 @@ export default function SettingsScreen() {
             
             {/* Left Column: Core Engine Settings */}
             <View className="md:flex-1">
-              <Text className="text-textMain dark:text-darktextMain text-h2 font-semibold mb-5 flex-row items-center tracking-tight"><FontAwesome5 name="sliders-h" size={18} color="#9DCD8B" className="mr-3" />  Engine Guardrails</Text>
+              <Text className="text-textMain dark:text-darktextMain text-h2 font-semibold mb-5 flex-row items-center tracking-tight"><FontAwesome5 name="sliders-h" size={18} color="#9DCD8B" className="mr-3" />  Taste Profile Settings</Text>
               
               <View className="bg-surface dark:bg-darkgrey/60 rounded-[32px] p-7 mb-8 border border-softBorder dark:border-white/5 shadow-sm backdrop-blur-md">
                 
@@ -182,7 +182,7 @@ export default function SettingsScreen() {
                   onPress={() => router.replace('/calibration')}
                   className="bg-surface dark:bg-darkgrey border-2 border-danger/10 p-5 rounded-[24px] items-center active:bg-danger/5 transition-colors"
                 >
-                  <Text className="text-danger font-semibold text-body-lg">Reset Engine (Restart Calibration)</Text>
+                  <Text className="text-danger font-semibold text-body-lg">Reset Taste Profile (Restart Calibration)</Text>
                 </TouchableOpacity>
               </View>
 

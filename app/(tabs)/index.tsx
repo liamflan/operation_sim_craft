@@ -329,7 +329,7 @@ export default function DashboardScreen() {
                       </View>
                       <View>
                         <Text className="text-textMain dark:text-darktextMain text-[18px] font-semibold tracking-tight">{slotLabel(slot, dayRoutine[slot])}</Text>
-                        <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for fuel list processing</Text>
+                        <Text className="text-textSec dark:text-darktextSec text-[12px] mt-1 opacity-80">Not scheduled for shopping list generation</Text>
                       </View>
                     </View>
                   );
@@ -515,11 +515,11 @@ export default function DashboardScreen() {
             {/* Next Action — Sage Card */}
             <TouchableOpacity
               testID="dashboard-next-action-card"
-              onPress={() => router.push('/shop')}
+              onPress={() => router.push('/shopping-list')}
               className="bg-sageTint dark:bg-darksageTint rounded-3xl p-5 mb-4 shadow-sm border border-transparent dark:border-darksoftBorder active:opacity-90 hover:opacity-95 transition-all flex-row items-center cursor-pointer"
             >
               <View className="flex-1 mr-4">
-                <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-widest mb-1.5">Weekly Prep</Text>
+                <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-widest mb-1.5">SHOPPING LIST</Text>
                 <Text className="text-textMain dark:text-darktextMain text-[18px] font-medium tracking-tight">
                   {workspace.output?.assignments.filter(a => !!a.recipeId).length || 0} meals planned
                 </Text>

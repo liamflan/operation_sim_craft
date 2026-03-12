@@ -285,7 +285,7 @@ export default function ShoppingListScreen() {
   const categoryCount = Object.keys(currentList).filter(cat => !hideStaples || currentList[cat].some(i => !i.isRestock)).length;
 
   const handleCopyText = async () => {
-    let textOut = "PROVISION FUEL LIST\n\n";
+    let textOut = "PROVISION SHOPPING LIST\n\n";
     Object.entries(currentList).forEach(([category, items]) => {
       const visible = hideStaples ? items.filter(i => !i.isRestock) : items;
       if (visible.length === 0) return;
@@ -314,7 +314,7 @@ export default function ShoppingListScreen() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "provision_fuel_list.csv";
+      link.download = "provision_shopping_list.csv";
       link.click();
       URL.revokeObjectURL(url);
     } finally { setIsExporting(false); }
@@ -328,7 +328,7 @@ export default function ShoppingListScreen() {
           <View className="print-hide">
             <PageHeader 
               eyebrow="Active Shopping List"
-              title="The Fuel List"
+              title="Shopping List"
               subtitle={plannedMealCount === 21 ? "Full week plan" : `Built for ${plannedMealCount} planned meals.`}
               rightActions={
                 <View className="hidden md:flex flex-row items-center bg-surface dark:bg-darksurface p-1.5 rounded-full border border-black/5 shadow-sm">
@@ -370,7 +370,7 @@ export default function ShoppingListScreen() {
           {workspace.status === 'error' && (
             <View className="flex-1 items-center justify-center py-20 bg-red-50 dark:bg-red-900/10 rounded-[32px] border border-red-100 dark:border-red-900/20 px-6">
               <FontAwesome5 name="exclamation-circle" size={32} color="#EF4444" />
-              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4 text-center">Fuel List Generation Failed</Text>
+              <Text className="text-textMain dark:text-darktextMain text-[20px] font-semibold mt-4 text-center">Shopping List Generation Failed</Text>
               <Text className="text-textSec dark:text-darktextSec mt-2 text-center">{workspace.error || 'Unknown error occurred'}</Text>
               <TouchableOpacity onPress={() => router.replace('/calibration')} className="mt-6 bg-red-500 px-8 py-3 rounded-full">
                 <Text className="text-white font-bold">Restart Onboarding</Text>

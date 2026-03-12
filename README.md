@@ -1,4 +1,4 @@
-# Provision - Taste-Led Hybrid AI Planner 🥑
+# Provision - Taste-Led Planning 🥑
 
 Provision is a premium, intelligence-first meal planning system designed to bridge the gap between fixed recipe libraries and infinite AI generation. It prioritizes flavor alignment, budget control, and macro precision through a rigorous, multi-layered planning engine.
 
@@ -17,7 +17,7 @@ At the heart of Provision is a strict 4-layer data model that ensures consistenc
 -   **Intelligent Rescue Flow**: A tiered recovery system that handles pool collapses by automatically relaxing constraints or triggering Gemini for custom "Budget Rescue" generations.
 -   **Provision Insights**: Real-time feedback on *why* a meal was chosen, highlighting key benefits like "Budget Fit" or "High Protein."
 -   **Planner Sandbox**: A dedicated developer environment for auditing the engine's internal scoring and diagnostics in real-time.
--   **Pantry & Fuel List Aware**: Built-in inventory tracking that influences planner scoring based on ingredients you already own.
+-   **Pantry & Shopping List Aware**: Built-in inventory tracking that influences planner scoring based on ingredients you already own.
 
 ## 🛠️ Tech Stack
 
