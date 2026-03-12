@@ -233,23 +233,23 @@ export default function CalibrationScreen() {
                   activeOpacity={0.8}
                   className={`p-6 md:p-7 rounded-[28px] w-full md:w-[48.8%] border transition-all ${
                     isActive
-                      ? 'bg-primary/5 dark:bg-primary/10 border-primary shadow-sm scale-[0.99]'
+                      ? 'bg-primary/[0.03] dark:bg-primary/10 border-primary/40 shadow-sm scale-[0.99]'
                       : 'bg-surface dark:bg-darksurface border-black/[0.04] dark:border-white/5 hover:border-black/10 dark:hover:border-white/10'
                   }`}
                 >
                   <View className="flex-row justify-between items-center mb-4">
-                    <View className={`w-12 h-12 rounded-[16px] items-center justify-center ${isActive ? 'bg-primary/10 dark:bg-primary/20' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
+                    <View className={`w-12 h-12 rounded-[16px] items-center justify-center ${isActive ? 'bg-primary/20 dark:bg-primary/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
                       <FontAwesome5 name={option.icon as any} size={18} color={isActive ? '#9DCD8B' : '#8C9A90'} />
                     </View>
                     {isActive
-                      ? <View className="bg-primary rounded-full w-6 h-6 items-center justify-center shadow-sm"><FontAwesome5 name="check" size={10} color="white" /></View>
+                      ? <View className="bg-primary/40 rounded-full w-4 h-4 items-center justify-center shadow-sm"><FontAwesome5 name="check" size={7} color="white" /></View>
                       : <View className="w-6 h-6 rounded-full border-2 border-black/[0.08] dark:border-white/10" />
                     }
                   </View>
-                  <Text className={`text-[20px] md:text-[22px] font-bold tracking-tight mb-1.5 ${isActive ? 'text-primary dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
+                  <Text className="text-[20px] md:text-[22px] font-bold tracking-tight mb-1.5 text-textMain dark:text-darktextMain">
                     {option.label}
                   </Text>
-                  <Text className={`font-medium text-[14px] leading-relaxed ${isActive ? 'text-textMain/80 dark:text-darktextMain/80' : 'text-textSec dark:text-darktextSec'}`}>
+                  <Text className="font-medium text-[14px] leading-relaxed text-textSec dark:text-darktextSec">
                     {option.description}
                   </Text>
                 </TouchableOpacity>
@@ -353,21 +353,24 @@ export default function CalibrationScreen() {
               Weekly food budget
             </Text>
             <View className="flex-row flex-wrap gap-2">
-              {BUDGET_PRESETS.map(b => (
-                <TouchableOpacity
-                  key={b}
-                  onPress={() => setBudget(b)}
-                  className={`px-5 py-3 rounded-2xl border transition-all ${
-                    budget === b
-                      ? 'bg-primary/10 dark:bg-primary/20 border-primary'
-                      : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
-                  }`}
-                >
-                  <Text className={`font-bold text-[15px] ${budget === b ? 'text-primary dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
-                    £{b}{b === 70 ? '+' : ''}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {BUDGET_PRESETS.map(b => {
+                const isActive = budget === b;
+                return (
+                  <TouchableOpacity
+                    key={b}
+                    onPress={() => setBudget(b)}
+                    className={`px-5 py-3 rounded-2xl border transition-all ${
+                      isActive
+                        ? 'bg-primary/[0.08] dark:bg-primary/20 border-primary/40 scale-[0.98]'
+                        : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
+                    }`}
+                  >
+                    <Text className={`font-bold text-[15px] ${isActive ? 'text-textMain dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
+                      £{b}{b === 70 ? '+' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -376,24 +379,27 @@ export default function CalibrationScreen() {
               Daily calorie target
             </Text>
             <View className="flex-row flex-wrap gap-2">
-              {CALORIE_PRESETS.map(c => (
-                <TouchableOpacity
-                  key={c.value}
-                  onPress={() => setCalorieTarget(c.value)}
-                  className={`flex-1 min-w-[100px] px-4 py-3.5 rounded-2xl border items-center transition-all ${
-                    calorieTarget === c.value
-                      ? 'bg-primary/10 dark:bg-primary/20 border-primary'
-                      : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
-                  }`}
-                >
-                  <Text className={`font-bold text-[14px] ${calorieTarget === c.value ? 'text-primary dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
-                    {c.label}
-                  </Text>
-                  <Text className={`text-[11px] mt-0.5 ${calorieTarget === c.value ? 'text-primary/70 dark:text-[#85B674]/70' : 'text-textSec dark:text-darktextSec'}`}>
-                    {c.value.toLocaleString()} kcal
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {CALORIE_PRESETS.map(c => {
+                const isActive = calorieTarget === c.value;
+                return (
+                  <TouchableOpacity
+                    key={c.value}
+                    onPress={() => setCalorieTarget(c.value)}
+                    className={`flex-1 min-w-[100px] px-4 py-3.5 rounded-2xl border items-center transition-all ${
+                      isActive
+                        ? 'bg-primary/[0.08] dark:bg-primary/20 border-primary/40 scale-[0.98]'
+                        : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
+                    }`}
+                  >
+                    <Text className={`font-bold text-[14px] ${isActive ? 'text-textMain dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
+                      {c.label}
+                    </Text>
+                    <Text className={`text-[11px] mt-0.5 ${isActive ? 'text-textSec dark:text-[#85B674]/70' : 'text-textSec dark:text-darktextSec'}`}>
+                      {c.value.toLocaleString()} kcal
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -402,24 +408,27 @@ export default function CalibrationScreen() {
               Daily protein goal
             </Text>
             <View className="flex-row flex-wrap gap-2">
-              {PROTEIN_PRESETS.map(p => (
-                <TouchableOpacity
-                  key={p.value}
-                  onPress={() => setProteinTarget(p.value)}
-                  className={`flex-1 min-w-[100px] px-4 py-3.5 rounded-2xl border items-center transition-all ${
-                    proteinTarget === p.value
-                      ? 'bg-primary/10 dark:bg-primary/20 border-primary'
-                      : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
-                  }`}
-                >
-                  <Text className={`font-bold text-[14px] ${proteinTarget === p.value ? 'text-primary dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
-                    {p.label}
-                  </Text>
-                  <Text className={`text-[11px] mt-0.5 ${proteinTarget === p.value ? 'text-primary/70 dark:text-[#85B674]/70' : 'text-textSec dark:text-darktextSec'}`}>
-                    {p.sub}/day
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {PROTEIN_PRESETS.map(p => {
+                const isActive = proteinTarget === p.value;
+                return (
+                  <TouchableOpacity
+                    key={p.value}
+                    onPress={() => setProteinTarget(p.value)}
+                    className={`flex-1 min-w-[100px] px-4 py-3.5 rounded-2xl border items-center transition-all ${
+                      isActive
+                        ? 'bg-primary/[0.08] dark:bg-primary/20 border-primary/40 scale-[0.98]'
+                        : 'bg-surface dark:bg-darksurface border-black/[0.06] dark:border-white/[0.06]'
+                    }`}
+                  >
+                    <Text className={`font-bold text-[14px] ${isActive ? 'text-textMain dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
+                      {p.label}
+                    </Text>
+                    <Text className={`text-[11px] mt-0.5 ${isActive ? 'text-textSec dark:text-[#85B674]/70' : 'text-textSec dark:text-darktextSec'}`}>
+                      {p.sub}/day
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -572,10 +581,10 @@ export default function CalibrationScreen() {
       <View className="mx-auto w-full max-w-[980px] flex-row items-center justify-between">
         <TouchableOpacity
           onPress={handleBack}
-          className={`flex-row items-center gap-2 py-2 px-4 rounded-full transition-all ${step > 1 && step < 5 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          className={`flex-row items-center gap-2 py-2.5 px-6 rounded-full transition-all border border-black/[0.06] dark:border-white/[0.06] ${step > 1 && step < 5 ? 'opacity-100 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]' : 'opacity-0 pointer-events-none'}`}
         >
           <FontAwesome5 name="arrow-left" size={10} color="#8C9A90" />
-          <Text className="text-[13px] font-semibold text-textSec dark:text-darktextSec">Back</Text>
+          <Text className="text-[14px] font-bold text-textMain dark:text-darktextMain ml-1">Back</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
