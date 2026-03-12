@@ -7,9 +7,9 @@
 import { NormalizedRecipe, RecipeValidationStatus } from './plannerTypes';
 import { Recipe } from '../schema';
 import { MOCK_RECIPES } from '../seed';
-import { 
-  curatedRoast, 
-  curatedPasta, 
+import {
+  curatedRoast,
+  curatedPasta,
   generatedLentilStew,
   highProteinSeitan,
   highProteinTempeh,
@@ -24,7 +24,7 @@ import {
   veggieMutterPaneer,
   veggieFetaWrap,
   pesciSeabass,
-  pesciSalmonBagel
+  pesciSalmonBagel,
 } from './plannerFixtures';
 import { getRecipeImage } from './RecipeImages';
 import { auditRecipeImage } from './RecipeImageAuditor';
@@ -37,40 +37,44 @@ import { WAVE3_FIXTURES } from './wave3Fixtures';
  */
 export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
   const servings = recipe.servings || 1;
-  const imageUrl = getRecipeImage(recipe.id, recipe.imageUrl);
-  
-  // Basic normalization for legacy fields
+  const resolvedImageUrl = getRecipeImage(recipe.id, recipe.imageUrl);
+
   return {
     id: recipe.id,
     sourceId: `legacy_${recipe.id}`,
     status: 'ready' as RecipeValidationStatus,
-    
-    macroConfidence: 0.8, // Legacy data is estimated
+
+    macroConfidence: 0.8,
     costConfidence: 0.7,
     ingredientMappingConfidence: 0.9,
     servingConfidence: 1.0,
     normalizationWarnings: [],
-    
-    imageMetadata: auditRecipeImage(recipe.title, imageUrl),
-    
+
+    imageMetadata: auditRecipeImage(recipe.title, resolvedImageUrl),
+
     title: recipe.title,
     description: recipe.description || '',
-    imageUrl: imageUrl,
-    
-    // Phase 21 Fallback Mappings (Metadata Debt)
+    imageUrl: resolvedImageUrl,
+
     activePrepMinutes: recipe.prepTimeMinutes,
-    totalMinutes: recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
-    complexityScore: recipe.difficulty === 'Hard' ? 4 : (recipe.difficulty === 'Easy' ? 2 : 3),
-    
-    // Legacy fields preserved for backfill reference
-    totalTimeMinutes: recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
+    totalMinutes:
+      recipe.totalTimeMinutes ||
+      (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
+    complexityScore:
+      recipe.difficulty === 'Hard' ? 4 : recipe.difficulty === 'Easy' ? 2 : 3,
+
+    totalTimeMinutes:
+      recipe.totalTimeMinutes ||
+      (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
     prepTimeMinutes: recipe.prepTimeMinutes,
+    cookTimeMinutes: recipe.cookTimeMinutes,
     difficulty: recipe.difficulty || 'Medium',
-    
-    servings: servings,
+
+    servings,
     estimatedCostTotalGBP: recipe.estimatedCostGBP,
-    estimatedCostPerServingGBP: recipe.costPerServingGBP || (recipe.estimatedCostGBP / servings),
-    
+    estimatedCostPerServingGBP:
+      recipe.costPerServingGBP || recipe.estimatedCostGBP / servings,
+
     macrosTotal: {
       calories: recipe.macros.calories * servings,
       protein: recipe.macros.protein * servings,
@@ -78,39 +82,37 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
       fats: recipe.macros.fats * servings,
     },
     macrosPerServing: recipe.macros,
-    
-    ingredients: recipe.ingredients.map(i => ({
-      name: `Ingredient ${i.ingredientId}`, // We don't have the name mapping easily here without more imports
-      amount: i.amount,
-      unit: i.unit,
-      canonicalIngredientId: i.ingredientId
+
+    ingredients: recipe.ingredients.map((ingredient) => ({
+      name: `Ingredient ${ingredient.ingredientId}`,
+      amount: ingredient.amount,
+      unit: ingredient.unit,
+      canonicalIngredientId: ingredient.ingredientId,
     })),
-    method: recipe.method ? recipe.method.map(m => ({ step: m.step, text: m.text })) : [],
+    method: recipe.method ? recipe.method.map((step) => ({ step: step.step, text: step.text })) : [],
     tags: recipe.tags,
-    
+
     archetype: (recipe.archetype as any) || 'Staple',
-    freezerFriendly: recipe.freezerFriendly || false,
-    reheatsWell: recipe.reheatsWell || true,
-    yieldsLeftovers: true, // Default to true for legacy recipes
+    cuisineId: (recipe as any).cuisineId,
+    freezerFriendly: recipe.freezerFriendly ?? false,
+    reheatsWell: recipe.reheatsWell ?? true,
+    yieldsLeftovers: true,
     suitableFor: recipe.suitableFor || ['lunch', 'dinner'],
-    
-    cookTimeMinutes: recipe.cookTimeMinutes,
+
     notes: recipe.notes,
     substitutions: recipe.substitutions,
     relatedRecipeIds: recipe.relatedRecipeIds,
-    ingredientTags: [],
-    flavourIds: [],
-    styleIds: [],
-    
+    ingredientTags: (recipe as any).ingredientTags || [],
+    flavourIds: (recipe as any).flavourIds || [],
+    styleIds: (recipe as any).styleIds || [],
+
     plannerUsable: true,
-    libraryVisible: true
+    libraryVisible: true,
   };
 }
 
-// 1. Load Legacy Recipes
 const normalizedLegacy = MOCK_RECIPES.map(normalizeLegacyRecipe);
 
-// 2. High-Fidelity Fixtures (already normalized)
 const fixtures = [
   ...WAVE1_FIXTURES,
   ...WAVE2_FIXTURES,
@@ -131,7 +133,7 @@ const fixtures = [
   veggieMutterPaneer,
   veggieFetaWrap,
   pesciSeabass,
-  pesciSalmonBagel
+  pesciSalmonBagel,
 ];
 
 /**
@@ -139,13 +141,14 @@ const fixtures = [
  */
 export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
-[...normalizedLegacy, ...fixtures].forEach(r => {
-  // Enforce strict per-recipe image lookup
-  r.imageUrl = getRecipeImage(r.id, r.imageUrl);
-  // Also re-audit to ensure imageMetadata is up to date with the resolved image
-  r.imageMetadata = auditRecipeImage(r.title, r.imageUrl);
-  
-  FULL_RECIPE_CATALOG[r.id] = r;
+[...normalizedLegacy, ...fixtures].forEach((recipe) => {
+  const resolvedImageUrl = getRecipeImage(recipe.id, recipe.imageUrl);
+
+  FULL_RECIPE_CATALOG[recipe.id] = {
+    ...recipe,
+    imageUrl: resolvedImageUrl,
+    imageMetadata: auditRecipeImage(recipe.title, resolvedImageUrl),
+  };
 });
 
 /**
