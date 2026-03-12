@@ -285,19 +285,18 @@ export default function CalibrationScreen() {
             </Text>
           </View>
 
-          {/* Grid Layout - Compact 3-Column */}
-          <View className="flex-row flex-wrap justify-start mx-[-8px]">
+          {/* Grid Layout - Responsive CSS Grid */}
+          <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
             {cuisineOptions.map(cuisine => {
               const isActive = selectedCuisines.includes(cuisine.id);
               const cardIcon = CUISINE_CARD_ICONS[cuisine.id] || 'utensils';
               
               return (
-                <View key={cuisine.id} className="w-[100%] sm:w-[50%] md:w-[33.33%] p-2">
+                <View key={cuisine.id}>
                   <TouchableOpacity
                     onPress={() => toggleCuisine(cuisine.id)}
                     activeOpacity={0.8}
-                    style={{ height: 130 }}
-                    className={`p-4 md:p-5 rounded-[24px] border transition-all flex-col justify-between ${
+                    className={`p-5 md:p-6 rounded-[24px] border border-transparent transition-all flex-col justify-between h-[150px] lg:h-[135px] ${
                       isActive
                         ? 'bg-primary/[0.03] dark:bg-primary/[0.05] border-primary/40 shadow-sm scale-[0.98]'
                         : 'bg-surface dark:bg-darksurface border-black/[0.04] dark:border-white/5 hover:border-black/10'
