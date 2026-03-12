@@ -69,6 +69,7 @@ export const useToast = () => {
 const ToastItem: React.FC<{ toast: ToastProps; onDismiss: () => void }> = ({ toast, onDismiss }) => {
   const translateY = useRef(new Animated.Value(-50)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     Animated.parallel([
@@ -122,16 +123,31 @@ const ToastItem: React.FC<{ toast: ToastProps; onDismiss: () => void }> = ({ toa
     borderColor = '#dcfce7'; // green-tinted
   }
 
+  const isWeb = Platform.OS === 'web';
+  const showDismissByDefault = toast.type === 'error' || toast.type === 'warning' || !isWeb;
+  const showCloseBtn = showDismissByDefault || isHovered;
+
   return (
-    <Animated.View style={[
-      styles.toast, 
-      { backgroundColor: bgColor, borderColor, opacity, transform: [{ translateY }] }
-    ]}>
-      <FontAwesome5 name={iconName} size={15} color={iconColor} style={styles.icon} />
-      <Text style={styles.text}>{toast.message}</Text>
-      <TouchableOpacity onPress={slideOutAndDismiss} style={styles.closeBtn}>
-        <FontAwesome5 name="times" size={11} color="#374151" style={{ opacity: 0.4 }} />
-      </TouchableOpacity>
+    <Animated.View 
+      style={[
+        styles.toast, 
+        { backgroundColor: bgColor, borderColor, opacity, transform: [{ translateY }] }
+      ]}
+      {...(isWeb ? {
+        onMouseEnter: () => setIsHovered(true),
+        onMouseLeave: () => setIsHovered(false),
+      } : {})}
+    >
+      <View style={styles.toastContent}>
+        <FontAwesome5 name={iconName} size={14} color={iconColor} style={styles.icon} />
+        <Text style={styles.text}>{toast.message}</Text>
+      </View>
+      
+      {showCloseBtn && (
+        <TouchableOpacity onPress={slideOutAndDismiss} style={styles.closeBtn} activeOpacity={0.7}>
+          <FontAwesome5 name="times" size={10} color={iconColor} style={{ opacity: 0.5 }} />
+        </TouchableOpacity>
+      )}
     </Animated.View>
   );
 };
@@ -147,12 +163,13 @@ const styles = StyleSheet.create({
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 12,
     marginBottom: 10,
-    maxWidth: Platform.OS === 'web' ? 380 : '90%',
-    minWidth: Platform.OS === 'web' ? 280 : 260,
+    maxWidth: Platform.OS === 'web' ? 320 : '90%',
+    minWidth: Platform.OS === 'web' ? 140 : 260,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -160,8 +177,13 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 4,
   },
+  toastContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    // Removed flex: 1 to allow intrinsic sizing
+  },
   icon: {
-    marginRight: 14,
+    marginRight: 10,
   },
   text: {
     color: '#374151',
@@ -172,7 +194,8 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   closeBtn: {
-    marginLeft: 14,
+    marginLeft: 10,
     padding: 4,
+    marginRight: -4,
   }
 });
