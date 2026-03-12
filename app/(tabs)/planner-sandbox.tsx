@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { generatePlan } from '../../data/planner/orchestrator';
 import { 
   curatedRoast, 
@@ -7,7 +7,7 @@ import {
   generatedLentilStew, 
   typicalDinnerContract
 } from '../../data/planner/plannerFixtures';
-import { SlotContract } from '../../data/planner/plannerTypes';
+import { SlotContract, OrchestratorOutput } from '../../data/planner/plannerTypes';
 import { getMealCardViewModel } from '../../data/planner/selectors';
 
 const MOCK_RECIPES = [curatedRoast, curatedPasta, generatedLentilStew];
@@ -23,11 +23,25 @@ const WEEK_CONTRACTS: SlotContract[] = Array.from({ length: 7 }).flatMap((_, i) 
 
 export default function PlannerSandbox() {
   const [activeTab, setActiveTab] = useState<'day' | 'week'>('day');
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [engineResult, setEngineResult] = useState<OrchestratorOutput | null>(null);
   
-  // Simulate Generation
-  const engineResult = useMemo(() => {
-    const contractsToRun = activeTab === 'day' ? DAY_CONTRACTS : WEEK_CONTRACTS;
-    return generatePlan(contractsToRun, MOCK_RECIPES, 'planner_autofill', []);
+  // Handlers for generation
+  useEffect(() => {
+    async function runGeneration() {
+      setIsGenerating(true);
+      try {
+        const contractsToRun = activeTab === 'day' ? DAY_CONTRACTS : WEEK_CONTRACTS;
+        const result = await generatePlan(contractsToRun, MOCK_RECIPES, 'planner_autofill', []);
+        setEngineResult(result);
+      } catch (err) {
+        console.error('Sandbox generation failed:', err);
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+    
+    runGeneration();
   }, [activeTab]);
 
   return (
@@ -51,64 +65,84 @@ export default function PlannerSandbox() {
       </View>
 
       <ScrollView style={styles.scroll}>
-        <View style={styles.metrics}>
-          <Text style={styles.metricText}>Generated {engineResult.assignments.length} assignments.</Text>
-          <Text style={styles.metricText}>
-            Rescues Triggered: {engineResult.diagnostics.filter(d => d.rescueTriggered).length}
-          </Text>
-        </View>
-
-        {engineResult.assignments.map((assignment, index) => {
-          const diagnostic = engineResult.diagnostics.find(d => d.slotId === `${assignment.dayIndex}_${assignment.slotType}`);
-          const contract = DAY_CONTRACTS.find(c => c.slotType === assignment.slotType)!;
-          const recipe = MOCK_RECIPES.find(r => r.id === assignment.recipeId);
-          const vm = getMealCardViewModel(assignment, recipe);
-
-          // Find full recipe metrics if needed
-          const fullRecipe = recipe;
-
-          return (
-            <View key={assignment.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Day {assignment.dayIndex + 1} - {assignment.slotType.toUpperCase()}</Text>
-                <View style={[styles.badge, diagnostic?.rescueTriggered ? styles.badgeRescue : styles.badgeNormal]}>
-                  <Text style={styles.badgeText}>{diagnostic?.actionTaken.replace(/_/g, ' ').toUpperCase()}</Text>
-                </View>
-              </View>
-
-              <View style={styles.row}>
-                <View style={styles.col}>
-                  <Text style={styles.label}>Chosen Recipe</Text>
-                  <Text style={styles.value}>{vm.title || 'None (Generating)'}</Text>
-                  {fullRecipe && (
-                    <Text style={styles.subValue}>
-                      £{fullRecipe.estimatedCostPerServingGBP.toFixed(2)} | {fullRecipe.macrosPerServing.protein}g P
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.col}>
-                  <Text style={styles.label}>Contract Target</Text>
-                  <Text style={styles.value}>Max £{contract.budgetEnvelopeGBP.toFixed(2)}</Text>
-                  <Text style={styles.subValue}>Min {contract.macroTargets.protein.min}g P</Text>
-                </View>
-              </View>
-
-              <View style={styles.diagnosticsBox}>
-                <Text style={styles.diagTitle}>Engine Diagnostics</Text>
-                <Text style={styles.diagText}>Candidates Evaluated: {diagnostic?.totalConsidered}</Text>
-                <Text style={styles.diagText}>Eligible: {diagnostic?.eligibleCount} | Rejected: {diagnostic?.rejectedCount}</Text>
-                {diagnostic && Object.keys(diagnostic.topFailureReasons).length > 0 && (
-                  <View style={{ marginTop: 8 }}>
-                    <Text style={styles.diagTextAlert}>Top Pool Failures:</Text>
-                    {Object.entries(diagnostic.topFailureReasons).map(([reason, count]) => (
-                      <Text key={reason} style={styles.diagTextAlertItem}>• {count} failed due to: {reason}</Text>
-                    ))}
-                  </View>
-                )}
-              </View>
+        {isGenerating ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#212529" />
+            <Text style={styles.loadingText}>Running Planner Engine...</Text>
+          </View>
+        ) : !engineResult ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Failed to generate sandbox plan.</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.metrics}>
+              <Text style={styles.metricText}>
+                Generated {(engineResult.assignments || []).length} assignments.
+              </Text>
+              <Text style={styles.metricText}>
+                Rescues Triggered: {(engineResult.diagnostics || []).filter(d => d.rescueTriggered).length}
+              </Text>
             </View>
-          );
-        })}
+
+            {(engineResult.assignments || []).map((assignment, index) => {
+              const diagnostic = (engineResult.diagnostics || []).find(d => d.slotId === `${assignment.dayIndex}_${assignment.slotType}`);
+              const contract = (activeTab === 'day' ? DAY_CONTRACTS : WEEK_CONTRACTS).find(
+                c => c.slotType === assignment.slotType && (activeTab === 'day' || c.dayIndex === assignment.dayIndex)
+              );
+              
+              if (!contract) return null;
+
+              const recipe = MOCK_RECIPES.find(r => r.id === assignment.recipeId);
+              const vm = getMealCardViewModel(assignment, recipe);
+              const fullRecipe = recipe;
+
+              return (
+                <View key={assignment.id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>Day {assignment.dayIndex + 1} - {assignment.slotType.toUpperCase()}</Text>
+                    <View style={[styles.badge, diagnostic?.rescueTriggered ? styles.badgeRescue : styles.badgeNormal]}>
+                      <Text style={styles.badgeText}>
+                        {(diagnostic?.actionTaken || 'filled_normally').replace(/_/g, ' ').toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.row}>
+                    <View style={styles.col}>
+                      <Text style={styles.label}>Chosen Recipe</Text>
+                      <Text style={styles.value}>{vm.title || 'None (Generating)'}</Text>
+                      {fullRecipe && (
+                        <Text style={styles.subValue}>
+                          £{fullRecipe.estimatedCostPerServingGBP.toFixed(2)} | {fullRecipe.macrosPerServing.protein}g P
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.col}>
+                      <Text style={styles.label}>Contract Target</Text>
+                      <Text style={styles.value}>Max £{contract.budgetEnvelopeGBP.toFixed(2)}</Text>
+                      <Text style={styles.subValue}>Min {contract.macroTargets.protein.min}g P</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.diagnosticsBox}>
+                    <Text style={styles.diagTitle}>Engine Diagnostics</Text>
+                    <Text style={styles.diagText}>Candidates Evaluated: {diagnostic?.totalConsidered ?? 0}</Text>
+                    <Text style={styles.diagText}>Eligible: {diagnostic?.eligibleCount ?? 0} | Rejected: {diagnostic?.rejectedCount ?? 0}</Text>
+                    {diagnostic && diagnostic.topFailureReasons && Object.keys(diagnostic.topFailureReasons).length > 0 && (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={styles.diagTextAlert}>Top Pool Failures:</Text>
+                        {Object.entries(diagnostic.topFailureReasons).map(([reason, count]) => (
+                          <Text key={reason} style={styles.diagTextAlertItem}>• {count} failed due to: {reason}</Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -124,6 +158,10 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, fontWeight: '600', color: '#495057' },
   activeTabText: { color: '#FFFFFF' },
   scroll: { flex: 1, padding: 16 },
+  loadingContainer: { flex: 1, paddingVertical: 100, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: 16, fontSize: 15, color: '#495057', fontWeight: '500' },
+  errorContainer: { flex: 1, paddingVertical: 100, alignItems: 'center' },
+  errorText: { fontSize: 15, color: '#D32F2F', fontWeight: '500' },
   metrics: { marginBottom: 16, padding: 16, backgroundColor: '#E3F2FD', borderRadius: 12 },
   metricText: { fontSize: 14, color: '#0D47A1', fontWeight: '500' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },

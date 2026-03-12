@@ -14,18 +14,30 @@ function NavItem({ icon, label, isActive, onPress }: { icon: string, label: stri
   return (
     <TouchableOpacity 
       onPress={onPress}
-      className={`flex-row items-center px-3.5 py-2.5 rounded-full mb-1.5 transition-all duration-300 ${
+      activeOpacity={0.7}
+      className={`flex-row items-center px-4 py-2.5 rounded-2xl mb-0.5 transition-all duration-300 ${
         isActive 
-          ? 'bg-primary/15 dark:bg-primary/20 border border-primary/10 dark:border-primary/10' 
-          : 'hover:bg-white/40 dark:hover:bg-white/5 border border-transparent'
+          ? 'bg-white/50 dark:bg-white/10 border border-primary/10 dark:border-primary/20 shadow-[0_1px_6px_rgba(157,205,139,0.04)]' 
+          : 'hover:bg-white/30 dark:hover:bg-white/5 border border-transparent'
       }`}
     >
-      <View className="w-8 items-center mr-2">
-        <FontAwesome5 name={icon} size={14} color={isActive ? '#7BA96A' : '#A3B3A9'} />
+      <View className="w-6 items-center mr-3.5">
+        <FontAwesome5 
+          name={icon} 
+          size={13.5} 
+          color={isActive ? '#7BA96A' : '#8C9A90'} 
+          style={{ opacity: isActive ? 1 : 0.55 }}
+        />
       </View>
-      <Text className={`font-normal text-[14px] tracking-wide ${
-        isActive ? 'text-[#24332D] font-medium dark:text-darktextMain' : 'text-[#6E7C74] dark:text-darktextSec'
+      <Text className={`text-[14px] tracking-tight ${
+        isActive 
+          ? 'text-textMain dark:text-darktextMain font-medium' 
+          : 'text-textSec/70 dark:text-darktextSec/60 font-normal'
       }`}>{label}</Text>
+      
+      {isActive && (
+        <View className="ml-auto w-1 h-1 rounded-full bg-primary/25 dark:bg-primary/40" />
+      )}
     </TouchableOpacity>
   );
 }
@@ -73,75 +85,91 @@ export default function TabLayout() {
         className="flex-1 flex-row bg-appBg dark:bg-darkappBg"
         style={Platform.OS === 'web' ? { height: '100vh', width: '100vw', overflow: 'hidden' } as any : undefined}
       >
-        {/* Persistent Left Sidebar */}
+        {/* Persistent Left Sidebar - Softened Editorial Shell */}
         <View 
-          className="w-[260px] bg-[#EEF4E8] dark:bg-darksageTint pt-12 px-5 pb-8 print-hide border-r border-transparent dark:border-darksoftBorder shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10" 
+          className="w-[265px] bg-[#EEF4E8]/40 dark:bg-[#1A221E] pt-12 pb-6 print-hide border-r border-black/[0.03] dark:border-white/[0.04] z-10" 
           style={Platform.OS === 'web' ? { flexShrink: 0, height: '100%' } : { height: '100%' }}
         >
-          <View className="mb-12 pl-3">
-            <Text className="text-textMain dark:text-darktextMain text-[24px] font-semibold tracking-tight">Provision</Text>
-            <Text className="text-primary text-[10px] font-medium uppercase tracking-widest mt-1 opacity-80">Taste-Led Planning</Text>
+          {/* Brand Area - Simplified Editorial Branding */}
+          <View className="px-8 mb-12">
+            <Text className="text-textMain dark:text-darktextMain text-[24px] font-semibold tracking-tighter mb-1">Provision</Text>
+            <Text className="text-primary dark:text-[#85B674] text-[9.5px] font-bold uppercase tracking-[0.25em]">Taste-Led Planning</Text>
           </View>
 
-          <View className="flex-1">
-            <NavItem 
-              icon="home" 
-              label="Dashboard" 
-              isActive={pathname === '/'} 
-              onPress={() => router.push('/(tabs)')} 
-            />
-            <NavItem 
-              icon="list" 
-              label="Fuel List" 
-              isActive={pathname === '/shop'} 
-              onPress={() => router.push('/(tabs)/shop')} 
-            />
-            <NavItem 
-              icon="star" 
-              label="Taste Profile" 
-              isActive={pathname === '/taste-profile'} 
-              onPress={() => router.push('/(tabs)/taste-profile')} 
-            />
-            <NavItem 
-              icon="box-open" 
-              label="Pantry" 
-              isActive={pathname === '/pantry'} 
-              onPress={() => router.push('/(tabs)/pantry')} 
-            />
-            <NavItem 
-              icon="flask" 
-              label="Planner Dev" 
-              isActive={pathname === '/planner-dev'} 
-              onPress={() => router.push('/(tabs)/planner-dev')} 
-            />
-            <NavItem 
-              icon="vial" 
-              label="Planner Sandbox" 
-              isActive={pathname === '/planner-sandbox'} 
-              onPress={() => router.push('/(tabs)/planner-sandbox')} 
-            />
+          {/* Navigation Items */}
+          <View className="flex-1 px-4">
+            <View className="mb-2">
+              <NavItem 
+                icon="home" 
+                label="Dashboard" 
+                isActive={pathname === '/' || pathname === '/(tabs)'} 
+                onPress={() => router.push('/(tabs)')} 
+              />
+              <NavItem 
+                icon="shopping-basket" 
+                label="Fuel List" 
+                isActive={pathname === '/shop' || pathname === '/(tabs)/shop'} 
+                onPress={() => router.push('/(tabs)/shop')} 
+              />
+              <NavItem 
+                icon="star" 
+                label="Taste Profile" 
+                isActive={pathname === '/taste-profile' || pathname === '/(tabs)/taste-profile'} 
+                onPress={() => router.push('/(tabs)/taste-profile')} 
+              />
+              <NavItem 
+                icon="box-open" 
+                label="Pantry" 
+                isActive={pathname === '/pantry' || pathname === '/(tabs)/pantry'} 
+                onPress={() => router.push('/(tabs)/pantry')} 
+              />
+            </View>
+
+            <View className="mt-8 pt-6 border-t border-black/[0.03] dark:border-white/[0.03]">
+              <Text className="px-5 mb-4 text-[9px] font-bold uppercase tracking-[0.2em] text-textSec/30 dark:text-darktextSec/30">Lab Tools</Text>
+              <NavItem 
+                icon="vial" 
+                label="Planner Dev" 
+                isActive={pathname === '/planner-dev' || pathname === '/(tabs)/planner-dev'} 
+                onPress={() => router.push('/(tabs)/planner-dev')} 
+              />
+              <NavItem 
+                icon="flask" 
+                label="Sandbox" 
+                isActive={pathname === '/planner-sandbox' || pathname === '/(tabs)/planner-sandbox'} 
+                onPress={() => router.push('/(tabs)/planner-sandbox')} 
+              />
+            </View>
           </View>
-          <View className="mt-auto">
+
+          {/* Anchored Footer Area - Softer Profile Identity */}
+          <View className="mt-auto px-4 pt-4 border-t border-black/[0.03] dark:border-white/5 bg-black/[0.01] dark:bg-black/5">
             <TouchableOpacity 
               onPress={handleReset}
-              className="flex-row items-center p-3 rounded-full hover:bg-red-500/10 dark:hover:bg-red-500/10 transition-colors mb-2 group border border-transparent hover:border-red-500/20"
+              activeOpacity={0.7}
+              className="flex-row items-center px-5 py-2 rounded-xl hover:bg-red-500/[0.04] transition-colors mb-5 group"
             >
-              <View className="w-8 items-center mr-2">
-                <FontAwesome5 name="trash-alt" size={12} color="#EF4444" className="opacity-60 group-hover:opacity-100" />
+              <View className="w-5 items-center mr-3">
+                <FontAwesome5 name="undo-alt" size={10} color="#EF4444" style={{ opacity: 0.4 }} className="group-hover:opacity-80" />
               </View>
-              <Text className="text-red-500/60 group-hover:text-red-500 font-bold text-[11px] uppercase tracking-widest">Reset System</Text>
+              <Text className="text-red-500/50 group-hover:text-red-500/80 font-bold text-[9px] uppercase tracking-widest leading-none mt-0.5">Reset Workspace</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
               onPress={() => router.push('/(tabs)/settings')}
-              className="flex-row items-center p-3 rounded-full hover:bg-white/40 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-white/40"
+              activeOpacity={0.8}
+              className={`flex-row items-center p-3.5 rounded-2xl transition-all ${
+                pathname.includes('settings') 
+                  ? 'bg-white/60 dark:bg-white/10 shadow-sm border border-black/[0.02] dark:border-white/5' 
+                  : 'bg-transparent hover:bg-white/40 dark:hover:bg-white/5'
+              }`}
             >
-              <View className="w-10 h-10 bg-white/80 dark:bg-darksurface rounded-full items-center justify-center mr-3 shadow-sm">
-                <Text className="text-[#6E7C74] dark:text-darktextSec font-medium text-caption leading-none tracking-tight">LF</Text>
+              <View className="w-9 h-9 bg-white dark:bg-darksurface rounded-full items-center justify-center mr-3.5 shadow-sm border border-black/[0.02] dark:border-white/5">
+                <Text className="text-textSec dark:text-darktextSec font-medium text-[13px]">LF</Text>
               </View>
-              <View>
-                <Text className="text-textMain dark:text-darktextMain font-medium text-[14px] leading-tight">Liam F.</Text>
-                <Text className="text-textSec dark:text-darktextSec text-[11px] font-medium mt-0.5 opacity-80">Free Plan</Text>
+              <View className="flex-1">
+                <Text className="text-textMain dark:text-darktextMain font-medium text-[14px] tracking-tight">Liam F.</Text>
+                <Text className="text-textSec/50 dark:text-darktextSec/40 text-[11px] font-normal mt-0.5">Free Account</Text>
               </View>
             </TouchableOpacity>
           </View>
