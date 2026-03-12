@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useActivePlan } from '../data/ActivePlanContext';
@@ -72,6 +72,7 @@ export default function CalibrationScreen() {
     updateCuisinePreferences, 
     updateExclusions 
   } = useActivePlan();
+  const { width } = useWindowDimensions();
 
   const [step, setStep] = useState(1);
 
@@ -265,11 +266,27 @@ export default function CalibrationScreen() {
     const cuisineOptions = Object.values(CUISINE_PROFILES);
     const cuisineCount = selectedCuisines.length;
 
+    // Responsive column count based on width - Favouring readability over strict 5-column symmetry
+    let numCols = 1;
+    if (width >= 1600) numCols = 5;
+    else if (width >= 1024) numCols = 4; // 4 columns is standard desktop default for better breathing room
+    else if (width >= 640) numCols = 2;
+
+    const chunkArray = (arr: any[], size: number) => {
+      const chunks = [];
+      for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+      }
+      return chunks;
+    };
+
+    const rows = chunkArray(cuisineOptions, numCols);
+
     return (
       <View className="flex-1 w-full flex-col justify-center py-2">
-        <View className="w-full max-w-[980px] mx-auto">
-          {/* Header Section - Refined heading / counter relationship */}
-          <View className="mb-5 md:mb-6 items-center md:items-start px-2">
+        <View className="w-full max-w-[1160px] mx-auto">
+          {/* Header Section */}
+          <View className="mb-6 items-center md:items-start px-2">
             <View className="flex-row items-end gap-x-3 mb-1.5">
               <Text className="text-[30px] md:text-[38px] tracking-tight font-bold text-textMain dark:text-darktextMain">
                 Explore your tastes
@@ -285,49 +302,60 @@ export default function CalibrationScreen() {
             </Text>
           </View>
 
-          {/* Grid Layout - Responsive CSS Grid */}
-          <View className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
-            {cuisineOptions.map(cuisine => {
-              const isActive = selectedCuisines.includes(cuisine.id);
-              const cardIcon = CUISINE_CARD_ICONS[cuisine.id] || 'utensils';
-              
-              return (
-                <View key={cuisine.id}>
-                  <TouchableOpacity
-                    onPress={() => toggleCuisine(cuisine.id)}
-                    activeOpacity={0.8}
-                    className={`p-5 md:p-6 rounded-[24px] border border-transparent transition-all flex-col justify-between h-[150px] lg:h-[135px] ${
-                      isActive
-                        ? 'bg-primary/[0.03] dark:bg-primary/[0.05] border-primary/40 shadow-sm scale-[0.98]'
-                        : 'bg-surface dark:bg-darksurface border-black/[0.04] dark:border-white/5 hover:border-black/10'
-                    }`}
-                  >
-                    <View className="flex-row justify-between items-start">
-                      <View className={`w-10 h-10 rounded-xl items-center justify-center ${isActive ? 'bg-primary/20 dark:bg-primary/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
-                        <FontAwesome5 name={cardIcon as any} size={16} color={isActive ? '#9DCD8B' : '#8C9A90'} />
-                      </View>
-                      {isActive && (
-                        <View className="bg-primary/40 dark:bg-primary/50 rounded-full w-4 h-4 items-center justify-center shadow-sm">
-                          <FontAwesome5 name="check" size={7} color="white" />
-                        </View>
-                      )}
-                    </View>
-                    
-                    <View>
-                      <Text className="text-[17px] md:text-[19px] font-bold tracking-tight mb-0.5 text-textMain dark:text-darktextMain">
-                        {cuisine.label}
-                      </Text>
-                      <Text 
-                        numberOfLines={2}
-                        className="font-medium text-[12.5px] leading-snug text-textSec dark:text-darktextSec"
+          {/* Grid Layout - Row-based Flex (Reliable Breakpoint Handling) */}
+          <View className="gap-y-4 md:gap-y-5 px-2">
+            {rows.map((row, rowIdx) => (
+              <View key={`row-${rowIdx}`} className="flex-row gap-4 md:gap-5">
+                {row.map(cuisine => {
+                  const isActive = selectedCuisines.includes(cuisine.id);
+                  const cardIcon = CUISINE_CARD_ICONS[cuisine.id as CuisineId] || 'utensils';
+                  
+                  return (
+                    <View key={cuisine.id} className="flex-1">
+                      <TouchableOpacity
+                        onPress={() => toggleCuisine(cuisine.id)}
+                        activeOpacity={0.8}
+                        className={`p-5 md:p-6 rounded-[32px] border transition-all flex-col justify-between h-[155px] lg:h-[145px] ${
+                          isActive
+                            ? 'bg-primary/[0.03] dark:bg-primary/[0.05] border-primary/40 shadow-sm scale-[0.98]'
+                            : 'bg-surface dark:bg-darksurface border-black/[0.05] dark:border-white/5 hover:border-black/10'
+                        }`}
                       >
-                        {cuisine.description}
-                      </Text>
+                        <View className="flex-row justify-between items-start">
+                          <View className={`w-10 h-10 rounded-xl items-center justify-center ${isActive ? 'bg-primary/20 dark:bg-primary/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
+                            <FontAwesome5 name={cardIcon as any} size={16} color={isActive ? '#9DCD8B' : '#8C9A90'} />
+                          </View>
+                          {isActive && (
+                            <View className="bg-primary/40 dark:bg-primary/50 rounded-full w-4 h-4 items-center justify-center shadow-sm">
+                              <FontAwesome5 name="check" size={7} color="white" />
+                            </View>
+                          )}
+                        </View>
+                        
+                        <View>
+                          <Text 
+                            numberOfLines={1}
+                            className="text-[17px] md:text-[18px] font-bold tracking-tight mb-0.5 text-textMain dark:text-darktextMain"
+                          >
+                            {cuisine.label}
+                          </Text>
+                          <Text 
+                            numberOfLines={2}
+                            className="font-medium text-[12.5px] leading-snug text-textSec dark:text-darktextSec"
+                          >
+                            {cuisine.description}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
+                  );
+                })}
+                {/* Visual filler to keep flex rows aligned if row is not full */}
+                {row.length < numCols && Array.from({ length: numCols - row.length }).map((_, i) => (
+                  <View key={`filler-${i}`} className="flex-1" />
+                ))}
+              </View>
+            ))}
           </View>
         </View>
       </View>
