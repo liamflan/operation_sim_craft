@@ -52,7 +52,8 @@ export const greekYogurtBerryBowl: NormalizedRecipe = {
   
   archetype: 'protein_breakfast',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false,
-  suitableFor: ['breakfast']
+  suitableFor: ['breakfast'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 export const cottageCheeseSourdough: NormalizedRecipe = {
@@ -87,7 +88,8 @@ export const cottageCheeseSourdough: NormalizedRecipe = {
   
   archetype: 'budget_breakfast',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false,
-  suitableFor: ['breakfast']
+  suitableFor: ['breakfast'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 // --- CATEGORY 2: QUICK LUNCHES (Not reliant on leftovers) ---
@@ -124,7 +126,8 @@ export const tunaCannelliniSalad: NormalizedRecipe = {
   
   archetype: 'budget_workhorse',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: true, // stores well cold
-  suitableFor: ['lunch']
+  suitableFor: ['lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 export const smokedTofuWrap: NormalizedRecipe = {
@@ -157,12 +160,13 @@ export const smokedTofuWrap: NormalizedRecipe = {
   
   ingredients: [], method: [], tags: ['Vegan', 'Quick'],
   
-  archetype: 'variety_anchor',
+  archetype: 'Variety_Pack',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false,
-  suitableFor: ['lunch']
+  suitableFor: ['lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
-// --- CATEGORY 3: MODERATE PROTEIN (20-30g) ANCHORS ---
+// --- CATEGORY 3: MODERATE PROTEIN (20-30g) CUISINES ---
 
 export const lemonHerbChickenBowl: NormalizedRecipe = {
   id: "rec_wave1_chicken_bowl_01",
@@ -196,7 +200,8 @@ export const lemonHerbChickenBowl: NormalizedRecipe = {
   
   archetype: 'budget_workhorse',
   freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true,
-  suitableFor: ['dinner', 'lunch']
+  suitableFor: ['dinner', 'lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 export const simpleChickpeaCurry: NormalizedRecipe = {
@@ -231,7 +236,8 @@ export const simpleChickpeaCurry: NormalizedRecipe = {
   
   archetype: 'Batch_Cook',
   freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true,
-  suitableFor: ['dinner', 'lunch']
+  suitableFor: ['dinner', 'lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 // --- CATEGORY 4: PESCATARIAN SUPPORT ---
@@ -268,7 +274,8 @@ export const bakedCodMedVeg: NormalizedRecipe = {
   
   archetype: 'premium_meal',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false,
-  suitableFor: ['dinner']
+  suitableFor: ['dinner'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 export const garlicButterPrawns: NormalizedRecipe = {
@@ -301,9 +308,10 @@ export const garlicButterPrawns: NormalizedRecipe = {
   
   ingredients: [], method: [], tags: ['Pescatarian', 'Low-Carb', 'Quick'],
   
-  archetype: 'variety_anchor',
+  archetype: 'Variety_Pack',
   freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false,
-  suitableFor: ['dinner']
+  suitableFor: ['dinner'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 export const WAVE1_FIXTURES = [

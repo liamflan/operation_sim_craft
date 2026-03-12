@@ -67,6 +67,10 @@ export const curatedRoast: NormalizedRecipe = {
   
   ingredients: [], method: [], tags: ['High-Protein', 'Sunday Roast'],
   archetype: 'Staple', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner', 'lunch'],
+  cuisineId: 'french',
+  ingredientTags: ['chicken', 'herbs'],
+  flavourIds: ['savoury', 'herby'],
+  styleIds: ['roasted']
 };
 
 export const curatedPasta: NormalizedRecipe = {
@@ -92,6 +96,10 @@ export const curatedPasta: NormalizedRecipe = {
   
   ingredients: [], method: [], tags: ['Vegetarian', 'Quick'],
   archetype: 'Quick_Fix', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['lunch', 'dinner'],
+  cuisineId: 'italian',
+  ingredientTags: ['pasta', 'tomato'],
+  flavourIds: ['tomato', 'garlic'],
+  styleIds: ['pasta']
 };
 
 export const generatedLentilStew: NormalizedRecipe = {
@@ -117,6 +125,10 @@ export const generatedLentilStew: NormalizedRecipe = {
   
   ingredients: [], method: [], tags: ['Vegan', 'High-Fiber', 'Budget'],
   archetype: 'budget_workhorse', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner', 'lunch'],
+  cuisineId: 'mediterranean',
+  ingredientTags: ['lentils', 'beans'],
+  flavourIds: ['aromatic'],
+  styleIds: ['stew']
 };
 
 export const highProteinSeitan: NormalizedRecipe = {
@@ -134,10 +146,14 @@ export const highProteinSeitan: NormalizedRecipe = {
   totalTimeMinutes: 40, prepTimeMinutes: 10, difficulty: 'Medium', servings: 1,
   estimatedCostTotalGBP: 5.50,
   estimatedCostPerServingGBP: 5.50,
-  macrosTotal: { calories: 550, protein: 52, carbs: 20, fats: 28 }, // Keto seitan is rare but possible
+  macrosTotal: { calories: 550, protein: 52, carbs: 20, fats: 28 }, 
   macrosPerServing: { calories: 550, protein: 52, carbs: 20, fats: 28 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein', 'Low-Carb'],
   archetype: 'premium_meal', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
+  cuisineId: 'french',
+  ingredientTags: ['seitan', 'garlic'],
+  flavourIds: ['rich'],
+  styleIds: ['refined_comfort']
 };
 
 export const highProteinTempeh: NormalizedRecipe = {
@@ -159,6 +175,10 @@ export const highProteinTempeh: NormalizedRecipe = {
   macrosPerServing: { calories: 580, protein: 41, carbs: 35, fats: 32 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
   archetype: 'Staple', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['lunch', 'dinner'],
+  cuisineId: 'chinese',
+  ingredientTags: ['tempeh', 'peanuts'],
+  flavourIds: ['savoury'],
+  styleIds: ['stir_fry']
 };
 
 export const highProteinHalloumi: NormalizedRecipe = {
@@ -180,6 +200,10 @@ export const highProteinHalloumi: NormalizedRecipe = {
   macrosPerServing: { calories: 620, protein: 38, carbs: 15, fats: 48 },
   ingredients: [], method: [], tags: ['Vegetarian', 'High-Protein'],
   archetype: 'Staple', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['dinner'],
+  cuisineId: 'mediterranean',
+  ingredientTags: ['halloumi', 'peppers'],
+  flavourIds: ['herbs'],
+  styleIds: ['roasted']
 };
 
 export const highProteinTofuScramble: NormalizedRecipe = {
@@ -201,6 +225,10 @@ export const highProteinTofuScramble: NormalizedRecipe = {
   macrosPerServing: { calories: 420, protein: 32, carbs: 12, fats: 28 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
   archetype: 'protein_breakfast', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['breakfast'],
+  cuisineId: 'chinese',
+  ingredientTags: ['tofu'],
+  flavourIds: ['smoky'],
+  styleIds: ['clean']
 };
 
 // --- BATCH 1: POOL EXPANSION ---
@@ -223,7 +251,11 @@ export const veganTikkaMasala: NormalizedRecipe = {
   macrosTotal: { calories: 720, protein: 48, carbs: 65, fats: 25 },
   macrosPerServing: { calories: 720, protein: 48, carbs: 65, fats: 25 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein', 'Calorie-Dense'],
-  archetype: 'high_protein_anchor', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['lunch', 'dinner'],
+  archetype: 'High_Protein', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['lunch', 'dinner'],
+  cuisineId: 'indian',
+  ingredientTags: ['tofu', 'chickpeas'],
+  flavourIds: ['warming_spice'],
+  styleIds: ['saucy']
 };
 
 export const veganMeatloaf: NormalizedRecipe = {
@@ -244,7 +276,11 @@ export const veganMeatloaf: NormalizedRecipe = {
   macrosTotal: { calories: 750, protein: 42, carbs: 80, fats: 28 },
   macrosPerServing: { calories: 750, protein: 42, carbs: 80, fats: 28 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein', 'Calorie-Dense'],
-  archetype: 'high_protein_anchor', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
+  archetype: 'High_Protein', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
+  cuisineId: 'french',
+  ingredientTags: ['lentils', 'walnuts'],
+  flavourIds: ['rich'],
+  styleIds: ['refined_comfort']
 };
 
 export const veganOvernightOats: NormalizedRecipe = {
@@ -266,6 +302,10 @@ export const veganOvernightOats: NormalizedRecipe = {
   macrosPerServing: { calories: 550, protein: 30, carbs: 60, fats: 22 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
   archetype: 'protein_breakfast', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['breakfast'],
+  cuisineId: 'mediterranean',
+  ingredientTags: ['oats', 'peanut_butter'],
+  flavourIds: ['savoury'],
+  styleIds: ['clean']
 };
 
 export const veganTempehBowl: NormalizedRecipe = {
@@ -286,7 +326,11 @@ export const veganTempehBowl: NormalizedRecipe = {
   macrosTotal: { calories: 710, protein: 38, carbs: 45, fats: 42 },
   macrosPerServing: { calories: 710, protein: 38, carbs: 45, fats: 42 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein', 'Calorie-Dense'],
-  archetype: 'high_protein_anchor', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['lunch', 'dinner'],
+  archetype: 'High_Protein', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['lunch', 'dinner'],
+  cuisineId: 'mexican',
+  ingredientTags: ['tempeh', 'avocado'],
+  flavourIds: ['smoky'],
+  styleIds: ['clean']
 };
 
 export const veganOmlette: NormalizedRecipe = {
@@ -308,6 +352,10 @@ export const veganOmlette: NormalizedRecipe = {
   macrosPerServing: { calories: 450, protein: 28, carbs: 40, fats: 18 },
   ingredients: [], method: [], tags: ['Vegan', 'High-Protein'],
   archetype: 'protein_breakfast', freezerFriendly: false, reheatsWell: true, yieldsLeftovers: false, suitableFor: ['breakfast'],
+  cuisineId: 'french',
+  ingredientTags: ['chickpea_flour'],
+  flavourIds: ['savoury'],
+  styleIds: ['clean']
 };
 
 export const veggieShells: NormalizedRecipe = {
@@ -328,7 +376,11 @@ export const veggieShells: NormalizedRecipe = {
   macrosTotal: { calories: 680, protein: 45, carbs: 70, fats: 22 },
   macrosPerServing: { calories: 680, protein: 45, carbs: 70, fats: 22 },
   ingredients: [], method: [], tags: ['Vegetarian', 'High-Protein'],
-  archetype: 'high_protein_anchor', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
+  archetype: 'High_Protein', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['dinner'],
+  cuisineId: 'italian',
+  ingredientTags: ['pasta', 'cottage_cheese'],
+  flavourIds: ['tomato'],
+  styleIds: ['pasta']
 };
 
 export const veggieMutterPaneer: NormalizedRecipe = {
@@ -349,7 +401,11 @@ export const veggieMutterPaneer: NormalizedRecipe = {
   macrosTotal: { calories: 650, protein: 40, carbs: 25, fats: 45 },
   macrosPerServing: { calories: 650, protein: 40, carbs: 25, fats: 45 },
   ingredients: [], method: [], tags: ['Vegetarian', 'High-Protein'],
-  archetype: 'high_protein_anchor', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['lunch', 'dinner'],
+  archetype: 'High_Protein', freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true, suitableFor: ['lunch', 'dinner'],
+  cuisineId: 'indian',
+  ingredientTags: ['paneer', 'peas'],
+  flavourIds: ['warming_spice'],
+  styleIds: ['saucy']
 };
 
 export const veggieFetaWrap: NormalizedRecipe = {
@@ -370,7 +426,11 @@ export const veggieFetaWrap: NormalizedRecipe = {
   macrosTotal: { calories: 580, protein: 35, carbs: 45, fats: 28 },
   macrosPerServing: { calories: 580, protein: 35, carbs: 45, fats: 28 },
   ingredients: [], method: [], tags: ['Vegetarian', 'High-Protein'],
-  archetype: 'high_protein_anchor', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['lunch'],
+  archetype: 'High_Protein', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['lunch'],
+  cuisineId: 'mediterranean',
+  ingredientTags: ['greek_yogurt', 'feta'],
+  flavourIds: ['lemon'],
+  styleIds: ['clean']
 };
 
 export const pesciSeabass: NormalizedRecipe = {
@@ -391,7 +451,11 @@ export const pesciSeabass: NormalizedRecipe = {
   macrosTotal: { calories: 620, protein: 46, carbs: 35, fats: 24 },
   macrosPerServing: { calories: 620, protein: 46, carbs: 35, fats: 24 },
   ingredients: [], method: [], tags: ['Pescatarian', 'High-Protein'],
-  archetype: 'high_protein_anchor', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['dinner'],
+  archetype: 'High_Protein', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['dinner'],
+  cuisineId: 'mediterranean',
+  ingredientTags: ['seabass', 'cannellini_beans'],
+  flavourIds: ['lemon'],
+  styleIds: ['clean']
 };
 
 export const pesciSalmonBagel: NormalizedRecipe = {
@@ -413,45 +477,58 @@ export const pesciSalmonBagel: NormalizedRecipe = {
   macrosPerServing: { calories: 520, protein: 32, carbs: 45, fats: 22 },
   ingredients: [], method: [], tags: ['Pescatarian', 'High-Protein'],
   archetype: 'protein_breakfast', freezerFriendly: false, reheatsWell: false, yieldsLeftovers: false, suitableFor: ['breakfast'],
+  cuisineId: 'japanese',
+  ingredientTags: ['salmon', 'bagel'],
+  flavourIds: ['umami'],
+  styleIds: ['clean']
 };
-
 
 // --- 3. HARD SLOT CONTRACTS ---
 
-const NEUTRAL_TASTE_PROFILE: TasteProfile = {
-  anchorCount: 0,
-  totalTagWeight: 0,
-  totalArchetypeWeight: 0,
-  preferredTags: {},
-  preferredArchetypes: {},
-};
-
 export const typicalDinnerContract: SlotContract = {
-  planId: 'week_42', dayIndex: 0, date: '2026-03-09', slotType: 'dinner',
+  planId: 'week_42', 
+  dayIndex: 0, 
+  date: '2026-03-09', 
+  slotType: 'dinner',
   macroTargets: {
     calories: { min: 400, max: 700, ideal: 600 },
     protein: { min: 25, ideal: 35 }
   },
-  budgetEnvelopeGBP: 4.00, // Reasonable budget
+  budgetEnvelopeGBP: 4.00, 
   dietaryBaseline: 'Omnivore',
-  repeatCap: 1, archetypeCaps: { 'Splurge': 1, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
-  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
+  repeatCap: 1, 
+  archetypeCaps: { 'Splurge': 1, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
+  leftoverPreference: 'prefer_fresh', 
+  batchCookPreference: 'allowed', 
+  rescueThresholdScore: 65.0,
   hardExclusions: [],
-  tasteProfile: NEUTRAL_TASTE_PROFILE
+  tasteProfile: {
+    preferredCuisineIds: [],
+    excludedIngredientTags: []
+  }
 };
 
 export const exhaustedBudgetDinnerContract: SlotContract = {
-  planId: 'week_42', dayIndex: 3, date: '2026-03-12', slotType: 'dinner',
+  planId: 'week_42', 
+  dayIndex: 3, 
+  date: '2026-03-12', 
+  slotType: 'dinner',
   macroTargets: {
     calories: { min: 400, max: 700, ideal: 500 },
-    protein: { min: 35, ideal: 40 } // Hard requirement for 35g min
+    protein: { min: 35, ideal: 40 }
   },
-  budgetEnvelopeGBP: 1.50, // Almost no money left in the weekly envelope!
+  budgetEnvelopeGBP: 1.50,
   dietaryBaseline: 'Omnivore',
-  repeatCap: 1, archetypeCaps: { 'Splurge': 0, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
-  leftoverPreference: 'prefer_fresh', batchCookPreference: 'allowed', rescueThresholdScore: 65.0,
+  repeatCap: 1, 
+  archetypeCaps: { 'Splurge': 0, 'Staple': 5, 'Quick_Fix': 3, 'Batch_Cook': 2 },
+  leftoverPreference: 'prefer_fresh', 
+  batchCookPreference: 'allowed', 
+  rescueThresholdScore: 65.0,
   hardExclusions: [],
-  tasteProfile: NEUTRAL_TASTE_PROFILE
+  tasteProfile: {
+    preferredCuisineIds: [],
+    excludedIngredientTags: []
+  }
 };
 
 
@@ -470,14 +547,6 @@ export const normalAssignment: PlannedMealAssignment = {
   metrics: { swappedCount: 0, autoFilledBy: 'background_enrichment' }
 };
 
-/**
- * The Real Rescue Flow: 
- * The system tried to fill `exhaustedBudgetDinnerContract`.
- * - `curatedPasta` failed hard eligibility: 'protein_minimum_failed' (12g < 35g).
- * - `curatedRoast` failed hard eligibility: 'budget_delta_exceeded' (£3.00 > £1.50).
- * - System triggered Tier 2 Gemini Generation, producing `generatedLentilStew` (£1.25 / 36g protein).
- * - System assigned it.
- */
 export const rescueAssignment: PlannedMealAssignment = {
   id: "assign_thu_dinner_rescue", planId: 'week_42', dayIndex: 3, date: '2026-03-12', slotType: 'dinner',
   state: 'proposed', candidateId: 'cand_lentil_1', recipeId: generatedLentilStew.id,
@@ -492,16 +561,16 @@ export const rescueAssignment: PlannedMealAssignment = {
     swappedCount: 0, 
     autoFilledBy: 'rescue_operation',
     priorFailedCandidateCounts: {
-      'protein_minimum_failed': 12, // 12 recipes looked at failed protein
-      'budget_delta_exceeded': 28 // 28 recipes looked at broke the bank
+      'protein_minimum_failed': 12, 
+      'budget_delta_exceeded': 28 
     }
   },
   rescueData: {
-    tierTriggered: 2, // Gemini Generation
-    failureReasons: ['budget_delta_exceeded', 'protein_minimum_failed'], // The aggregate reasons the pool collapsed
+    tierTriggered: 2, 
+    failureReasons: ['budget_delta_exceeded', 'protein_minimum_failed'],
     archetypeCapsIgnored: false,
     repeatCapsEnforced: true,
-    budgetDeltaPushed: 0, // We mathematically saved it without breaking the limit!
+    budgetDeltaPushed: 0, 
     originalTargetHash: 'b_1.50_p_35' 
   }
 };

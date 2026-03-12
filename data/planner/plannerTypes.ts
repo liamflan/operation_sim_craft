@@ -53,17 +53,126 @@ export interface MacroTarget {
 }
 
 export type RecipeArchetype = 
+  | 'High_Protein'
+  | 'protein_breakfast'
+  | 'protein_heavy'
+  | 'budget_breakfast'
+  | 'budget_workhorse'
+  | 'Variety_Pack'
+  | 'premium_meal'
+  | 'calorie_dense'
   | 'Staple' 
   | 'Splurge' 
   | 'Quick_Fix' 
-  | 'Batch_Cook'
-  | 'protein_breakfast'
-  | 'high_protein_anchor'
-  | 'budget_breakfast'
-  | 'budget_workhorse'
-  | 'variety_anchor'
-  | 'premium_meal'
-  | 'calorie_dense';
+  | 'Batch_Cook';
+
+// ---------------------------------------------------------------------------
+// CUISINE MODELS (Phase 21 Rework)
+// ---------------------------------------------------------------------------
+
+export type CuisineId = 
+  | 'italian'
+  | 'french'
+  | 'mexican'
+  | 'japanese'
+  | 'chinese'
+  | 'indian'
+  | 'mediterranean'
+  | 'middle_eastern'
+  | 'korean'
+  | 'south_east_asian';
+
+export interface CuisineProfile {
+  id: CuisineId;
+  label: string;
+  description: string;
+  flavourTags: string[];
+  styleTags: string[];
+  ingredientBiasTags: string[];
+}
+
+export const CUISINE_PROFILES: Record<CuisineId, CuisineProfile> = {
+  italian: {
+    id: 'italian',
+    label: 'Italian',
+    description: 'Brimming with tomato, basil, and garlic across pasta and fresh comfort dishes.',
+    flavourTags: ['tomato', 'basil', 'garlic'],
+    styleTags: ['pasta', 'fresh_comfort'],
+    ingredientBiasTags: ['parmesan', 'olive_oil', 'mozzarella']
+  },
+  french: {
+    id: 'french',
+    label: 'French',
+    description: 'Sophisticated flavours featuring rich sauces, fresh herbs, and slow-braised comforts.',
+    flavourTags: ['rich', 'herby'],
+    styleTags: ['braised', 'stew', 'refined_comfort'],
+    ingredientBiasTags: ['butter', 'wine', 'shallots']
+  },
+  mexican: {
+    id: 'mexican',
+    label: 'Mexican',
+    description: 'Vibrant and smoky palettes with chilli, lime, and earthy cumin.',
+    flavourTags: ['chilli', 'lime', 'cumin', 'smoky'],
+    styleTags: ['taco', 'street_food'],
+    ingredientBiasTags: ['avocado', 'coriander', 'black_beans']
+  },
+  japanese: {
+    id: 'japanese',
+    label: 'Japanese',
+    description: 'Clean, umami-rich dishes highlighting soy, ginger, and precision.',
+    flavourTags: ['umami', 'soy', 'ginger'],
+    styleTags: ['rice', 'clean'],
+    ingredientBiasTags: ['miso', 'seaweed', 'mirin']
+  },
+  chinese: {
+    id: 'chinese',
+    label: 'Chinese',
+    description: 'Savoury and aromatic stir-fries powered by ginger, garlic, and sesame soul.',
+    flavourTags: ['ginger', 'garlic', 'sesame', 'savoury'],
+    styleTags: ['stir_fry'],
+    ingredientBiasTags: ['soy_sauce', 'spring_onion', 'bok_choy']
+  },
+  indian: {
+    id: 'indian',
+    label: 'Indian',
+    description: 'Deeply aromatic curries and warming spices that provide ultimate comfort.',
+    flavourTags: ['warming_spice', 'curry', 'aromatic'],
+    styleTags: ['saucy'],
+    ingredientBiasTags: ['turmeric', 'cumin', 'coconut_milk']
+  },
+  mediterranean: {
+    id: 'mediterranean',
+    label: 'Mediterranean',
+    description: 'Bright, sun-drenched flavours of lemon, olive oil, and mountain herbs.',
+    flavourTags: ['lemon', 'herbs', 'olive_oil'],
+    styleTags: ['light', 'fresh'],
+    ingredientBiasTags: ['feta', 'cucumber', 'chickpeas']
+  },
+  middle_eastern: {
+    id: 'middle_eastern',
+    label: 'Middle Eastern',
+    description: 'Arrestingly aromatic dishes with cumin, coriander, and yoghurt accents.',
+    flavourTags: ['cumin', 'coriander', 'yoghurt'],
+    styleTags: ['roasted', 'warm_spice'],
+    ingredientBiasTags: ['tahini', 'pomegranate', 'bulgur']
+  },
+  korean: {
+    id: 'korean',
+    label: 'Korean',
+    description: 'Bold, punchy flavours driven by fermented umami and sesame.',
+    flavourTags: ['gochujang', 'sesame', 'punchy', 'umami'],
+    styleTags: ['fermented'],
+    ingredientBiasTags: ['kimchi', 'gochugaru', 'beef']
+  },
+  south_east_asian: {
+    id: 'south_east_asian',
+    label: 'South East Asian',
+    description: 'Fragrant and complex profiles balancing lime, chilli, and coconut milk.',
+    flavourTags: ['lime', 'chilli', 'coconut'],
+    styleTags: ['fragrant_herbs'],
+    ingredientBiasTags: ['lemongrass', 'fish_sauce', 'thai_basil']
+  }
+};
 
 export interface NormalizedRecipe {
   id: string;
@@ -84,8 +193,7 @@ export interface NormalizedRecipe {
   title: string;
   description: string;
   imageUrl?: string;
-  // Canonical Phase 21 Time & Effort (Required for all new recipes)
-  // Legacy recipes rely on fallback mapping to populate these dynamically
+  // Canonical Phase 21 Time & Effort
   activePrepMinutes: number;
   totalMinutes: number;
   complexityScore: number; // 1-5 scale
@@ -96,7 +204,13 @@ export interface NormalizedRecipe {
   batchFriendly?: boolean;
   leftoverFriendly?: boolean; 
   
-  // Legacy Time & Effort (Preserved temporarily for progressive backfill)
+  // Cuisine-Led Metadata (Phase 21 Rework)
+  cuisineId?: CuisineId;
+  ingredientTags: string[];
+  flavourIds: string[];
+  styleIds: string[];
+  
+  // Legacy Time & Effort (Preserved temporarily)
   totalTimeMinutes?: number;
   prepTimeMinutes?: number;
   cookTimeMinutes?: number;
@@ -118,14 +232,8 @@ export interface NormalizedRecipe {
   yieldsLeftovers: boolean;
   suitableFor: SlotType[];
   
-  // Rich Optional Details
-  notes?: string;
-  substitutions?: { original: string; swap: string; reason: string }[];
-  relatedRecipeIds?: string[];
-  
-  // Usability Gates
-  plannerUsable: boolean; // Has it passed all base checks to be considered for an auto-plan?
-  libraryVisible: boolean; // Should the user see this in their recipe vault?
+  plannerUsable: boolean; 
+  libraryVisible: boolean; 
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +244,6 @@ export type ImageSourceType = 'imported' | 'manual' | 'generated' | 'fallback';
 export type ImageProvider = 'unsplash' | 'pexels' | 'internal' | 'unknown';
 export type ImageAuditStatus = 'correct' | 'missing' | 'suspect' | 'needs-review';
 
-/** Centralized audit reasons to prevent string drift */
 export const IMAGE_AUDIT_REASONS = {
   MISSING_URL: 'missing-url' as const,
   PLACEHOLDER_IMAGE: 'placeholder-image' as const,
@@ -153,17 +260,14 @@ export interface RecipeImageMetadata {
   provider: ImageProvider;
   status: ImageAuditStatus;
   reasons: ImageAuditReason[];
-  fingerprint?: string; // Normalized URL or Provider ID
+  fingerprint?: string; 
   alt?: string;
-  lastCheckedAt?: string; // ISO
+  lastCheckedAt?: string; 
 }
 
 export interface TasteProfile {
-  anchorCount: number;
-  totalTagWeight: number;
-  totalArchetypeWeight: number;
-  preferredTags: Record<string, number>;
-  preferredArchetypes: Record<string, number>;
+  preferredCuisineIds: CuisineId[];
+  excludedIngredientTags: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -174,57 +278,55 @@ export type SlotType = 'breakfast' | 'lunch' | 'dinner' | 'snack_am' | 'snack_pm
 
 export interface SlotContract {
   planId: string;
-  dayIndex: number; // 0 (Mon) to 6 (Sun)
-  date: string; // ISO Date e.g., "2026-03-10"
+  dayIndex: number; 
+  date: string; 
   slotType: SlotType;
   
-  // Guiderails
   macroTargets: {
     calories: { min: number; max: number; ideal: number };
     protein: { min: number; ideal: number };
   };
   budgetEnvelopeGBP: number;
   dietaryBaseline: DietaryBaseline;
-  /** Normalized (lowercase, trimmed) strings from profileExclusions. Hard gate in evaluator. */
   hardExclusions: string[];
   tasteProfile: TasteProfile;
   
-  // Planner Constraints
-  repeatCap: number; // Max occurrences of same recipe in plan
-  archetypeCaps: Partial<Record<RecipeArchetype, number>>; // Max allowed uses of archetypes (e.g., max 1 Splurge)
+  repeatCap: number; 
+  archetypeCaps: Partial<Record<RecipeArchetype, number>>; 
   leftoverPreference: 'prefer_fresh' | 'accept_leftover' | 'require_leftover';
   batchCookPreference: 'allowed' | 'discouraged' | 'required';
-  rescueThresholdScore: number; // 0-100 threshold
+  rescueThresholdScore: number; 
 }
 
 export interface InsightMetadata {
   type: 'macro_fit' | 'budget_fit' | 'pantry_match' | 'taste_match' | 'variety_fit' | 'prep_warning' | 'rescue_action';
-  score: number; // 0.0 to 1.0 
+  score: number; 
   icon: string;
   label: string;
   detail: string;
-  debug?: Record<string, any>; // Optional payload for inspectable reasons
+  debug?: Record<string, any>; 
 }
 
 export interface PlannerCandidate {
-  id: string; // Transient evaluate-time ID
+  id: string; 
   recipeId: string;
   slotContractRef: { planId: string; dayIndex: number; slotType: SlotType };
   
   scores: {
-    totalScore: number;      // Weighted aggregate 0-100
-    slotFitScore: number;    // Culinary / typical appropriateness
-    macroFitScore: number;   // Delta vs ranges
-    budgetFitScore: number;  // Delta vs envelope
-    tasteFitScore: number;   // User DNA match
-    varietyFitScore: number; // Distance from recent meals
-    pantryFitScore: number;  // Ingredient inventory coverage
-    leftoverFitScore: number;// Efficacy of leftover chaining
+    totalScore: number;      
+    slotFitScore: number;    
+    macroFitScore: number;   
+    budgetFitScore: number;  
+    tasteFitScore: number;   
+    varietyFitScore: number; 
+    pantryFitScore: number;  
+    leftoverFitScore: number;
   };
   
   penalties: {
     archetypePenalty: number;
     repeatPenalty: number;
+    cuisineSaturationPenalty: number; 
   };
   
   rescueEligible: boolean; 
@@ -248,7 +350,7 @@ export type RescueFailureReason =
   | 'batch_cook_mismatch'
   | 'leftover_mismatch'
   | 'dietary_mismatch'
-  | 'exclusion_ingredient_match'; // Recipe contains an ingredient matching a hardExclusion from profileExclusions
+  | 'exclusion_ingredient_match'; 
 
 export interface RescueMetadata {
   tierTriggered: 1 | 2 | 3; 
@@ -256,7 +358,7 @@ export interface RescueMetadata {
   archetypeCapsIgnored: boolean;
   repeatCapsEnforced: boolean;
   budgetDeltaPushed: number;
-  originalTargetHash: string; // e.g. "budget=5, protein=40"
+  originalTargetHash: string; 
 }
 
 export interface PlannedMealAssignment {
@@ -270,11 +372,9 @@ export interface PlannedMealAssignment {
   candidateId: string | null;
   recipeId: string | null;
   
-  // Chaining
   isBatchCookOrigin: boolean;
   consumesLeftoverFromAssignmentId?: string;
   
-  // Decision context ensures history doesn't drift if the candidate scoring changes later
   decisionSnapshot?: {
     scores: PlannerCandidate['scores'];
     insights: InsightMetadata[];
@@ -285,13 +385,12 @@ export interface PlannedMealAssignment {
   metrics: {
     swappedCount: number;
     autoFilledBy: ActorType | null;
-    priorFailedCandidateCounts?: Partial<Record<RescueFailureReason, number>>; // Tracking why the slot struggled
+    priorFailedCandidateCounts?: Partial<Record<RescueFailureReason, number>>; 
   };
   
   rescueData?: RescueMetadata;
   pantryTransferStatus?: 'transferred';
 
-  // Set when state === 'pool_collapse' — carries the reason and UI-ready message
   collapseContext?: {
     reasons: RescueFailureReason[];
     availableCandidatesBeforeCollapse: number;
@@ -302,7 +401,7 @@ export interface PlannedMealAssignment {
 }
 
 export interface SlotDiagnostic {
-  slotId: string; // "dayIndex_slotType"
+  slotId: string; 
   totalConsidered: number;
   eligibleCount: number;
   rejectedCount: number;
@@ -320,7 +419,7 @@ export interface PlannerExecutionDiagnostic {
   planningMode: 'normal' | 'degraded_due_to_infeasible_protein_target';
   isHardRuleValid: boolean;
   isTargetFeasible: boolean;
-  candidateCountsBySlot: Record<string, number>; // "dayIndex_slotType" -> count
+  candidateCountsBySlot: Record<string, number>; 
   topWarnings: string[];
 }
 
@@ -335,5 +434,5 @@ export interface VarietyContext {
   archetypeDensity: number;
   sameDayArchetypes: Set<string>;
   consecutiveArchetypeMatch: boolean;
+  cuisineSaturationCount: number; 
 }
-

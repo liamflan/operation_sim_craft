@@ -9,74 +9,24 @@ import {
   SlotType, 
   PlannedMealAssignment, 
   RecipeArchetype,
-  ActorType,
   DietaryBaseline,
-  TasteProfile
+  TasteProfile,
+  CuisineId
 } from './plannerTypes';
 import { WeeklyRoutine, DAYS, isPlanned } from '../weeklyRoutine';
-import { FULL_RECIPE_LIST } from './recipeRegistry';
 
 export interface CalibrationPayload {
-  selectedVibes: string[]; // Recipe IDs
+  preferredCuisineIds: CuisineId[];
   diet: DietaryBaseline;
   budgetWeekly?: number;
   targetProtein?: number;
   targetCalories?: number;
-  profileExclusions?: string[]; // Normalized (lowercase, trimmed). Profile metadata only — not yet planner-consumed.
+  excludedIngredientTags?: string[]; // Normalized (lowercase, trimmed).
 }
 
 const DEFAULT_BUDGET = 50;
 const DEFAULT_PROTEIN = 160;
 const DEFAULT_CALORIES = 2000;
-
-/**
- * Heuristic: Maps the "Vibe Picks" from onboarding to the earliest possible 
- * meal slots (Mon/Tue) and locks them.
- */
-function buildVibeAssignments(
-  planId: string,
-  selectedVibes: string[],
-  contracts: SlotContract[]
-): PlannedMealAssignment[] {
-  const assignments: PlannedMealAssignment[] = [];
-  
-  // Keep track of which contracts we've already filled
-  const usedContractIndices = new Set<number>();
-  
-  for (const vibeId of selectedVibes) {
-    const recipe = FULL_RECIPE_LIST.find(r => r.id === vibeId);
-    if (!recipe) continue;
-    
-    // Find the first contract that matches this recipe's slot suitability
-    // and hasn't been used yet.
-    const eligibleContractIndex = contracts.findIndex((c, idx) => 
-      !usedContractIndices.has(idx) && recipe.suitableFor.includes(c.slotType)
-    );
-    
-    if (eligibleContractIndex !== -1) {
-      usedContractIndices.add(eligibleContractIndex);
-      const contract = contracts[eligibleContractIndex];
-      
-      assignments.push({
-        id: `assign_${planId}_${contract.dayIndex}_${contract.slotType}`,
-        planId,
-        dayIndex: contract.dayIndex,
-        date: contract.date,
-        slotType: contract.slotType,
-        state: 'locked', // Vibe picks are "The Plan" so we lock them
-        candidateId: `vibe_${vibeId}`,
-        recipeId: vibeId,
-        isBatchCookOrigin: false,
-        metrics: {
-          swappedCount: 0,
-          autoFilledBy: 'user_manual' as ActorType
-        }
-      });
-    }
-  }
-
-  return assignments;
-}
 
 /**
  * Builds a week of SlotContracts based on user routine and goals.
@@ -90,37 +40,15 @@ export function buildSlotContracts(
   const budget = payload.budgetWeekly ?? DEFAULT_BUDGET;
   const protein = payload.targetProtein ?? DEFAULT_PROTEIN;
   const calories = payload.targetCalories ?? DEFAULT_CALORIES;
-  const hardExclusions: string[] = (payload.profileExclusions ?? [])
+  const hardExclusions: string[] = (payload.excludedIngredientTags ?? [])
     .map(e => e.toLowerCase().trim())
     .filter(e => e.length > 0);
 
-  // Build the TasteProfile from user's selected vibes
+  // Build the TasteProfile from user's selected cuisines
   const tasteProfile: TasteProfile = {
-    anchorCount: 0,
-    totalTagWeight: 0,
-    totalArchetypeWeight: 0,
-    preferredTags: {},
-    preferredArchetypes: {}
+    preferredCuisineIds: payload.preferredCuisineIds,
+    excludedIngredientTags: hardExclusions
   };
-
-  payload.selectedVibes.forEach(vibeId => {
-    const anchorRecipe = FULL_RECIPE_LIST.find(r => r.id === vibeId);
-    if (!anchorRecipe) return;
-
-    tasteProfile.anchorCount++;
-    
-    // Add archetypes
-    if (anchorRecipe.archetype) {
-      tasteProfile.preferredArchetypes[anchorRecipe.archetype] = (tasteProfile.preferredArchetypes[anchorRecipe.archetype] || 0) + 1;
-      tasteProfile.totalArchetypeWeight++;
-    }
-
-    // Add tags
-    anchorRecipe.tags.forEach(tag => {
-      tasteProfile.preferredTags[tag] = (tasteProfile.preferredTags[tag] || 0) + 1;
-      tasteProfile.totalTagWeight++;
-    });
-  });
 
   const today = new Date();
   const startDate = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Mon of current week
@@ -177,17 +105,22 @@ export function buildSlotContracts(
   return contracts;
 }
 
+/**
+ * Source of truth for building the initial planner setup.
+ */
 export function buildPlannerSetup(
   routine: WeeklyRoutine,
   payload: CalibrationPayload
 ) {
   const planId = `plan_${Date.now()}`;
   const contracts = buildSlotContracts(planId, routine, payload);
-  const vibeAssignments = buildVibeAssignments(planId, payload.selectedVibes, contracts);
+  
+  // No pre-selected assignments: fully dynamic generation.
+  const preSelectedAssignments: PlannedMealAssignment[] = [];
 
   return {
     planId,
     contracts,
-    vibeAssignments
+    preSelectedAssignments
   };
 }

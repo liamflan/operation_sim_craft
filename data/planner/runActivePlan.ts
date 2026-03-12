@@ -21,7 +21,7 @@ function getApprovedRecipes(): NormalizedRecipe[] {
  */
 export async function runActivePlan(
   contracts: SlotContract[],
-  initialAssignments: PlannedMealAssignment[] = [],
+  preservedAssignments: PlannedMealAssignment[] = [],
   actor: ActorType = 'planner_autofill',
   globalBudget: number = 50.00,
   pantryItems: PantryItem[] = []
@@ -37,14 +37,11 @@ export async function runActivePlan(
     console.log('[runActivePlan] profileExclusions: none set');
   }
 
-  // Trigger the orchestrator
-  // We use the initialAssignments (vibe picks) to ensure the engine respects 
-  // the user's "What sounds good" choices.
   console.log('[runActivePlan] Input contracts:', contracts.length);
-  console.log('[runActivePlan] Initial assignments (vibes):', initialAssignments.length);
+  console.log('[runActivePlan] Preserved assignments:', preservedAssignments.length);
 
   // Trigger the orchestrator
-  const result = generatePlan(contracts, recipes, actor, initialAssignments, globalBudget, pantryItems);
+  const result = await generatePlan(contracts, recipes, actor, preservedAssignments, globalBudget, pantryItems);
   
   console.log('[runActivePlan] Orchestrator assignments produced:', result.assignments.length);
 

@@ -45,8 +45,8 @@ function audit() {
     console.log('\n');
   }
 
-  console.log('## 3. Protein Anchor Analysis (35g+ Protein Dinners)');
-  console.log('| Diet | HP Dinners Count | Sample Anchors |');
+  console.log('## 3. Protein Cuisine Analysis (35g+ Protein Dinners)');
+  console.log('| Diet | HP Dinners Count | Sample Cuisines |');
   console.log('| :--- | :--- | :--- |');
   for (const diet of DIETS) {
     const eligible = FULL_RECIPE_LIST.filter(r => isRecipeAllowedForBaselineDiet(r, diet as any));

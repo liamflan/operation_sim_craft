@@ -322,7 +322,7 @@ export default function TasteProfileScreen() {
     updateCalories,
     updateProtein,
     updateExclusions,
-    updateVibes
+    updateCuisinePreferences
   } = useActivePlan();
   
   const diet = workspace.userDiet;
@@ -334,7 +334,7 @@ export default function TasteProfileScreen() {
   const [customGoalText, setCustomGoalText] = useState('');
   const [isAddingGoal, setIsAddingGoal] = useState(false);
 
-  const currentExclusions = workspace.input?.payload.profileExclusions || [];
+  const currentExclusions = workspace.input?.payload.excludedIngredientTags || [];
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>(currentExclusions);
   const [customRestrictionText, setCustomRestrictionText] = useState('');
   const [isAddingRestriction, setIsAddingRestriction] = useState(false);
@@ -578,7 +578,7 @@ export default function TasteProfileScreen() {
             <View>
               <View className="flex-row justify-between items-end mb-6 pl-2">
                 <View className="flex-1 pr-4">
-                  <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Vibe Signals</Text>
+                  <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Cuisine Signals</Text>
                   <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Signals learned from your imports.</Text>
                 </View>
                 <TouchableOpacity 
@@ -660,7 +660,7 @@ export default function TasteProfileScreen() {
             <View>
               <View className="mb-6 pl-2">
                 <Text className="text-textMain dark:text-darktextMain text-[22px] font-medium tracking-tight">Taste Gallery</Text>
-                <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Meals you anchored during onboarding.</Text>
+                <Text className="text-textSec dark:text-darktextSec text-[14px] font-medium mt-1">Meals you preferenced during onboarding.</Text>
               </View>
               
               <View className="flex-row gap-4">

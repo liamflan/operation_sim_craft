@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { DietaryBaseline, PlannerExecutionDiagnostic, SlotType, RescueFailureReason } from './planner/plannerTypes';
+import { DietaryBaseline, PlannerExecutionDiagnostic, SlotType, RescueFailureReason, CuisineId } from './planner/plannerTypes';
 
 export type UnchangedReason =
   | 'no_better_candidate'
@@ -83,14 +83,14 @@ export interface DebugMetadata {
 
   // ─── Freshness Trace (Phase: Reliability Pass) ──────────────────────────────
   debugCurrentUserDiet: DietaryBaseline | null;
-  debugCurrentSelectedVibes: string[] | null;
+  debugCurrentSelectedCuisines: CuisineId[] | null;
   debugCurrentProfileExclusions: string[] | null;
   debugCurrentBudgetWeekly: number | null;
   debugCurrentTargetCalories: number | null;
   debugCurrentTargetProteinG: number | null;
 
   debugPlannerInputDiet: DietaryBaseline | null;
-  debugPlannerInputSelectedVibes: string[] | null;
+  debugPlannerInputSelectedCuisines: CuisineId[] | null;
   debugPlannerInputExclusions: string[] | null;
   debugPlannerInputBudgetWeekly: number | null;
   debugPlannerInputTargetCalories: number | null;
@@ -157,14 +157,14 @@ const INITIAL_DEBUG_DATA: DebugMetadata = {
   hardExclusionValues: null,
 
   debugCurrentUserDiet: null,
-  debugCurrentSelectedVibes: null,
+  debugCurrentSelectedCuisines: null,
   debugCurrentProfileExclusions: null,
   debugCurrentBudgetWeekly: null,
   debugCurrentTargetCalories: null,
   debugCurrentTargetProteinG: null,
 
   debugPlannerInputDiet: null,
-  debugPlannerInputSelectedVibes: null,
+  debugPlannerInputSelectedCuisines: null,
   debugPlannerInputExclusions: null,
   debugPlannerInputBudgetWeekly: null,
   debugPlannerInputTargetCalories: null,

@@ -175,11 +175,12 @@ const w2r4: NormalizedRecipe = {
   
   archetype: 'Batch_Cook',
   freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true,
-  suitableFor: ['dinner', 'lunch']
+  suitableFor: ['dinner', 'lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 
-// --- CATEGORY 3: VEGAN CORE ANCHORS ---
+// --- CATEGORY 3: VEGAN CORE CUISINES ---
 
 const w2r5: NormalizedRecipe = {
   id: 'w2_r5_lentil_stew',
@@ -217,7 +218,8 @@ const w2r5: NormalizedRecipe = {
   
   archetype: 'budget_workhorse',
   freezerFriendly: true, reheatsWell: true, yieldsLeftovers: true,
-  suitableFor: ['dinner', 'lunch']
+  suitableFor: ['dinner', 'lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 const w2r6: NormalizedRecipe = {
@@ -254,9 +256,10 @@ const w2r6: NormalizedRecipe = {
   method: [], 
   tags: ['Vegan', 'Mexican', 'Quick'],
   
-  archetype: 'variety_anchor',
+  archetype: 'Variety_Pack',
   freezerFriendly: false, reheatsWell: true, yieldsLeftovers: true,
-  suitableFor: ['dinner', 'lunch']
+  suitableFor: ['dinner', 'lunch'],
+  ingredientTags: [], flavourIds: [], styleIds: [],
 };
 
 

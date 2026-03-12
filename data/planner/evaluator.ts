@@ -9,7 +9,8 @@ import {
   PlannerCandidate,
   InsightMetadata,
   RescueFailureReason,
-  VarietyContext
+  VarietyContext,
+  CUISINE_PROFILES
 } from './plannerTypes';
 import { isRecipeAllowedForBaselineDiet } from './dietRules';
 import { PantryItem } from '../PantryContext';
@@ -18,7 +19,6 @@ const PANTRY_STOPLIST = ['salt', 'pepper', 'water', 'oil', 'olive oil', 'vegetab
 
 /**
  * Validates if a recipe passes hard, non-negotiable eligibility constraints for a slot.
- * Returns an array of reasons if it fails. Returns empty array if it passes.
  */
 export function checkHardEligibility(
   recipe: NormalizedRecipe, 
@@ -27,25 +27,27 @@ export function checkHardEligibility(
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
-  // 0. Profile Exclusions (HARD) — must come first, user-trust gate
-  // Match each exclusion term against each ingredient name using word-boundary logic
-  // to avoid false positives (e.g. "salmon" should not reject a recipe with "salsa")
+  // 0. Profile Exclusions / Ingredient Exclusions (HARD)
   if (contract.hardExclusions && contract.hardExclusions.length > 0) {
     const exclusionMatchFound = contract.hardExclusions.some(exclusion => {
-      // Build a word-boundary regex: \b won't work for multi-word exclusions like "blue cheese"
-      // So we use a safe substring check with surrounding non-alpha context
       const pattern = new RegExp(`(?:^|[^a-z])${exclusion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z]|$)`, 'i');
       return recipe.ingredients.some(ingredient => {
         const normalizedIngredient = ingredient.name.toLowerCase().trim();
-        if (pattern.test(normalizedIngredient)) {
-          console.log(`[evaluator] exclusion match: "${exclusion}" in ingredient "${ingredient.name}" for recipe "${recipe.title}"`); 
-          return true;
-        }
-        return false;
+        return pattern.test(normalizedIngredient);
       });
     });
     if (exclusionMatchFound) {
       failures.push('exclusion_ingredient_match');
+    }
+  }
+
+  // Phase 21: excludedIngredientTags (HARD)
+  if (contract.tasteProfile?.excludedIngredientTags && contract.tasteProfile.excludedIngredientTags.length > 0) {
+    const tagMatchFound = contract.tasteProfile.excludedIngredientTags.some(tag => 
+       recipe.ingredientTags.includes(tag) || recipe.tags.includes(tag)
+    );
+    if (tagMatchFound) {
+       failures.push('exclusion_ingredient_match');
     }
   }
 
@@ -60,14 +62,12 @@ export function checkHardEligibility(
   }
 
   // Slot Suitability
-  if (!recipe.suitableFor.includes(contract.slotType)) {
+  if (!recipe.suitableFor.includes(contract.slotType as any)) {
     failures.push('no_slot_match');
   }
 
   // Budget
-  // If the envelope is completely blown. We allow a 10% tolerance for soft matching,
-  // but a hard fail if it's way over. Or, per the requirements: "cap-compliant candidates exceed budget tolerance".
-  const budgetTolerance = contract.budgetEnvelopeGBP * 1.1; 
+  const budgetTolerance = contract.budgetEnvelopeGBP * 1.5; 
   if (recipe.estimatedCostPerServingGBP > budgetTolerance) {
     failures.push('budget_delta_exceeded');
   }
@@ -80,7 +80,7 @@ export function checkHardEligibility(
     failures.push('calorie_maximum_exceeded');
   }
   if (recipe.macrosPerServing.calories < (contract.macroTargets.calories.min * 0.75)) {
-    failures.push('calorie_minimum_failed'); // grossly under-caloried for the slot
+    failures.push('calorie_minimum_failed');
   }
 
   // Archetype & Repeat Caps
@@ -91,7 +91,7 @@ export function checkHardEligibility(
   if (varietyCtx.repeatCount >= contract.repeatCap) {
     failures.push('repeat_cap_exhausted');
   }
-  if (varietyCtx.sameDayArchetypes.has(recipe.id)) { // Note: same_day_duplicate checks by recipe.id originally, keeping behavior matching old logic for the "same day duplicate"
+  if (varietyCtx.sameDayArchetypes.has(recipe.id)) {
     failures.push('same_day_duplicate');
   }
 
@@ -119,7 +119,7 @@ export function scoreCandidate(
   pantryItems: PantryItem[] = []
 ): { scores: PlannerCandidate['scores']; penalties: PlannerCandidate['penalties'] } {
   
-  // Macro Fit: How close to the ideal target?
+  // Macro Fit
   const pDelta = Math.abs(recipe.macrosPerServing.protein - contract.macroTargets.protein.ideal);
   const pScore = Math.max(0, 100 - (pDelta / contract.macroTargets.protein.ideal) * 100);
   
@@ -127,39 +127,42 @@ export function scoreCandidate(
   const cScore = Math.max(0, 100 - (cDelta / contract.macroTargets.calories.ideal) * 100);
   const macroFitScore = Math.round((pScore + cScore) / 2);
 
-  // Budget Fit: Cheaper is better, up to 100 if it's free. Envelopes are guaranteed by hard eligibility.
+  // Budget Fit
   const budgetFitScore = Math.round(Math.max(0, 100 - (recipe.estimatedCostPerServingGBP / contract.budgetEnvelopeGBP) * 50));
 
-  // Taste Scoring (P1)
-  let tasteFitScore = 50; // Neutral default
-  let tagAffinity = 0;
-  let archetypeAffinity = 0;
+  // Cuisine-Led Taste Scoring (Strict Replacement)
+  let tasteFitScore = 50; 
   
-  if (contract.tasteProfile && contract.tasteProfile.anchorCount > 0) {
-    let matchedTagWeight = 0;
-    recipe.tags.forEach(tag => {
-      if (contract.tasteProfile.preferredTags[tag]) {
-        matchedTagWeight += contract.tasteProfile.preferredTags[tag];
-      }
-    });
+  if (contract.tasteProfile && contract.tasteProfile.preferredCuisineIds.length > 0) {
+    let cuisinePoints = 0;
     
-    let matchedArchetypeWeight = 0;
-    if (recipe.archetype && contract.tasteProfile.preferredArchetypes[recipe.archetype]) {
-      matchedArchetypeWeight += contract.tasteProfile.preferredArchetypes[recipe.archetype];
+    // 1. Direct Cuisine Match (High Reward)
+    if (recipe.cuisineId && contract.tasteProfile.preferredCuisineIds.includes(recipe.cuisineId)) {
+        cuisinePoints += 40;
     }
-    
-    tagAffinity = contract.tasteProfile.totalTagWeight > 0 
-      ? matchedTagWeight / contract.tasteProfile.totalTagWeight 
-      : 0;
-      
-    archetypeAffinity = contract.tasteProfile.totalArchetypeWeight > 0 
-      ? matchedArchetypeWeight / contract.tasteProfile.totalArchetypeWeight 
-      : 0;
-      
-    tasteFitScore = Math.min(100, Math.max(0, Math.round(40 + (tagAffinity * 40) + (archetypeAffinity * 20))));
+
+    // 2. Characteristic Overlaps (Flavor / Style / Bias)
+    contract.tasteProfile.preferredCuisineIds.forEach(prefId => {
+        const profile = CUISINE_PROFILES[prefId];
+        if (!profile) return;
+
+        // Flavour overlap (Medium)
+        const matchedFlavours = (recipe.flavourIds || []).filter(f => profile.flavourTags.includes(f));
+        cuisinePoints += matchedFlavours.length * 15;
+
+        // Style overlap (Medium)
+        const matchedStyles = (recipe.styleIds || []).filter(s => profile.styleTags.includes(s));
+        cuisinePoints += matchedStyles.length * 15;
+
+        // Ingredient bias overlap (Light)
+        const matchedBias = (recipe.ingredientTags || []).filter(i => profile.ingredientBiasTags.includes(i));
+        cuisinePoints += matchedBias.length * 5;
+    });
+
+    tasteFitScore = Math.min(100, Math.max(0, 40 + cuisinePoints));
   }
 
-  // Pantry Scoring (P3)
+  // Pantry Scoring
   const meaningfulIngredients = recipe.ingredients.filter(ing => {
     const normalized = ing.name.toLowerCase().trim();
     return !PANTRY_STOPLIST.some(stop => normalized.includes(stop));
@@ -168,19 +171,17 @@ export function scoreCandidate(
   const pantryMetrics = {
     matches: 0,
     weightedScore: 0,
-    totalMeaningful: meaningfulIngredients.length || 1 // Avoid div by zero
+    totalMeaningful: meaningfulIngredients.length || 1
   };
 
   meaningfulIngredients.forEach(ing => {
     const normalizedName = ing.name.toLowerCase().trim();
-    // Try to match by canonical ID first, then by name
     const matches = pantryItems.filter(p => 
       (ing.canonicalIngredientId && p.id === ing.canonicalIngredientId) ||
       p.name.toLowerCase().trim() === normalizedName
     );
 
     if (matches.length > 0) {
-      // Use the best match state
       const bestMatch = matches.reduce((best, curr) => {
         const scores = { in_stock: 1.0, low: 0.5, out: 0.0, need_checking: 0.0 };
         return (scores[curr.state] || 0) > (scores[best.state] || 0) ? curr : best;
@@ -198,11 +199,16 @@ export function scoreCandidate(
 
   const pantryFitScore = Math.round(Math.min(100, (pantryMetrics.weightedScore / pantryMetrics.totalMeaningful) * 100));
   
-  // Slot
-  const slotFitScore = recipe.archetype === 'Quick_Fix' && contract.slotType === 'lunch' ? 100 : 70;
+  // Effort / Difficulty Characteristics (Preserved logic layer)
+  let slotFitScore = 70;
+  if (recipe.difficulty === 'Easy' && (contract.slotType === 'breakfast' || contract.slotType === 'lunch')) {
+    slotFitScore += 20;
+  }
+  if (recipe.archetype === 'Quick_Fix') slotFitScore += 10;
+  
   const leftoverFitScore = recipe.yieldsLeftovers && contract.leftoverPreference === 'prefer_fresh' ? 30 : 100;
 
-  // Real Variety Scoring (P2)
+  // Variety Scoring
   let varietyScore = 100;
   varietyScore -= (varietyCtx.repeatCount * 20);
   varietyScore -= (varietyCtx.archetypeDensity * 5);
@@ -210,25 +216,25 @@ export function scoreCandidate(
   if (varietyCtx.consecutiveArchetypeMatch) varietyScore -= 15;
   const varietyFitScore = Math.max(0, varietyScore);
 
-  // Real Penalties (Absolute deductions on final score)
-  const repeatPenalty = varietyCtx.repeatCount * 15; // 15 points off absolute for every time it repeats
-  // Mild penalty for using up the archetype pool, to naturally encourage variety before the hard cap is hit
+  // Penalties
+  const repeatPenalty = varietyCtx.repeatCount * 15; 
   const archetypePenalty = varietyCtx.archetypeDensity * 5; 
+  const cuisineSaturationPenalty = (varietyCtx.cuisineSaturationCount || 0) * 12;
 
   const baseTotalScore = (
     macroFitScore * 0.30 +
-    budgetFitScore * 0.25 +
+    budgetFitScore * 0.20 +
     varietyFitScore * 0.25 +
     slotFitScore * 0.10 +
-    tasteFitScore * 0.05 +
+    tasteFitScore * 0.10 +
     pantryFitScore * 0.05
   );
 
-  const totalScore = Math.max(0, Math.round(baseTotalScore - repeatPenalty - archetypePenalty));
+  const totalScore = Math.max(0, Math.round(baseTotalScore - repeatPenalty - archetypePenalty - cuisineSaturationPenalty));
 
   return {
     scores: { totalScore, slotFitScore, macroFitScore, budgetFitScore, tasteFitScore, varietyFitScore, pantryFitScore, leftoverFitScore },
-    penalties: { archetypePenalty, repeatPenalty }
+    penalties: { archetypePenalty, repeatPenalty, cuisineSaturationPenalty }
   };
 }
 
@@ -253,7 +259,7 @@ export function generateInsights(scores: PlannerCandidate['scores'], recipe: Nor
   if (scores.macroFitScore > 85) {
     insights.push({
       type: 'macro_fit', score: scores.macroFitScore / 100, icon: 'bullseye',
-      label: 'Hits Protein Target', detail: `${recipe.macrosPerServing.protein}g aligns with ${contract.macroTargets.protein.ideal}g goal.`
+      label: 'Hits Protein Target', detail: `${recipe.macrosPerServing.protein}g aligns with goals.`
     });
   }
   
@@ -264,48 +270,17 @@ export function generateInsights(scores: PlannerCandidate['scores'], recipe: Nor
     });
   }
 
-  if (scores.totalScore > 90) {
-    insights.push({
-      type: 'taste_match', score: 1.0, icon: 'star',
-      label: 'Top Pick', detail: `One of your highest rated matches for this slot.`
-    });
-  }
-
-  // P2 Variety Insights
-  if (scores.varietyFitScore >= 90) {
+  if (scores.tasteFitScore > 85) {
+     const cuisineLabel = recipe.cuisineId ? CUISINE_PROFILES[recipe.cuisineId]?.label : 'profile';
      insights.push({
-        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'leaf',
-        label: 'Highly Varied', detail: `Brings fresh diversity to your week.`
-     });
-  } else if (varietyCtx.repeatCount > 0) {
-     insights.push({
-        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'copy',
-        label: 'Repeated Meal', detail: `You have this ${varietyCtx.repeatCount} other time(s) this week.`
-     });
-  } else if (varietyCtx.sameDayArchetypes.has(recipe.archetype)) {
-     insights.push({
-        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'layer-group',
-        label: 'Same-Day Meal Type Clash', detail: `You're already having a ${recipe.archetype.replace('_', ' ')} today.`
-     });
-  } else if (varietyCtx.consecutiveArchetypeMatch) {
-     insights.push({
-        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'exchange-alt',
-        label: 'Back-to-Back Meal Type', detail: `Follows another ${recipe.archetype.replace('_', ' ')} meal.`
-     });
-  } else if (varietyCtx.archetypeDensity >= 2) {
-     insights.push({
-        type: 'variety_fit', score: scores.varietyFitScore / 100, icon: 'chart-pie',
-        label: 'Saturating Meal Type', detail: `You're having a lot of ${recipe.archetype.replace('_', ' ')}s this week.`
+        type: 'taste_match', score: scores.tasteFitScore / 100, icon: 'heart',
+        label: `${cuisineLabel} favourite`, detail: `Matches your preferred cuisine and style.`
      });
   }
 
   return insights;
 }
 
-/**
- * Orchestrator: Creates a PlannerCandidate from a Recipe and a Contract.
- * Returns structured output with either the candidate or the list of failure reasons.
- */
 export function evaluateCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
@@ -314,7 +289,7 @@ export function evaluateCandidate(
 ): { candidate: PlannerCandidate | null, failureReasons: RescueFailureReason[] } {
   
   const failures = checkHardEligibility(recipe, contract, varietyCtx);
-  if (failures.length > 0) return { candidate: null, failureReasons: failures }; // Complete rejection
+  if (failures.length > 0) return { candidate: null, failureReasons: failures };
 
   const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx, pantryItems);
 
@@ -324,7 +299,6 @@ export function evaluateCandidate(
     slotContractRef: { planId: contract.planId, dayIndex: contract.dayIndex, slotType: contract.slotType },
     scores,
     penalties,
-    // Only eligible for soft rescue if it is close to the threshold (e.g. within 15 points)
     rescueEligible: scores.totalScore >= (contract.rescueThresholdScore - 15),
     insights: generateInsights(scores, recipe, contract, false, varietyCtx)
   };
@@ -332,14 +306,6 @@ export function evaluateCandidate(
   return { candidate, failureReasons: [] };
 }
 
-// ---------------------------------------------------------------------------
-// RESCUE & POOL COLLAPSE DETECTION
-// ---------------------------------------------------------------------------
-
-/**
- * Aggregates failure reasons across a pool of rejected candidates to determine
- * *why* the slot is failing to fill.
- */
 export function analyzePoolCollapse(
   recipes: NormalizedRecipe[], 
   contract: SlotContract,
@@ -348,13 +314,12 @@ export function analyzePoolCollapse(
   const failureCounts: Partial<Record<RescueFailureReason, number>> = {};
   
   recipes.forEach(r => {
-    // We pass an empty/zero variance context for today's assignments during collapse analysis because
-    // it's an aggregate summary, and 'same_day_duplicate' shouldn't mask real hard failures
     const failures = checkHardEligibility(r, contract, {
       repeatCount: 0,
       archetypeDensity: currentArchetypeCounts[r.archetype] || 0,
       sameDayArchetypes: new Set(),
-      consecutiveArchetypeMatch: false
+      consecutiveArchetypeMatch: false,
+      cuisineSaturationCount: 0
     }); 
     failures.forEach(f => {
       failureCounts[f] = (failureCounts[f] || 0) + 1;
@@ -364,42 +329,29 @@ export function analyzePoolCollapse(
   const total = recipes.length;
   if (total === 0) return ['candidate_pool_empty'];
 
-  // All recipes failed for identical reasons (universal collapse)
   const universalFailures = Object.entries(failureCounts)
     .filter(([_, count]) => count === total)
     .map(([reason]) => reason as RescueFailureReason);
 
   if (universalFailures.length > 0) return universalFailures;
   
-  // Mixed-cause collapse. Report the top competing reasons that exhausted the pool.
-  const topFailures = Object.entries(failureCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-    .map(([reason]) => reason as RescueFailureReason);
-
-  return topFailures.length > 0 ? topFailures : ['candidate_pool_empty'];
+  return ['candidate_pool_empty'];
 }
 
-/**
- * Determines what action the UI/Saga should take if the candidate pool fails.
- */
 export function determineRescueAction(
   candidates: PlannerCandidate[], 
   recipes: NormalizedRecipe[], 
   contract: SlotContract, 
   currentArchetypeCounts: Record<string, number>
 ) {
-  // Safe sort (creates a new array instead of sorting in place)
   const sortedCandidates = [...candidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
   const bestCandidate = sortedCandidates[0];
   
   if (bestCandidate && bestCandidate.scores.totalScore < contract.rescueThresholdScore) {
-    // We have options, but they are bad. Soft rescue.
     return { action: 'soft_rescue_needed', reasons: ['taste_pool_collapse'] as RescueFailureReason[] };
   }
 
   if (candidates.length === 0) {
-    // Strict eligibility wiped out the entire database. We need Gemini.
     const rootCauses = analyzePoolCollapse(recipes, contract, currentArchetypeCounts);
     return { action: 'gemini_generation_needed', reasons: rootCauses };
   }

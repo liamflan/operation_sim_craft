@@ -214,7 +214,7 @@ export default function DebugOverlay() {
           {renderField('Budget £', debugData.debugCurrentBudgetWeekly)}
           {renderField('Calories', debugData.debugCurrentTargetCalories)}
           {renderField('Protein', debugData.debugCurrentTargetProteinG)}
-          {renderField('Anchors', (debugData.debugCurrentSelectedVibes ?? []).length)}
+          {renderField('Cuisines', (debugData.debugCurrentSelectedCuisines ?? []).length)}
           {renderField('Exclusions', (debugData.debugCurrentProfileExclusions ?? []).length)}
 
           <Text style={styles.subSectionTitle}>Planner Input (Most Recent Run)</Text>
@@ -222,7 +222,7 @@ export default function DebugOverlay() {
           {renderField('Budget £', debugData.debugPlannerInputBudgetWeekly)}
           {renderField('Calories', debugData.debugPlannerInputTargetCalories)}
           {renderField('Protein', debugData.debugPlannerInputTargetProteinG)}
-          {renderField('Anchors', (debugData.debugPlannerInputSelectedVibes ?? []).length)}
+          {renderField('Cuisines', (debugData.debugPlannerInputSelectedCuisines ?? []).length)}
           {renderField('Exclusions', (debugData.debugPlannerInputExclusions ?? []).length)}
 
           {/* ─── Planner Execution Meta ───────────────────────────────────── */}
