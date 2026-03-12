@@ -11,17 +11,17 @@ import {
 } from 'react-native';
 import { useRecipes, SortOption } from '../../data/RecipeContext';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { NormalizedRecipe, CuisineId } from '../../data/planner/plannerTypes';
+import { NormalizedRecipe, CuisineId, CUISINE_PROFILES } from '../../data/planner/plannerTypes';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
 
 const CUISINES: { id: CuisineId | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'italian', label: 'Italian' },
-  { id: 'mexican', label: 'Mexican' },
-  { id: 'japanese', label: 'Japanese' },
-  { id: 'mediterranean', label: 'Mediterranean' },
+  ...Object.values(CUISINE_PROFILES).map(profile => ({
+    id: profile.id,
+    label: profile.label
+  }))
 ];
 
 const SORT_OPTIONS: { id: SortOption; label: string; icon: string }[] = [
@@ -40,6 +40,7 @@ export default function RecipeLibrary() {
     setActiveCuisine,
     sortBy,
     setSortBy,
+    resolveCuisineId,
   } = useRecipes();
   const { width } = useWindowDimensions();
   const [importModalVisible, setImportModalVisible] = useState(false);
@@ -156,7 +157,12 @@ export default function RecipeLibrary() {
         <View style={styles.grid}>
           {filteredRecipes.length > 0 ? (
             filteredRecipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} isDesktop={isDesktop} />
+              <RecipeCard 
+                key={recipe.id} 
+                recipe={recipe} 
+                isDesktop={isDesktop} 
+                resolveCuisineId={resolveCuisineId}
+              />
             ))
           ) : (
             <View style={styles.emptyState}>
@@ -184,7 +190,15 @@ export default function RecipeLibrary() {
   );
 }
 
-function RecipeCard({ recipe, isDesktop }: { recipe: NormalizedRecipe; isDesktop: boolean }) {
+function RecipeCard({ 
+  recipe, 
+  isDesktop, 
+  resolveCuisineId 
+}: { 
+  recipe: NormalizedRecipe; 
+  isDesktop: boolean;
+  resolveCuisineId: (r: NormalizedRecipe) => CuisineId | undefined;
+}) {
   const router = useRouter();
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -195,8 +209,9 @@ function RecipeCard({ recipe, isDesktop }: { recipe: NormalizedRecipe; isDesktop
   const title = recipe.title || 'Untitled Recipe';
   const totalMinutes = recipe.totalMinutes ?? 0;
   const protein = recipe.macrosPerServing?.protein ?? 0;
-  const cuisine = recipe.cuisineId
-    ? recipe.cuisineId.charAt(0).toUpperCase() + recipe.cuisineId.slice(1)
+  const resolvedCuisineId = resolveCuisineId(recipe);
+  const cuisine = resolvedCuisineId && CUISINE_PROFILES[resolvedCuisineId]
+    ? CUISINE_PROFILES[resolvedCuisineId].label
     : null;
   const status = recipe.status || 'needs_review';
   const isImported =

@@ -125,7 +125,7 @@ export default function TabLayout() {
               />
               <NavItem 
                 icon="book-open" 
-                label="Library" 
+                label="Recipes" 
                 isActive={pathname === '/library' || pathname === '/(tabs)/library'} 
                 onPress={() => router.push('/(tabs)/library')} 
               />

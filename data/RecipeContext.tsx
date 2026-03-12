@@ -3,7 +3,8 @@ import { StorageService } from './storage';
 import { 
   NormalizedRecipe, 
   CuisineId, 
-  RecipeValidationStatus
+  RecipeValidationStatus,
+  CUISINE_PROFILES
 } from './planner/plannerTypes';
 import { FULL_RECIPE_LIST } from './planner/recipeRegistry';
 
@@ -22,6 +23,7 @@ interface RecipeContextType {
   sortBy: SortOption;
   setSortBy: (sort: SortOption) => void;
   filteredRecipes: NormalizedRecipe[];
+  resolveCuisineId: (recipe: NormalizedRecipe) => CuisineId | undefined;
   importRecipe: (recipeData: Partial<NormalizedRecipe>) => Promise<void>;
   updateRecipe: (recipeId: string, updates: Partial<NormalizedRecipe>) => Promise<void>;
   deleteRecipe: (recipeId: string) => Promise<void>;
@@ -85,6 +87,27 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
     return allRecipes.filter(r => r.status === 'ready');
   }, [allRecipes]);
 
+  // Phase 21: Robust Cuisine Resolution
+  const resolveCuisineId = useMemo(() => (recipe: NormalizedRecipe): CuisineId | undefined => {
+    if (recipe.cuisineId) return recipe.cuisineId;
+    
+    // Fallback: Map legacy tags to canonical IDs
+    const tags = (recipe.tags || []).map(t => t.toLowerCase());
+    
+    if (tags.some(t => t.includes('italian'))) return 'italian';
+    if (tags.some(t => t.includes('mexican'))) return 'mexican';
+    if (tags.some(t => t.includes('japanese'))) return 'japanese';
+    if (tags.some(t => t.includes('chinese'))) return 'chinese';
+    if (tags.some(t => t.includes('indian'))) return 'indian';
+    if (tags.some(t => t.includes('mediterranean'))) return 'mediterranean';
+    if (tags.some(t => t.includes('middle eastern'))) return 'middle_eastern';
+    if (tags.some(t => t.includes('korean'))) return 'korean';
+    if (tags.some(t => t.includes('french'))) return 'french';
+    if (tags.some(t => t.includes('thai') || t.includes('vietamese') || t.includes('south east asian'))) return 'south_east_asian';
+    
+    return undefined;
+  }, []);
+
   const filteredRecipes = useMemo(() => {
     let result = [...allRecipes];
 
@@ -106,7 +129,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Cuisine Filter
     if (activeCuisine !== 'all') {
-      result = result.filter(r => r.cuisineId === activeCuisine);
+      result = result.filter(r => resolveCuisineId(r) === activeCuisine);
     }
 
     // 3. Sorting with Defensive Fallbacks
@@ -210,6 +233,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       sortBy,
       setSortBy,
       filteredRecipes,
+      resolveCuisineId,
       importRecipe,
       updateRecipe,
       deleteRecipe
