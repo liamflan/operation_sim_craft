@@ -25,7 +25,7 @@ function normalizeExclusions(raw: string): string[] {
 const STEP_LABELS = [
   { number: 1, label: 'Welcome' },
   { number: 2, label: 'Dietary Baseline' },
-  { number: 3, label: 'Cuisine Selection' },
+  { number: 3, label: 'Taste Preferences' },
   { number: 4, label: 'Goals & Constraints' },
   { number: 5, label: 'Plan Setup' },
 ];
@@ -93,10 +93,10 @@ export default function CalibrationScreen() {
   const hasTriggeredGeneration = React.useRef(false);
 
   const loadingMessages = [
-    'Mapping your cuisine preferences...',
+    'Mapping your taste preferences...',
     'Matching flavours to your goals and budget...',
     'Optimising protein and variety...',
-    'Shaping your culinary week...',
+    'Shaping your routine-friendly week...',
     'Your first plan is ready',
   ];
   const isSetupComplete = loadingStage >= loadingMessages.length - 1 && (workspace.status === 'ready' || workspace.status === 'idle');
@@ -181,15 +181,15 @@ export default function CalibrationScreen() {
             Provision
           </Text>
           <Text className="text-[18px] md:text-[20px] font-medium text-textSec dark:text-darktextSec leading-snug max-w-[360px] text-center">
-            Modern culinary planning that fits your lifestyle.
+            Modern taste-led planning that fits your lifestyle.
           </Text>
         </View>
 
         <View className="flex-row flex-wrap justify-center gap-2 mb-10">
           {[
-            { icon: 'utensils', label: 'Cuisine-led' },
+            { icon: 'utensils', label: 'Taste-led' },
             { icon: 'dna', label: 'Diet-smart' },
-            { icon: 'bolt', label: 'Protein-first' },
+            { icon: 'calendar-check', label: 'Routine-friendly' },
           ].map(pill => (
             <View
               key={pill.label}
@@ -268,22 +268,21 @@ export default function CalibrationScreen() {
     return (
       <View className="flex-1 w-full flex-col justify-center py-2">
         <View className="w-full max-w-[980px] mx-auto">
-          {/* Header Section - Tightened */}
+          {/* Header Section - Refined heading / counter relationship */}
           <View className="mb-5 md:mb-6 items-center md:items-start px-2">
-            <Text className="text-[30px] md:text-[38px] tracking-tight font-bold text-textMain dark:text-darktextMain mb-1.5">
-              Explore your tastes
-            </Text>
-            <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
-              <Text className="text-[14px] md:text-[16px] font-medium text-textSec dark:text-darktextSec leading-relaxed">
-                Pick at least 1 cuisine you'd love to see this week.
+            <View className="flex-row items-end gap-x-3 mb-1.5">
+              <Text className="text-[30px] md:text-[38px] tracking-tight font-bold text-textMain dark:text-darktextMain">
+                Explore your tastes
               </Text>
-              <View className="flex-row items-center bg-black/[0.03] dark:bg-white/[0.03] rounded-full px-3 py-1 border border-black/[0.04] dark:border-white/5">
-                <View className={`w-2 h-2 rounded-full mr-2 ${cuisineCount >= 1 ? 'bg-primary' : 'bg-textSec/30'}`} />
-                <Text className="font-bold text-[12px] text-textMain dark:text-darktextMain">
-                  {cuisineCount} selected
+              <View className="mb-2 md:mb-3 flex-row items-center bg-primary/10 dark:bg-primary/20 rounded-full px-2.5 py-0.5 border border-primary/20">
+                <Text className="font-bold text-[11px] text-primary dark:text-[#85B674]">
+                  {cuisineCount} SELECTED
                 </Text>
               </View>
             </View>
+            <Text className="text-[14px] md:text-[16px] font-medium text-textSec dark:text-darktextSec leading-relaxed">
+              Pick at least 1 cuisine you'd love to see this week.
+            </Text>
           </View>
 
           {/* Grid Layout - Compact 3-Column */}
@@ -319,7 +318,7 @@ export default function CalibrationScreen() {
                       </Text>
                       <Text 
                         numberOfLines={2}
-                        className={`font-medium text-[12.5px] leading-snug ${isActive ? 'text-textMain/70 dark:text-darktextMain/70' : 'text-textSec dark:text-darktextSec'}`}
+                        className={`font-medium text-[12.5px] leading-snug ${isActive ? 'text-textMain/70 dark:text-darktextMain/70' : 'text-textMain dark:text-darktextMain'}`}
                       >
                         {cuisine.description}
                       </Text>
@@ -489,7 +488,7 @@ export default function CalibrationScreen() {
               </View>
               <View>
                 <Text className="text-[11px] font-bold text-textSec/60 dark:text-darktextSec/60 uppercase tracking-[0.15em] mb-0.5">Provision DNA</Text>
-                <Text className="text-textMain dark:text-darktextMain font-bold text-[18px] tracking-tight">Your Culinary Profile</Text>
+                <Text className="text-textMain dark:text-darktextMain font-bold text-[18px] tracking-tight">Your Taste Profile</Text>
               </View>
             </View>
 
@@ -513,7 +512,7 @@ export default function CalibrationScreen() {
     <View className="md:w-1/4 md:min-w-[260px] md:max-w-[300px] md:border-r md:border-softBorder dark:md:border-white/5 bg-surface dark:bg-darksurface pt-6 md:pt-12 pb-8 md:pb-12 px-6 md:px-8 flex-col justify-between z-10 shadow-sm md:shadow-none">
       <View>
         <Text className="text-textMain dark:text-darktextMain text-[24px] md:text-[28px] font-bold tracking-tight mb-0.5">Provision</Text>
-        <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-[0.15em]">Cuisine-Led Planning</Text>
+        <Text className="text-primary dark:text-[#85B674] text-[10px] font-bold uppercase tracking-[0.15em]">Taste-Led Planning</Text>
 
         <View className="hidden md:flex mt-12 pl-1 pr-4 relative">
           {STEP_LABELS.map((s, idx) => {
