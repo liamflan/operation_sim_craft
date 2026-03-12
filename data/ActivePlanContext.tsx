@@ -10,7 +10,7 @@ import { runActivePlan } from './planner/runActivePlan';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
 import { usePantry } from './PantryContext';
 import { NormalizedRecipe, SlotType, DietaryBaseline, OrchestratorOutput, PlannedMealAssignment, CuisineId } from './planner/plannerTypes';
-import { useDebug } from './DebugContext';
+import { useDebug, UnchangedReason } from './DebugContext';
 import { StorageService } from './storage';
 import { useRecipes } from './RecipeContext';
 
@@ -27,14 +27,39 @@ export interface ActiveWorkspace {
   error: string | null;
 }
 
+export type PlannerActionStatus = 
+  | 'success_changed' 
+  | 'success_unchanged' 
+  | 'failed_no_candidates' 
+  | 'failed_budget' 
+  | 'failed_constraints' 
+  | 'failed_locked_state' 
+  | 'failed_error' 
+  | 'action_ignored';
+
 export type PlannerActionResult = {
   ok: boolean;
   changed: boolean;
-  reason?: 'no_better_candidate' | 'budget_delta_exceeded' | 'pool_collapse' | 'same_best_result' | 'zero_target_day_candidates' | 'action_ignored' | 'error';
+  status: PlannerActionStatus;
+  reason?: UnchangedReason | 'error';
+  rawReason?: any;
   message?: string;
   runId?: string;
   targetDay?: number;
   targetSlot?: SlotType | null;
+  changedSlots?: number;
+};
+
+/**
+ * Maps technical/internal reasons to short friendly user-facing reasons.
+ */
+export const getFriendlyReason = (status: PlannerActionStatus, reason?: string) => {
+  if (status === 'failed_locked_state' || reason === 'all_meals_locked' || reason === 'no_eligible_slots') return 'all meals are locked';
+  if (status === 'failed_budget' || reason === 'budget_delta_exceeded') return 'budget is too tight';
+  if (status === 'failed_constraints') return 'current constraints are too strict';
+  if (status === 'failed_no_candidates' || reason === 'pool_collapse' || reason === 'no_better_candidate') return 'no suitable alternatives found';
+  if (status === 'success_unchanged') return 'no better option was available';
+  return 'no suitable alternatives found'; // Default fallback
 };
 
 interface ActivePlanContextType {
@@ -355,14 +380,52 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const replaceSlot = async (dayIndex: number, slotType: SlotType) => {
+  /**
+   * Helper to determine IF a planner run resulted in actual assignment changes.
+   * Compares per-slot: recipeId, skipped state, and manual state.
+   */
+  const diffAssignments = useCallback((prev: PlannedMealAssignment[], next: PlannedMealAssignment[]) => {
+    const prevMap = new Map(prev.map(a => [`${a.dayIndex}_${a.slotType}`, a]));
+    const nextMap = new Map(next.map(a => [`${a.dayIndex}_${a.slotType}`, a]));
+
+    const allKeys = Array.from(new Set([...prevMap.keys(), ...nextMap.keys()]));
+    let changedSlots = 0;
+    const details: any[] = [];
+
+    for (const key of allKeys) {
+      const p = prevMap.get(key);
+      const n = nextMap.get(key);
+
+      if (!p && !n) continue;
+
+      const isDifferent = 
+        (!p && n) || 
+        (p && !n) || 
+        (p?.recipeId !== n?.recipeId) ||
+        (p?.state !== n?.state);
+
+      if (isDifferent) {
+        changedSlots++;
+        details.push({
+          slot: key,
+          before: p?.recipeId || 'empty',
+          after: n?.recipeId || 'empty'
+        });
+      }
+    }
+
+    return { changed: changedSlots > 0, changedSlots, details };
+  }, []);
+
+  const replaceSlot = async (dayIndex: number, slotType: SlotType): Promise<PlannerActionResult> => {
     const slotKey = `${dayIndex}_${slotType}`;
     const runId = `swap_${slotKey}_${Date.now()}`;
 
-    if (slotLoading[slotKey]) return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
+    if (slotLoading[slotKey]) return { ok: true, changed: false, status: 'action_ignored', reason: 'action_ignored', runId };
 
     setSlotLoading(prev => ({ ...prev, [slotKey]: true }));
     const previousWorkspace = { ...workspaceRef.current };
+    const previousAssignments = previousWorkspace.output?.assignments || [];
 
     setWorkspace(prev => ({
       ...prev,
@@ -377,11 +440,10 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     try {
       const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
       const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_swap', routineValue, latestPayload);
-      const preservedAssignments = previousWorkspace.output?.assignments.filter(
+      const preservedAssignments = previousAssignments.filter(
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
-      ) || [];
+      );
 
-      // Integrate unified recipe pool
       const output = await runActivePlan(
         contracts, 
         preservedAssignments, 
@@ -391,12 +453,49 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         plannerEligibleRecipes
       );
 
-      const originalRecipeId = previousWorkspace.output?.assignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
-      const newRecipeId = output.assignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
-
-      if (originalRecipeId === newRecipeId) {
+      const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
+      
+      if (!changed) {
         setWorkspace(previousWorkspace);
-        return { ok: true, changed: false, reason: 'no_better_candidate' as const, runId };
+        
+        const slotDiag = output.diagnostics.find(d => d.slotId === slotKey);
+        let status: PlannerActionStatus = 'success_unchanged';
+        let reason: UnchangedReason = 'no_better_candidate';
+
+        if (slotDiag?.actionTaken === 'failed_completely') {
+          const topReasons = Object.keys(slotDiag.topFailureReasons || {});
+          if (topReasons.includes('budget_delta_exceeded')) {
+            status = 'failed_budget';
+          } else if (topReasons.some(r => ['dietary_mismatch', 'exclusion_ingredient_match'].includes(r))) {
+            status = 'failed_constraints';
+          } else {
+            status = 'failed_no_candidates';
+          }
+        }
+
+        const res: PlannerActionResult = { 
+          ok: status.startsWith('success_'), 
+          changed: false, 
+          status, 
+          reason, 
+          message: 'No better swap found',
+          runId 
+        };
+
+        updateDebugData({
+          lastActionIntent: 'swap_meal',
+          lastActionRunId: runId,
+          lastActionPhase: 'complete',
+          status,
+          changed: false,
+          changedSlots: 0,
+          unchangedReason: reason,
+          rawReason: slotDiag?.topFailureReasons,
+          lastSwapTargetDay: dayIndex,
+          lastSwapTargetSlot: slotType
+        });
+
+        return res;
       }
 
       setWorkspace(prev => ({
@@ -407,22 +506,35 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'swap_request'
       }));
 
-      return { ok: true, changed: true, runId } as PlannerActionResult;
+      updateDebugData({
+        lastActionIntent: 'swap_meal',
+        lastActionRunId: runId,
+        lastActionPhase: 'complete',
+        status: 'success_changed',
+        changed: true,
+        changedSlots,
+        lastSwapTargetDay: dayIndex,
+        lastSwapTargetSlot: slotType
+      });
+
+      return { ok: true, changed: true, status: 'success_changed', changedSlots, runId };
       
     } catch (err) {
       setWorkspace(previousWorkspace);
-      return { ok: false, changed: false, reason: 'error', runId } as PlannerActionResult;
+      updateDebugData({ lastActionPhase: 'error', lastActionRunId: runId });
+      return { ok: false, changed: false, status: 'failed_error', reason: 'error', runId };
     } finally {
       setSlotLoading(prev => { const next = { ...prev }; delete next[slotKey]; return next; });
     }
   };
 
-  const regenerateDay = async (dayIndex: number) => {
+  const regenerateDay = async (dayIndex: number): Promise<PlannerActionResult> => {
     const runId = `regen_day_${dayIndex}_${Date.now()}`;
-    if (dayLoading[dayIndex]) return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
+    if (dayLoading[dayIndex]) return { ok: true, changed: false, status: 'action_ignored', reason: 'action_ignored', runId };
 
     setDayLoading(prev => ({ ...prev, [dayIndex]: true }));
     const previousWorkspace = { ...workspaceRef.current };
+    const previousAssignments = previousWorkspace.output?.assignments || [];
 
     setWorkspace(prev => ({
       ...prev,
@@ -438,11 +550,27 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     try {
       const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
       const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_regen_day', routineValue, latestPayload);
-      const preservedAssignments = previousWorkspace.output?.assignments.filter(
-        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
-      ) || [];
+      
+      const targetSlotsToRegen = previousAssignments.filter(
+        (a: PlannedMealAssignment) => a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped' && a.state !== 'cooked'
+      );
 
-      // Integrate unified recipe pool
+      if (targetSlotsToRegen.length === 0) {
+        setWorkspace(previousWorkspace);
+        return { 
+          ok: false, 
+          changed: false, 
+          status: 'failed_locked_state', 
+          reason: 'all_meals_locked',
+          message: 'All meals are locked',
+          runId 
+        };
+      }
+
+      const preservedAssignments = previousAssignments.filter(
+        (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped' && a.state !== 'cooked')
+      );
+
       const output = await runActivePlan(
         contracts, 
         preservedAssignments, 
@@ -452,6 +580,52 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         plannerEligibleRecipes
       );
 
+      const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
+
+      if (!changed) {
+        setWorkspace(previousWorkspace);
+
+        const dayDiags = output.diagnostics.filter(d => d.slotId.startsWith(`${dayIndex}_`));
+        const failedSlot = dayDiags.find(d => d.actionTaken === 'failed_completely');
+        
+        let status: PlannerActionStatus = 'success_unchanged';
+        let reason: UnchangedReason = 'same_best_result';
+
+        if (failedSlot) {
+          const topReasons = Object.keys(failedSlot.topFailureReasons || {});
+          if (topReasons.includes('budget_delta_exceeded')) {
+            status = 'failed_budget';
+          } else if (topReasons.some(r => ['dietary_mismatch', 'exclusion_ingredient_match'].includes(r))) {
+            status = 'failed_constraints';
+          } else {
+            status = 'failed_no_candidates';
+          }
+        }
+
+        const res: PlannerActionResult = { 
+          ok: status.startsWith('success_'), 
+          changed: false, 
+          status, 
+          reason, 
+          message: 'Day plan unchanged',
+          runId 
+        };
+
+        updateDebugData({
+          lastActionIntent: 'regenerate_day',
+          lastActionRunId: runId,
+          lastActionPhase: 'complete',
+          status,
+          changed: false,
+          changedSlots: 0,
+          unchangedReason: reason,
+          rawReason: failedSlot?.topFailureReasons,
+          lastSwapTargetDay: dayIndex
+        });
+
+        return res;
+      }
+
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
@@ -460,21 +634,33 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'regenerate_day'
       }));
 
-      return { ok: true, changed: true, runId } as PlannerActionResult;
+      updateDebugData({
+        lastActionIntent: 'regenerate_day',
+        lastActionRunId: runId,
+        lastActionPhase: 'complete',
+        status: 'success_changed',
+        changed: true,
+        changedSlots,
+        lastSwapTargetDay: dayIndex
+      });
+
+      return { ok: true, changed: true, status: 'success_changed', changedSlots, runId };
     } catch (err) {
       setWorkspace(previousWorkspace);
-      return { ok: false, changed: false, reason: 'error', runId } as PlannerActionResult;
+      updateDebugData({ lastActionPhase: 'error', lastActionRunId: runId });
+      return { ok: false, changed: false, status: 'failed_error', reason: 'error', runId };
     } finally {
       setDayLoading(prev => { const next = { ...prev }; delete next[dayIndex]; return next; });
     }
   };
 
-  const regenerateWeek = async () => {
+  const regenerateWeek = async (): Promise<PlannerActionResult> => {
     const runId = `regen_week_${Date.now()}`;
-    if (weekLoading) return { ok: true, changed: false, reason: 'action_ignored', runId } as PlannerActionResult;
+    if (weekLoading) return { ok: true, changed: false, status: 'action_ignored', reason: 'action_ignored', runId };
 
     setWeekLoading(true);
     const previousWorkspace = { ...workspaceRef.current };
+    const previousAssignments = previousWorkspace.output?.assignments || [];
 
     setWorkspace(prev => ({
       ...prev,
@@ -490,11 +676,27 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     try {
       const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
       const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_regen_week', routineValue, latestPayload);
-      const preservedAssignments = previousWorkspace.output?.assignments.filter(
-        (a: PlannedMealAssignment) => (a.state === 'locked' || a.state === 'skipped' || a.state === 'cooked')
-      ) || [];
+      
+      const targetSlotsToRegen = previousAssignments.filter(
+        (a: PlannedMealAssignment) => (a.state !== 'locked' && a.state !== 'skipped' && a.state !== 'cooked')
+      );
 
-      // Integrate unified recipe pool
+      if (targetSlotsToRegen.length === 0) {
+        setWorkspace(previousWorkspace);
+        return { 
+          ok: false, 
+          changed: false, 
+          status: 'failed_locked_state', 
+          reason: 'all_meals_locked',
+          message: 'All meals are locked',
+          runId 
+        };
+      }
+
+      const preservedAssignments = previousAssignments.filter(
+        (a: PlannedMealAssignment) => (a.state === 'locked' || a.state === 'skipped' || a.state === 'cooked')
+      );
+
       const output = await runActivePlan(
         contracts, 
         preservedAssignments, 
@@ -504,6 +706,49 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         plannerEligibleRecipes
       );
 
+      const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
+
+      if (!changed) {
+        setWorkspace(previousWorkspace);
+
+        const failedSlot = output.diagnostics.find(d => d.actionTaken === 'failed_completely');
+        let status: PlannerActionStatus = 'success_unchanged';
+        let reason: UnchangedReason = 'same_best_result';
+
+        if (failedSlot) {
+          const topReasons = Object.keys(failedSlot.topFailureReasons || {});
+          if (topReasons.includes('budget_delta_exceeded')) {
+            status = 'failed_budget';
+          } else if (topReasons.some(r => ['dietary_mismatch', 'exclusion_ingredient_match'].includes(r))) {
+            status = 'failed_constraints';
+          } else {
+            status = 'failed_no_candidates';
+          }
+        }
+
+        const res: PlannerActionResult = { 
+          ok: status.startsWith('success_'), 
+          changed: false, 
+          status, 
+          reason, 
+          message: 'Week plan unchanged',
+          runId 
+        };
+
+        updateDebugData({
+          lastActionIntent: 'regenerate_week',
+          lastActionRunId: runId,
+          lastActionPhase: 'complete',
+          status,
+          changed: false,
+          changedSlots: 0,
+          unchangedReason: reason,
+          rawReason: failedSlot?.topFailureReasons
+        });
+
+        return res;
+      }
+
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
@@ -512,10 +757,20 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         actionSource: 'regenerate_week'
       }));
 
-      return { ok: true, changed: true, runId } as PlannerActionResult;
+      updateDebugData({
+        lastActionIntent: 'regenerate_week',
+        lastActionRunId: runId,
+        lastActionPhase: 'complete',
+        status: 'success_changed',
+        changed: true,
+        changedSlots
+      });
+
+      return { ok: true, changed: true, status: 'success_changed', changedSlots, runId };
     } catch (err) {
       setWorkspace(previousWorkspace);
-      return { ok: false, changed: false, reason: 'error', runId } as PlannerActionResult;
+      updateDebugData({ lastActionPhase: 'error', lastActionRunId: runId });
+      return { ok: false, changed: false, status: 'failed_error', reason: 'error', runId };
     } finally {
       setWeekLoading(false);
     }

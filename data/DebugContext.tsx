@@ -7,7 +7,9 @@ export type UnchangedReason =
   | 'action_ignored'
   | 'same_best_result'
   | 'budget_delta_exceeded'
-  | 'zero_target_day_candidates';
+  | 'zero_target_day_candidates'
+  | 'all_meals_locked'
+  | 'no_eligible_slots';
 
 export type ActionPhase =
   | 'click_received'
@@ -63,8 +65,11 @@ export interface DebugMetadata {
   lastSwapCurrentRecipeId: string | null;
   cardStateBefore: string | null;
   cardStateAfter: string | null;
-  resultChanged: boolean | null;
+  status: string | null;
+  changed: boolean | null;
+  changedSlots: number | null;
   unchangedReason: UnchangedReason | null;
+  rawReason: any | null;
 
   // ─── Collapse context ────────────────────────────────────────────────────────
   collapseContext: SwapCollapseContext | null;
@@ -143,8 +148,11 @@ const INITIAL_DEBUG_DATA: DebugMetadata = {
   lastSwapCurrentRecipeId: null,
   cardStateBefore: null,
   cardStateAfter: null,
-  resultChanged: null,
+  status: null,
+  changed: null,
+  changedSlots: null,
   unchangedReason: null,
+  rawReason: null,
 
   collapseContext: null,
 

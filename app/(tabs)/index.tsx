@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
 import { slotLabel, isPlanned, DAYS } from '../../data/weeklyRoutine';
-import { useActivePlan } from '../../data/ActivePlanContext';
+import { useActivePlan, PlannerActionStatus, getFriendlyReason } from '../../data/ActivePlanContext';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
 import { useDebug } from '../../data/DebugContext';
 import { getMealCardViewModel, getAssignmentsForDay, getWeeklyMetrics } from '../../data/planner/selectors';
@@ -98,11 +98,15 @@ export default function DashboardScreen() {
 
   const handleSwap = async (type: string) => {
     const result = await replaceSlot(displayedDayIndex, type as any);
-    if (result && result.changed) {
-      const label = type.charAt(0).toUpperCase() + type.slice(1);
-      showToast(`${label} swapped`, 'success');
-    } else if (result && !result.changed && result.message) {
-      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    const label = type.charAt(0).toUpperCase() + type.slice(1);
+
+    if (result.status === 'success_changed') {
+      showToast(`${label} swapped`, 'success', { category: 'planner' });
+    } else if (result.status === 'success_unchanged') {
+      showToast(`No better ${type} option found`, 'info', { category: 'planner' });
+    } else if (result.status.startsWith('failed_')) {
+      const friendly = getFriendlyReason(result.status, result.reason);
+      showToast(`Couldn’t swap ${type} - ${friendly}`, 'error', { category: 'planner' });
     }
   };
 
@@ -115,31 +119,33 @@ export default function DashboardScreen() {
   };
 
   const handleReplace = async (type: string) => {
-    const result = await replaceSlot(displayedDayIndex, type as any);
-    if (result && result.changed) {
-      const label = type.charAt(0).toUpperCase() + type.slice(1);
-      showToast(`${label} swapped`, 'success');
-    } else if (result && !result.changed && result.message) {
-      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
-    }
+    await handleSwap(type);
   };
 
   const handleRegenDay = async (dayIndex: number) => {
     const result = await regenerateDay(dayIndex);
-    if (result && result.changed) {
-      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
-      showToast(`${dayName} regenerated`, 'success');
-    } else if (result && !result.changed && result.message) {
-      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
+    
+    if (result.status === 'success_changed') {
+      showToast(`${dayName} updated`, 'success', { category: 'planner' });
+    } else if (result.status === 'success_unchanged') {
+      showToast(`No better plan found for ${dayName}`, 'info', { category: 'planner' });
+    } else if (result.status.startsWith('failed_')) {
+      const friendly = getFriendlyReason(result.status, result.reason);
+      showToast(`Couldn’t regenerate ${dayName} - ${friendly}`, 'error', { category: 'planner' });
     }
   };
 
   const handleRegenWeek = async () => {
     const result = await regenerateWeek();
-    if (result && result.changed) {
-      showToast(`Week regenerated`, 'success');
-    } else if (result && !result.changed && result.message) {
-      showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
+    
+    if (result.status === 'success_changed') {
+      showToast(`Week updated`, 'success', { category: 'planner' });
+    } else if (result.status === 'success_unchanged') {
+      showToast(`No better week plan found`, 'info', { category: 'planner' });
+    } else if (result.status.startsWith('failed_')) {
+      const friendly = getFriendlyReason(result.status, result.reason);
+      showToast(`Couldn’t regenerate week - ${friendly}`, 'error', { category: 'planner' });
     }
   };
 
@@ -156,7 +162,7 @@ export default function DashboardScreen() {
   // Open the Import Recipe modal
   const handleAddRecipeClick = () => setImportModalVisible(true);
   const handleImportSave = (data: any) => {
-    // In production: persist to taste profile / trigger planner refresh
+    // In production: persist to taste profile / trigger planner regeneration
     console.log('Recipe imported:', data);
     
     // Mock UI feedback: add a new tag if it's a "Learning" save

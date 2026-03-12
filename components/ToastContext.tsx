@@ -9,10 +9,11 @@ interface ToastProps {
   id: string;
   message: string;
   type: ToastType;
+  category?: string;
 }
 
 interface ToastContextType {
-  showToast: (message: string, type?: ToastType, duration?: number) => void;
+  showToast: (message: string, type?: ToastType, options?: { duration?: number; category?: string }) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -21,9 +22,19 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<ToastProps[]>([]);
   const insets = useSafeAreaInsets();
 
-  const showToast = (message: string, type: ToastType = 'info', duration: number = 3000) => {
+  const showToast = (message: string, type: ToastType = 'info', options?: { duration?: number; category?: string }) => {
+    const duration = options?.duration ?? 3000;
+    const category = options?.category;
     const id = Date.now().toString();
-    setToasts(prev => [...prev, { id, message, type }]);
+
+    setToasts(prev => {
+      // If it's a planner toast, we only want one visible at a time
+      let filtered = prev;
+      if (category === 'planner') {
+        filtered = prev.filter(t => t.category !== 'planner');
+      }
+      return [...filtered, { id, message, type, category }];
+    });
 
     setTimeout(() => {
       removeToast(id);
@@ -90,29 +101,36 @@ const ToastItem: React.FC<{ toast: ToastProps; onDismiss: () => void }> = ({ toa
   };
 
   let iconName = 'info-circle';
-  let bgColor = '#374151'; // gray-700
-  let iconColor = '#9ca3af';
+  let bgColor = '#f8f9fa'; // mist/ivory
+  let iconColor = '#64748b'; // muted slate
+  let borderColor = '#e2e8f0'; // neutral border
 
   if (toast.type === 'error') {
     iconName = 'exclamation-circle';
-    bgColor = '#991b1b'; // red-800
-    iconColor = '#fca5a5';
+    bgColor = '#fef2f2'; // pale blush
+    iconColor = '#991b1b'; // muted terracotta
+    borderColor = '#fee2e2';
   } else if (toast.type === 'warning') {
     iconName = 'exclamation-triangle';
-    bgColor = '#854d0e'; // yellow-800
-    iconColor = '#fde047';
+    bgColor = '#fffbeb';
+    iconColor = '#92400e';
+    borderColor = '#fef3c7';
   } else if (toast.type === 'success') {
     iconName = 'check-circle';
-    bgColor = '#166534'; // green-800
-    iconColor = '#86efac';
+    bgColor = '#f1f5f1'; // pale sage
+    iconColor = '#166534'; // green
+    borderColor = '#dcfce7'; // green-tinted
   }
 
   return (
-    <Animated.View style={[styles.toast, { backgroundColor: bgColor, opacity, transform: [{ translateY }] }]}>
-      <FontAwesome5 name={iconName} size={14} color={iconColor} style={styles.icon} />
+    <Animated.View style={[
+      styles.toast, 
+      { backgroundColor: bgColor, borderColor, opacity, transform: [{ translateY }] }
+    ]}>
+      <FontAwesome5 name={iconName} size={15} color={iconColor} style={styles.icon} />
       <Text style={styles.text}>{toast.message}</Text>
       <TouchableOpacity onPress={slideOutAndDismiss} style={styles.closeBtn}>
-        <FontAwesome5 name="times" size={12} color="#9ca3af" />
+        <FontAwesome5 name="times" size={11} color="#374151" style={{ opacity: 0.4 }} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -130,28 +148,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    maxWidth: '90%',
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 10,
+    maxWidth: Platform.OS === 'web' ? 380 : '90%',
+    minWidth: Platform.OS === 'web' ? 280 : 260,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
   },
   icon: {
-    marginRight: 10,
+    marginRight: 14,
   },
   text: {
-    color: '#fff',
+    color: '#374151',
     fontSize: 14,
     fontWeight: '500',
     flexShrink: 1,
+    lineHeight: 18,
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   closeBtn: {
-    marginLeft: 12,
+    marginLeft: 14,
     padding: 4,
   }
 });
