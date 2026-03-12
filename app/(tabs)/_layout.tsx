@@ -123,6 +123,12 @@ export default function TabLayout() {
                 isActive={pathname === '/pantry' || pathname === '/(tabs)/pantry'} 
                 onPress={() => router.push('/(tabs)/pantry')} 
               />
+              <NavItem 
+                icon="book-open" 
+                label="Library" 
+                isActive={pathname === '/library' || pathname === '/(tabs)/library'} 
+                onPress={() => router.push('/(tabs)/library')} 
+              />
             </View>
 
             <View className="mt-8 pt-6 border-t border-black/[0.03] dark:border-white/[0.03]">

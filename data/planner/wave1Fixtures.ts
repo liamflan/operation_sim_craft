@@ -22,7 +22,7 @@ const rawWave1Seed: RawRecipeInput = {
 export const greekYogurtBerryBowl: NormalizedRecipe = {
   id: "rec_wave1_yogurt_bowl_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -59,7 +59,7 @@ export const greekYogurtBerryBowl: NormalizedRecipe = {
 export const cottageCheeseSourdough: NormalizedRecipe = {
   id: "rec_wave1_cottage_toast_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -97,7 +97,7 @@ export const cottageCheeseSourdough: NormalizedRecipe = {
 export const tunaCannelliniSalad: NormalizedRecipe = {
   id: "rec_wave1_tuna_bean_salad_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -133,7 +133,7 @@ export const tunaCannelliniSalad: NormalizedRecipe = {
 export const smokedTofuWrap: NormalizedRecipe = {
   id: "rec_wave1_tofu_wrap_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -171,7 +171,7 @@ export const smokedTofuWrap: NormalizedRecipe = {
 export const lemonHerbChickenBowl: NormalizedRecipe = {
   id: "rec_wave1_chicken_bowl_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -207,7 +207,7 @@ export const lemonHerbChickenBowl: NormalizedRecipe = {
 export const simpleChickpeaCurry: NormalizedRecipe = {
   id: "rec_wave1_chickpea_curry_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -245,7 +245,7 @@ export const simpleChickpeaCurry: NormalizedRecipe = {
 export const bakedCodMedVeg: NormalizedRecipe = {
   id: "rec_wave1_cod_veg_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -281,7 +281,7 @@ export const bakedCodMedVeg: NormalizedRecipe = {
 export const garlicButterPrawns: NormalizedRecipe = {
   id: "rec_wave1_garlic_prawns_01",
   sourceId: rawWave1Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   

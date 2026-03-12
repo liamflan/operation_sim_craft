@@ -44,6 +44,8 @@ function RootApp() {
   );
 }
 
+import { RecipeProvider } from '../data/RecipeContext';
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     GoogleSansFlex: require('../assets/fonts/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf'),
@@ -91,13 +93,15 @@ export default function RootLayout() {
     <ThemeProvider>
       <WeeklyRoutineProvider>
         <PantryProvider>
-          <DebugProvider>
-            <ToastProvider>
-              <ActivePlanProvider>
-                <RootApp />
-              </ActivePlanProvider>
-            </ToastProvider>
-          </DebugProvider>
+          <RecipeProvider>
+            <DebugProvider>
+              <ToastProvider>
+                <ActivePlanProvider>
+                  <RootApp />
+                </ActivePlanProvider>
+              </ToastProvider>
+            </DebugProvider>
+          </RecipeProvider>
         </PantryProvider>
       </WeeklyRoutineProvider>
     </ThemeProvider>

@@ -4,7 +4,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_smoothie_01',
     sourceId: 'wave3_seed_01',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -16,7 +16,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Peanut Butter Maca Smoothie',
     description: 'A creamy, nutrient-dense breakfast smoothie with a nutty caramel flavor.',
-    imageUrl: '', // Policy: Use placeholder
+    imageUrl: 'https://images.unsplash.com/photo-1556767576-5ec41e3239ea?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 5,
     totalMinutes: 5,
@@ -46,7 +46,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_crispbread_01',
     sourceId: 'wave3_seed_02',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -58,7 +58,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Smoked Salmon & Cream Cheese Crispbreads',
     description: 'Crispy rye breads topped with smooth cream cheese, smoked salmon, and fresh dill.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 5,
     totalMinutes: 5,
@@ -88,7 +88,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_seabass_01',
     sourceId: 'wave3_seed_03',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -100,7 +100,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Pan-Seared Sea Bass with Asparagus',
     description: 'Elegant and light dinner featuring crispy-skinned sea bass and tender asparagus.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 15,
     totalMinutes: 25,
@@ -130,7 +130,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_tuna_pasta_01',
     sourceId: 'wave3_seed_04',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -142,7 +142,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Spicy Tuna & Cherry Tomato Linguine',
     description: 'A pantry-hero pasta dish with a kick of chili and sun-ripened tomatoes.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1473093226795-af9932fe5856?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 10,
     totalMinutes: 20,
@@ -172,7 +172,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_halloumi_pan_01',
     sourceId: 'wave3_seed_05',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -184,7 +184,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: '15-Min Halloumi & Mediterranean Veg Pan',
     description: 'Golden halloumi cubes tossed with peppers, zucchini, and basil.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 10,
     totalMinutes: 15,
@@ -214,7 +214,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_chicken_soup_01',
     sourceId: 'wave3_seed_06',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -226,7 +226,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Quick Chicken & Sweetcorn Noodle Soup',
     description: 'Comforting, light soup that comes together in minutes using leftover or rotisserie chicken.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 10,
     totalMinutes: 20,
@@ -256,7 +256,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_beef_ragu_01',
     sourceId: 'wave3_seed_07',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -268,7 +268,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Slow-Cooked Beef Ragu with Pappardelle',
     description: 'A deep, rich sauce of tender beef shin served over thick ribbons of pasta.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1546272989-40c929af9c66?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 30,
     totalMinutes: 150,
@@ -298,7 +298,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
   {
     id: 'w3_miso_aubergine_01',
     sourceId: 'wave3_seed_08',
-    status: 'approved',
+    status: 'ready',
     plannerUsable: true,
     libraryVisible: true,
     
@@ -310,7 +310,7 @@ export const WAVE3_FIXTURES: NormalizedRecipe[] = [
     
     title: 'Roasted Aubergine & Miso Traybake',
     description: 'Umami-rich traybake with cauliflower, chickpeas, and a savory miso glaze.',
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1545093149-618ce3bcf49d?q=80&w=800&auto=format&fit=crop',
     
     activePrepMinutes: 15,
     totalMinutes: 45,

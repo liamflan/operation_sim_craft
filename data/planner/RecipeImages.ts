@@ -5,8 +5,7 @@
  */
 
 export const UNIQUE_RECIPE_IMAGES: Record<string, any> = {
-  'r6': '',
-  'r51': '',
+  // Strategic overrides for curated identity logic
 };
 
 /**

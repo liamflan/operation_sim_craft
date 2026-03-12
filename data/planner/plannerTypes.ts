@@ -38,7 +38,7 @@ export interface RawRecipeInput {
   status: 'pending_normalization' | 'failed_extraction';
 }
 
-export type RecipeValidationStatus = 'draft' | 'needs_human_review' | 'approved' | 'rejected';
+export type RecipeValidationStatus = 'draft' | 'needs_review' | 'ready';
 
 export interface NormalizationWarning {
   code: 'MISSING_MACROS' | 'UNUSUAL_COST_VARIANCE' | 'CANNOT_MAP_INGREDIENT';
@@ -174,6 +174,12 @@ export const CUISINE_PROFILES: Record<CuisineId, CuisineProfile> = {
   }
 };
 
+export interface Substitution {
+  original: string;
+  swap: string;
+  reason: string; 
+}
+
 export interface NormalizedRecipe {
   id: string;
   sourceId: string;
@@ -215,6 +221,9 @@ export interface NormalizedRecipe {
   prepTimeMinutes?: number;
   cookTimeMinutes?: number;
   difficulty?: 'Easy' | 'Medium' | 'Hard';
+  notes?: string;
+  substitutions?: Substitution[];
+  relatedRecipeIds?: string[];
   servings: number;
   estimatedCostTotalGBP: number;
   estimatedCostPerServingGBP: number;

@@ -700,19 +700,6 @@ export default function TasteProfileScreen() {
       <ImportRecipeModal 
         visible={isImportOpen} 
         onClose={() => setIsImportOpen(false)} 
-        onSave={(payload) => {
-          const newRecipe = {
-            id: Date.now().toString(),
-            title: payload.recipe.title,
-            domain: payload.recipe.domain,
-            macros: payload.recipe.macros,
-            date: 'Just now',
-            tags: payload.recipe.tags.slice(0, 2)
-          };
-          
-          setScrapedRecipes(prev => [newRecipe, ...prev]);
-          setIsImportOpen(false);
-        }} 
       />
 
       {editingRule && (

@@ -43,7 +43,7 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
   return {
     id: recipe.id,
     sourceId: `legacy_${recipe.id}`,
-    status: 'approved' as RecipeValidationStatus,
+    status: 'ready' as RecipeValidationStatus,
     
     macroConfidence: 0.8, // Legacy data is estimated
     costConfidence: 0.7,
@@ -98,6 +98,9 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     notes: recipe.notes,
     substitutions: recipe.substitutions,
     relatedRecipeIds: recipe.relatedRecipeIds,
+    ingredientTags: [],
+    flavourIds: [],
+    styleIds: [],
     
     plannerUsable: true,
     libraryVisible: true

@@ -22,7 +22,7 @@ const rawWave2Seed: RawRecipeInput = {
 const w2r1: NormalizedRecipe = {
   id: 'w2_r1_lamb',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -61,7 +61,7 @@ const w2r1: NormalizedRecipe = {
 const w2r2: NormalizedRecipe = {
   id: 'w2_r2_risotto',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -103,7 +103,7 @@ const w2r2: NormalizedRecipe = {
 const w2r3: NormalizedRecipe = {
   id: 'w2_r3_sausage_tray',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -142,7 +142,7 @@ const w2r3: NormalizedRecipe = {
 const w2r4: NormalizedRecipe = {
   id: 'w2_r4_caprese_chicken',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -185,7 +185,7 @@ const w2r4: NormalizedRecipe = {
 const w2r5: NormalizedRecipe = {
   id: 'w2_r5_lentil_stew',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -225,7 +225,7 @@ const w2r5: NormalizedRecipe = {
 const w2r6: NormalizedRecipe = {
   id: 'w2_r6_black_bean_quinoa',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -268,7 +268,7 @@ const w2r6: NormalizedRecipe = {
 const w2r7: NormalizedRecipe = {
   id: 'w2_r7_chickpea_sandwich',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -307,7 +307,7 @@ const w2r7: NormalizedRecipe = {
 const w2r8: NormalizedRecipe = {
   id: 'w2_r8_egg_salad_wrap',
   sourceId: rawWave2Seed.id,
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   

@@ -11,9 +11,13 @@ import { PantryItem } from '../PantryContext';
 
 /**
  * Returns the current pool of "Planner-Approved" recipes.
+ * Now supports injecting a dynamic pool (e.g. from RecipeContext including imports).
  */
-function getApprovedRecipes(): NormalizedRecipe[] {
-  return FULL_RECIPE_LIST;
+function getApprovedRecipes(injectedPool?: NormalizedRecipe[]): NormalizedRecipe[] {
+  const pool = injectedPool || FULL_RECIPE_LIST;
+  
+  // Final Trust-Model Safety: Ensure only 'ready' recipes ever enter the planner
+  return pool.filter(r => r.status === 'ready');
 }
 
 /**
@@ -24,10 +28,11 @@ export async function runActivePlan(
   preservedAssignments: PlannedMealAssignment[] = [],
   actor: ActorType = 'planner_autofill',
   globalBudget: number = 50.00,
-  pantryItems: PantryItem[] = []
+  pantryItems: PantryItem[] = [],
+  recipePool?: NormalizedRecipe[]
 ): Promise<OrchestratorOutput> {
   
-  const recipes = getApprovedRecipes();
+  const recipes = getApprovedRecipes(recipePool);
   
   // Log exclusions reaching the planner — diagnostic proof they are wired end-to-end
   const exclusionsInContracts = contracts[0]?.hardExclusions ?? [];
@@ -39,6 +44,7 @@ export async function runActivePlan(
 
   console.log('[runActivePlan] Input contracts:', contracts.length);
   console.log('[runActivePlan] Preserved assignments:', preservedAssignments.length);
+  console.log('[runActivePlan] Eligible recipe pool size:', recipes.length);
 
   // Trigger the orchestrator
   const result = await generatePlan(contracts, recipes, actor, preservedAssignments, globalBudget, pantryItems);

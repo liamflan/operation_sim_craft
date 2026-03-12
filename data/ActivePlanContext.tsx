@@ -12,6 +12,7 @@ import { usePantry } from './PantryContext';
 import { NormalizedRecipe, SlotType, DietaryBaseline, OrchestratorOutput, PlannedMealAssignment, CuisineId } from './planner/plannerTypes';
 import { useDebug } from './DebugContext';
 import { StorageService } from './storage';
+import { useRecipes } from './RecipeContext';
 
 export interface ActiveWorkspace {
   id: string | null;
@@ -84,6 +85,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
   const { routine } = useWeeklyRoutine();
   const { pantryItems, addSkippedIngredients } = usePantry();
   const { updateDebugData } = useDebug();
+  const { plannerEligibleRecipes } = useRecipes();
 
   const workspaceRef = useRef(workspace);
   useEffect(() => { workspaceRef.current = workspace; }, [workspace]);
@@ -173,7 +175,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         diet: finalDiet
       });
 
-      const output = await runActivePlan(contracts, preSelectedAssignments, 'planner_autofill', finalBudget);
+      // Integrate unified recipe pool
+      const output = await runActivePlan(
+        contracts, 
+        preSelectedAssignments, 
+        'planner_autofill', 
+        finalBudget, 
+        pantryItems,
+        plannerEligibleRecipes
+      );
 
       setWorkspace(prev => ({
         ...prev,
@@ -371,7 +381,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
       ) || [];
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'swap_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
+      // Integrate unified recipe pool
+      const output = await runActivePlan(
+        contracts, 
+        preservedAssignments, 
+        'swap_request', 
+        latestPayload.budgetWeekly ?? 50.00, 
+        pantryItems,
+        plannerEligibleRecipes
+      );
 
       const originalRecipeId = previousWorkspace.output?.assignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
       const newRecipeId = output.assignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
@@ -424,7 +442,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.state !== 'locked' && a.state !== 'skipped')
       ) || [];
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
+      // Integrate unified recipe pool
+      const output = await runActivePlan(
+        contracts, 
+        preservedAssignments, 
+        'regenerate_request', 
+        latestPayload.budgetWeekly ?? 50.00, 
+        pantryItems,
+        plannerEligibleRecipes
+      );
 
       setWorkspace(prev => ({
         ...prev,
@@ -468,7 +494,15 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         (a: PlannedMealAssignment) => (a.state === 'locked' || a.state === 'skipped' || a.state === 'cooked')
       ) || [];
 
-      const output = await runActivePlan(contracts, preservedAssignments, 'regenerate_week_request', latestPayload.budgetWeekly ?? 50.00, pantryItems);
+      // Integrate unified recipe pool
+      const output = await runActivePlan(
+        contracts, 
+        preservedAssignments, 
+        'regenerate_week_request', 
+        latestPayload.budgetWeekly ?? 50.00, 
+        pantryItems,
+        plannerEligibleRecipes
+      );
 
       setWorkspace(prev => ({
         ...prev,

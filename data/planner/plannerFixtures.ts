@@ -20,7 +20,7 @@ export const rawUserImport: RawRecipeInput = {
   sourceMethod: 'url',
   requestedByActorType: 'user_manual',
   requestedByActorId: 'user_abc',
-  rawPayload: { type: 'url', url: 'https://example.com/spaghetti' },
+  rawPayload: { type: 'url', url: 'https://provision.app/import/spaghetti' },
   createdAt: new Date('2026-03-01T10:00:00Z'),
   status: 'pending_normalization'
 };
@@ -47,7 +47,7 @@ export const rawRescueGeneration: RawRecipeInput = {
 export const curatedRoast: NormalizedRecipe = {
   id: "rec_roast_01",
   sourceId: 'src_sys_01',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -76,7 +76,7 @@ export const curatedRoast: NormalizedRecipe = {
 export const curatedPasta: NormalizedRecipe = {
   id: "rec_pasta_01",
   sourceId: 'src_sys_02',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   
@@ -105,7 +105,7 @@ export const curatedPasta: NormalizedRecipe = {
 export const generatedLentilStew: NormalizedRecipe = {
   id: "rec_lentil_01",
   sourceId: rawRescueGeneration.id,
-  status: 'needs_human_review', // Generated recipes always start here
+  status: 'needs_review', // Generated recipes always start here
   plannerUsable: true, // But we can still allow the engine to use it if desperate
   libraryVisible: false, // Don't show in the vault until user approves it
   
@@ -134,7 +134,7 @@ export const generatedLentilStew: NormalizedRecipe = {
 export const highProteinSeitan: NormalizedRecipe = {
   id: "rec_vegan_steak_01",
   sourceId: 'src_sys_03',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 0.90, costConfidence: 0.80, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -159,7 +159,7 @@ export const highProteinSeitan: NormalizedRecipe = {
 export const highProteinTempeh: NormalizedRecipe = {
   id: "rec_vegan_tempeh_01",
   sourceId: 'src_sys_hp_02',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -184,7 +184,7 @@ export const highProteinTempeh: NormalizedRecipe = {
 export const highProteinHalloumi: NormalizedRecipe = {
   id: "rec_veggie_halloumi_01",
   sourceId: 'src_sys_hp_03',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -209,7 +209,7 @@ export const highProteinHalloumi: NormalizedRecipe = {
 export const highProteinTofuScramble: NormalizedRecipe = {
   id: "rec_vegan_scramble_01",
   sourceId: 'src_sys_hp_04',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -236,7 +236,7 @@ export const highProteinTofuScramble: NormalizedRecipe = {
 export const veganTikkaMasala: NormalizedRecipe = {
   id: "rec_vegan_tikka_01",
   sourceId: 'src_batch1_01',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -261,7 +261,7 @@ export const veganTikkaMasala: NormalizedRecipe = {
 export const veganMeatloaf: NormalizedRecipe = {
   id: "rec_vegan_meatloaf_01",
   sourceId: 'src_batch1_02',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 0.9, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -286,7 +286,7 @@ export const veganMeatloaf: NormalizedRecipe = {
 export const veganOvernightOats: NormalizedRecipe = {
   id: "rec_vegan_oats_01",
   sourceId: 'src_batch1_03',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -311,7 +311,7 @@ export const veganOvernightOats: NormalizedRecipe = {
 export const veganTempehBowl: NormalizedRecipe = {
   id: "rec_vegan_tempeh_bowl_01",
   sourceId: 'src_batch1_04',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -336,7 +336,7 @@ export const veganTempehBowl: NormalizedRecipe = {
 export const veganOmlette: NormalizedRecipe = {
   id: "rec_vegan_omelette_01",
   sourceId: 'src_batch1_05',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -361,7 +361,7 @@ export const veganOmlette: NormalizedRecipe = {
 export const veggieShells: NormalizedRecipe = {
   id: "rec_veggie_shells_01",
   sourceId: 'src_batch1_06',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -386,7 +386,7 @@ export const veggieShells: NormalizedRecipe = {
 export const veggieMutterPaneer: NormalizedRecipe = {
   id: "rec_veggie_mutter_paneer_01",
   sourceId: 'src_batch1_07',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -411,7 +411,7 @@ export const veggieMutterPaneer: NormalizedRecipe = {
 export const veggieFetaWrap: NormalizedRecipe = {
   id: "rec_veggie_feta_wrap_01",
   sourceId: 'src_batch1_08',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 1.0, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -436,7 +436,7 @@ export const veggieFetaWrap: NormalizedRecipe = {
 export const pesciSeabass: NormalizedRecipe = {
   id: "rec_pesci_seabass_01",
   sourceId: 'src_batch1_09',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 0.9, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
@@ -461,14 +461,14 @@ export const pesciSeabass: NormalizedRecipe = {
 export const pesciSalmonBagel: NormalizedRecipe = {
   id: "rec_pesci_salmon_bagel_01",
   sourceId: 'src_batch1_10',
-  status: 'approved',
+  status: 'ready',
   plannerUsable: true,
   libraryVisible: true,
   macroConfidence: 1.0, costConfidence: 0.9, ingredientMappingConfidence: 1.0, servingConfidence: 1.0,
   normalizationWarnings: [],
   title: 'Smoked Salmon & Cream Cheese Protein Bagel',
   description: 'Classic bagel upgraded with extra protein and healthy fats.',
-  imageUrl: "https://images.unsplash.com/photo-8LxEnrfgjgg?q=80&w=800&auto=format&fit=crop&uid=ox1xdk",
+  imageUrl: "https://images.unsplash.com/photo-1509339020286-1e6ac2bb1b61?q=80&w=800&auto=format&fit=crop&uid=ox1xdk",
   activePrepMinutes: 5, totalMinutes: 5, complexityScore: 2, cleanupBurden: 'Medium',
   totalTimeMinutes: 5, prepTimeMinutes: 5, difficulty: 'Easy', servings: 1,
   estimatedCostTotalGBP: 4.50,

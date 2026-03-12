@@ -99,7 +99,7 @@ export default function DashboardScreen() {
   const handleSwap = async (type: string) => {
     const result = await replaceSlot(displayedDayIndex, type as any);
     if (result && result.changed) {
-      const label = slotLabel(type as any);
+      const label = type.charAt(0).toUpperCase() + type.slice(1);
       showToast(`${label} swapped`, 'success');
     } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
@@ -117,7 +117,7 @@ export default function DashboardScreen() {
   const handleReplace = async (type: string) => {
     const result = await replaceSlot(displayedDayIndex, type as any);
     if (result && result.changed) {
-      const label = slotLabel(type as any);
+      const label = type.charAt(0).toUpperCase() + type.slice(1);
       showToast(`${label} swapped`, 'success');
     } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
@@ -126,9 +126,9 @@ export default function DashboardScreen() {
 
   const handleRegenDay = async (dayIndex: number) => {
     const result = await regenerateDay(dayIndex);
-    if (result && result.changed && result.changeSummary) {
+    if (result && result.changed) {
       const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex];
-      showToast(`${dayName} regenerated - ${result.changeSummary.changedSlotCount} meals updated`, 'success');
+      showToast(`${dayName} regenerated`, 'success');
     } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
@@ -136,14 +136,8 @@ export default function DashboardScreen() {
 
   const handleRegenWeek = async () => {
     const result = await regenerateWeek();
-    if (result && result.changed && result.changeSummary) {
-      const count = result.changeSummary.changedSlotCount;
-      const dayNames = result.changeSummary.changedDayIndexes.map(i => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i]);
-      let daysList = dayNames.join(', ');
-      if (dayNames.length > 2) {
-        daysList = `${dayNames.slice(0, -1).join(', ')} and ${dayNames[dayNames.length - 1]}`;
-      }
-      showToast(`Week regenerated - ${count} meals updated across ${daysList}`, 'success');
+    if (result && result.changed) {
+      showToast(`Week regenerated`, 'success');
     } else if (result && !result.changed && result.message) {
       showToast(result.message, result.reason === 'action_ignored' ? 'warning' : 'info');
     }
@@ -568,7 +562,6 @@ export default function DashboardScreen() {
       <ImportRecipeModal
         visible={importModalVisible}
         onClose={() => setImportModalVisible(false)}
-        onSave={handleImportSave}
       />
     </View>
   );
