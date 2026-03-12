@@ -47,6 +47,9 @@ function RootApp() {
 import { RecipeProvider } from '../data/RecipeContext';
 
 export default function RootLayout() {
+  const { width } = useWindowDimensions();
+  const [bypassGate, setBypassGate] = useState(false);
+
   const [loaded, error] = useFonts({
     GoogleSansFlex: require('../assets/fonts/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf'),
   });
@@ -62,11 +65,6 @@ export default function RootLayout() {
   }
 
   // --- M2 Mobile Web Gate ---
-  // Desktop Web = Supported
-  // Native iOS/Android = Supported
-  // Mobile/Tablet Web = Unsupported
-  const { width } = useWindowDimensions();
-  const [bypassGate, setBypassGate] = useState(false);
 
   const isWeb = Platform.OS === 'web';
   const isMobileOrTabletUa = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent);
