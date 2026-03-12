@@ -53,7 +53,7 @@ const CUISINE_CARD_ICONS: Record<CuisineId, string> = {
   french: 'cheese',
   mexican: 'pepper-hot',
   japanese: 'fish',
-  chinese: 'bowl-rice',
+  chinese: 'utensils',
   indian: 'fire-alt',
   mediterranean: 'leaf',
   middle_eastern: 'bread-slice',
@@ -289,6 +289,8 @@ export default function CalibrationScreen() {
           <View className="flex-row flex-wrap justify-start mx-[-8px]">
             {cuisineOptions.map(cuisine => {
               const isActive = selectedCuisines.includes(cuisine.id);
+              const cardIcon = CUISINE_CARD_ICONS[cuisine.id] || 'utensils';
+              
               return (
                 <View key={cuisine.id} className="w-[100%] sm:w-[50%] md:w-[33.33%] p-2">
                   <TouchableOpacity
@@ -297,28 +299,28 @@ export default function CalibrationScreen() {
                     style={{ height: 130 }}
                     className={`p-4 md:p-5 rounded-[24px] border transition-all flex-col justify-between ${
                       isActive
-                        ? 'bg-primary/5 dark:bg-primary/10 border-primary shadow-sm scale-[0.98]'
+                        ? 'bg-primary/[0.03] dark:bg-primary/[0.05] border-primary/40 shadow-sm scale-[0.98]'
                         : 'bg-surface dark:bg-darksurface border-black/[0.04] dark:border-white/5 hover:border-black/10'
                     }`}
                   >
                     <View className="flex-row justify-between items-start">
-                      <View className={`w-10 h-10 rounded-xl items-center justify-center ${isActive ? 'bg-primary/10 dark:bg-primary/20' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
-                        <FontAwesome5 name={CUISINE_CARD_ICONS[cuisine.id] as any} size={16} color={isActive ? '#9DCD8B' : '#8C9A90'} />
+                      <View className={`w-10 h-10 rounded-xl items-center justify-center ${isActive ? 'bg-primary/20 dark:bg-primary/30' : 'bg-black/[0.04] dark:bg-white/[0.04]'}`}>
+                        <FontAwesome5 name={cardIcon as any} size={16} color={isActive ? '#9DCD8B' : '#8C9A90'} />
                       </View>
                       {isActive && (
-                        <View className="bg-primary rounded-full w-5 h-5 items-center justify-center shadow-sm">
-                          <FontAwesome5 name="check" size={8} color="white" />
+                        <View className="bg-primary/40 dark:bg-primary/50 rounded-full w-4 h-4 items-center justify-center shadow-sm">
+                          <FontAwesome5 name="check" size={7} color="white" />
                         </View>
                       )}
                     </View>
                     
                     <View>
-                      <Text className={`text-[17px] md:text-[19px] font-bold tracking-tight mb-0.5 ${isActive ? 'text-primary dark:text-[#85B674]' : 'text-textMain dark:text-darktextMain'}`}>
+                      <Text className="text-[17px] md:text-[19px] font-bold tracking-tight mb-0.5 text-textMain dark:text-darktextMain">
                         {cuisine.label}
                       </Text>
                       <Text 
                         numberOfLines={2}
-                        className={`font-medium text-[12.5px] leading-snug ${isActive ? 'text-textMain/70 dark:text-darktextMain/70' : 'text-textMain dark:text-darktextMain'}`}
+                        className="font-medium text-[12.5px] leading-snug text-textSec dark:text-darktextSec"
                       >
                         {cuisine.description}
                       </Text>
