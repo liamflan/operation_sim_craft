@@ -172,31 +172,31 @@ export default function CalibrationScreen() {
 
   const renderStep1 = () => (
     <View className="flex-1 w-full items-center justify-center">
-      <View className="w-full max-w-[560px] items-center text-center px-4">
-        <View className="mb-6 items-center">
-          <View className="w-14 h-14 rounded-[18px] bg-primary/10 dark:bg-primary/20 items-center justify-center mb-5 shadow-sm">
-            <FontAwesome5 name="leaf" size={22} color="#9DCD8B" />
+      <View className="w-full max-w-[580px] items-center text-center px-6">
+        <View className="items-center mb-8">
+          <View className="w-14 h-14 rounded-[20px] bg-primary/10 dark:bg-primary/20 items-center justify-center mb-6 shadow-sm border border-primary/10">
+            <FontAwesome5 name="leaf" size={20} color="#9DCD8B" />
           </View>
-          <Text className="text-[42px] md:text-[52px] font-bold tracking-tight text-textMain dark:text-darktextMain leading-none mb-2">
+          
+          <Text className="text-[34px] md:text-[44px] font-bold tracking-tight text-textMain dark:text-darktextMain leading-none mb-3">
             Provision
           </Text>
-          <Text className="text-[18px] md:text-[20px] font-medium text-textSec dark:text-darktextSec leading-snug max-w-[360px] text-center">
+
+          <Text className="text-[18px] md:text-[21px] font-medium text-textSec dark:text-darktextSec leading-snug max-w-[400px] text-center">
             Modern taste-led planning that fits your lifestyle.
           </Text>
         </View>
 
-        <View className="flex-row flex-wrap justify-center gap-2 mb-10">
+        {/* Feature Pills - Subtle but Legible Supporting Elements */}
+        <View className="flex-row flex-wrap justify-center gap-x-8 gap-y-3 mt-2 opacity-[0.55]">
           {[
             { icon: 'utensils', label: 'Taste-led' },
             { icon: 'dna', label: 'Diet-smart' },
             { icon: 'calendar-check', label: 'Routine-friendly' },
           ].map(pill => (
-            <View
-              key={pill.label}
-              className="flex-row items-center gap-2 px-4 py-2.5 bg-surface dark:bg-darksurface rounded-full border border-black/[0.05] dark:border-white/[0.06] shadow-sm"
-            >
-              <FontAwesome5 name={pill.icon as any} size={11} color="#9DCD8B" />
-              <Text className="text-[13px] font-semibold text-textMain dark:text-darktextMain">{pill.label}</Text>
+            <View key={pill.label} className="flex-row items-center gap-2.5">
+              <FontAwesome5 name={pill.icon as any} size={10} color="#8C9A90" />
+              <Text className="text-[11px] font-bold text-textMain dark:text-darktextMain uppercase tracking-[0.2em]">{pill.label}</Text>
             </View>
           ))}
         </View>
@@ -635,6 +635,8 @@ export default function CalibrationScreen() {
     </SafeAreaView>
   );
 }
+
+// ─── UI Components ──────────────────────────────────────────────────────────
 
 function SummaryCell({ label, value, bordered, top }: { label: string; value: string; bordered?: boolean; top?: boolean }) {
   return (
