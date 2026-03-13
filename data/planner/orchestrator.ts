@@ -18,7 +18,8 @@ import {
   RescueFailureReason,
   AlternativeCandidate,
   NearMissCandidate,
-  FriendlyFailureCategory
+  FriendlyFailureCategory,
+  PlannerCandidate
 } from './plannerTypes';
 import { evaluateCandidate, determineRescueAction, scoreCandidate } from './evaluator';
 import { classifyFailure, performSemanticAudit } from './plannerDiagnostics';
@@ -73,55 +74,56 @@ export async function generatePlan(
 
     const slotId = `${contract.dayIndex}_${contract.slotType}`;
     
-    // 1. Evaluate all recipes for this slot
-    // We capture the predicted score and exact variety context for every recipe 
-    // to ensure near-miss reporting doesn't rely on a stale common varietyCtx object.
-    const evaluationResults = recipes.map(r => {
-      const perRecipeCtx: VarietyContext = {
-        repeatCount: planWideState.globalRepeatRegister.get(r.id) || 0,
-        archetypeDensity: planWideState.archetypeCounts[r.archetype] || 0,
-        sameDayArchetypes: planWideState.dayClusters.get(contract.dayIndex) || new Set(),
-        consecutiveArchetypeMatch: false,
-        cuisineSaturationCount: r.cuisineId ? planWideState.cuisineSaturation[r.cuisineId] || 0 : 0 
-      };
+    // GUARANTEE-FILL LADDER (Phase 22)
+    // We iterate through progressive relaxation tiers until we fill the slot or exhausted safety.
+    let finalCandidate: PlannerCandidate | null = null;
+    let fallbackActionTaken: 'filled_normally' | 'soft_rescue' | 'hard_fallback' | 'failed_completely' = 'failed_completely';
+    let activeTier: 1 | 2 | 3 | 4 = 1;
 
-      const evalResult = evaluateCandidate(r, contract, perRecipeCtx, pantryItems);
-      
-      // Post-pass diagnostic score capture using unchanged scoring pipeline
-      let diagnosticScore: number | undefined;
-      const { scores } = scoreCandidate(r, contract, perRecipeCtx, pantryItems);
-      diagnosticScore = scores.totalScore;
+    const allRejections: { recipe: NormalizedRecipe; failures: RescueFailureReason[] }[] = [];
+    let successfulTierCandidates: PlannerCandidate[] = [];
 
-      return {
-        recipe: r,
-        result: evalResult,
-        diagnosticScore
-      };
-    });
+    while (activeTier <= 4 && !finalCandidate) {
+      const tierResults = recipes.map(r => {
+        const perRecipeCtx: VarietyContext = {
+          repeatCount: planWideState.globalRepeatRegister.get(r.id) || 0,
+          archetypeDensity: planWideState.archetypeCounts[r.archetype] || 0,
+          sameDayArchetypes: planWideState.dayClusters.get(contract.dayIndex) || new Set(),
+          consecutiveArchetypeMatch: false,
+          cuisineSaturationCount: r.cuisineId ? planWideState.cuisineSaturation[r.cuisineId] || 0 : 0 
+        };
 
-    const candidates = evaluationResults
-      .filter(res => res.result.candidate !== null)
-      .map(res => res.result.candidate!);
+        const evalResult = evaluateCandidate(r, contract, perRecipeCtx, pantryItems, activeTier);
+        return { recipe: r, result: evalResult };
+      });
 
-    const rejections = evaluationResults
-      .filter(res => res.result.candidate === null);
+      const candidates = tierResults
+        .filter(res => res.result.candidate !== null)
+        .map(res => res.result.candidate!);
 
-    // 2. Decision logic (Standard selection path)
-    const { action, reasons } = determineRescueAction(candidates, recipes, contract, planWideState.archetypeCounts);
+      const rejections = tierResults
+        .filter(res => res.result.candidate === null)
+        .map(res => ({ recipe: res.recipe, failures: res.result.failureReasons }));
 
-    const sortedCandidates = [...candidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
-    let finalCandidate = sortedCandidates[0] || null;
+      if (candidates.length > 0) {
+        successfulTierCandidates = candidates;
+        const sorted = [...candidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
+        finalCandidate = sorted[0];
+        fallbackActionTaken = activeTier === 1 ? 'filled_normally' : activeTier <= 2 ? 'soft_rescue' : 'hard_fallback';
+      } else {
+        // Collect rejections for diagnostics if we haven't found a candidate yet
+        allRejections.push(...rejections);
+        activeTier++;
+      }
+    }
 
-    // Apply preferred selection IF it's valid
-    if (preferredRecipeId) {
-      const manualMatch = candidates.find(c => c.recipeId === preferredRecipeId);
+    // Apply preferred selection IF it's valid at the best tier we found
+    if (preferredRecipeId && finalCandidate) {
+      const manualMatch = successfulTierCandidates.find(c => c.recipeId === preferredRecipeId);
       if (manualMatch) {
          finalCandidate = manualMatch;
       } else {
-        // Option was not valid or not found in candidates for THIS run.
-        // We do NOT override. We let the planner fail or pick someone else.
-        // The ActivePlanContext will check if the result matches the request.
-        console.warn(`[orchestrator] Choice ${preferredRecipeId} not among eligible candidates for ${slotId}.`);
+        console.warn(`[orchestrator] Choice ${preferredRecipeId} not among eligible candidates for ${slotId} even in tier ${activeTier}.`);
       }
     }
 
@@ -129,22 +131,20 @@ export async function generatePlan(
     const topFailureReasons: Partial<Record<RescueFailureReason, number>> = {};
     const friendlyFailureSummary: Partial<Record<FriendlyFailureCategory, number>> = {};
     
-    rejections.forEach(rej => {
-      const failures = rej.result.failureReasons;
-      failures.forEach(f => {
+    allRejections.forEach(rej => {
+      rej.failures.forEach(f => {
         topFailureReasons[f] = (topFailureReasons[f] || 0) + 1;
       });
-      const friendly = classifyFailure(failures);
+      const friendly = classifyFailure(rej.failures);
       friendlyFailureSummary[friendly] = (friendlyFailureSummary[friendly] || 0) + 1;
     });
 
-    // 3.1 Near-Miss Identification
-    const nearMisses: NearMissCandidate[] = rejections
+    // 3.1 Near-Miss Identification (from all tiers)
+    const nearMisses: NearMissCandidate[] = allRejections
       .filter(rej => {
-        const failures = rej.result.failureReasons;
-        return failures.length <= 2 && 
-               !failures.includes('not_planner_usable') && 
-               !failures.includes('dietary_mismatch');
+        return rej.failures.length <= 2 && 
+               !rej.failures.includes('not_planner_usable') && 
+               !rej.failures.includes('dietary_mismatch');
       })
       .map(rej => {
         return {
@@ -157,12 +157,10 @@ export async function generatePlan(
           calories: rej.recipe.macrosPerServing.calories,
           protein: rej.recipe.macrosPerServing.protein,
           plannerUsable: rej.recipe.plannerUsable,
-          failureReasons: rej.result.failureReasons,
-          friendlyCategory: classifyFailure(rej.result.failureReasons),
-          score: rej.diagnosticScore
+          failureReasons: rej.failures,
+          friendlyCategory: classifyFailure(rej.failures),
         };
       })
-      .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 10);
 
     // 3.2 Assignment Explanation & Alternatives
@@ -171,6 +169,7 @@ export async function generatePlan(
     let topAlternatives: AlternativeCandidate[] = [];
 
     if (finalCandidate) {
+      const sortedCandidates = [...successfulTierCandidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
       const assignedRecipe = recipes.find(r => r.id === finalCandidate!.recipeId)!;
       const nextBest = sortedCandidates[1];
       const winnerMargin = nextBest ? finalCandidate.scores.totalScore - nextBest.scores.totalScore : undefined;
@@ -183,11 +182,11 @@ export async function generatePlan(
         archetype: assignedRecipe.archetype,
         cuisineId: assignedRecipe.cuisineId,
         scoreBreakdown: finalCandidate.scores,
-        isRescue: action !== 'none',
+        isRescue: fallbackActionTaken !== 'filled_normally',
         winnerMargin
       };
 
-      topAlternatives = sortedCandidates.slice(1, 4).map(c => {
+      topAlternatives = successfulTierCandidates.slice(1, 4).map(c => {
         const recipe = recipes.find(r => r.id === c.recipeId)!;
         return {
           recipeId: recipe.id,
@@ -240,16 +239,16 @@ export async function generatePlan(
       slotId,
       contractAudit: { ...contract },
       totalConsidered: recipes.length,
-      eligibleCount: candidates.length,
-      rejectedCount: rejections.length,
+      eligibleCount: successfulTierCandidates.length,
+      rejectedCount: allRejections.length,
       topFailureReasons,
       friendlyFailureSummary,
       nearMisses,
       topAlternatives,
       assignmentExplanation,
       semanticAudit,
-      rescueTriggered: action !== 'none',
-      actionTaken: action === 'none' ? 'filled_normally' : 'soft_rescue',
+      rescueTriggered: fallbackActionTaken !== 'filled_normally',
+      actionTaken: fallbackActionTaken,
       assignedCandidateId: finalCandidate?.id || null,
       bestScoreAchieved: finalCandidate?.scores.totalScore || null
     });

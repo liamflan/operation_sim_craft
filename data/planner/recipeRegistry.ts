@@ -54,7 +54,7 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     const title = recipe.title.toLowerCase();
     const tags = (recipe.tags || []).map(t => t.toLowerCase());
     
-    if (title.includes('breakfast') || tags.includes('breakfast')) {
+    if (title.includes('breakfast') || tags.includes('breakfast') || title.includes('oats') || title.includes('pancakes') || title.includes('yogurt') || title.includes('egg')) {
       suitableFor = ['breakfast'];
     } else if (title.includes('lunch') || tags.includes('lunch')) {
       suitableFor = ['lunch'];

@@ -172,7 +172,7 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
             <View className="flex-1 pr-6">
               <Text className="text-textMain text-[24px] font-medium tracking-tight mb-0.5">Swap Meal</Text>
               <Text className="text-textMain text-[12px] font-medium opacity-60" numberOfLines={1}>
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex]} • {slotType} • Currently: {currentRecipe?.title || 'None'}
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex]} • {slotType} • Currently: {currentRecipe?.title || 'Unfilled Slot'}
               </Text>
             </View>
             <TouchableOpacity 
@@ -220,7 +220,8 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
                 </View>
               ) : (
                 <View className="bg-white/40 rounded-[24px] py-10 border border-dashed border-black/[0.1] items-center">
-                  <Text className="text-textMain text-[13px] font-medium opacity-20 italic">Empty slot</Text>
+                  <Text className="text-textMain text-[13px] font-medium opacity-50 italic">No meal currently assigned</Text>
+                  <Text className="text-textMain text-[11px] opacity-30 mt-1">Select an alternative below to fill this slot</Text>
                 </View>
               )}
             </View>

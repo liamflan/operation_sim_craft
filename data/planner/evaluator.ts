@@ -19,15 +19,17 @@ const PANTRY_STOPLIST = ['salt', 'pepper', 'water', 'oil', 'olive oil', 'vegetab
 
 /**
  * Validates if a recipe passes hard, non-negotiable eligibility constraints for a slot.
+ * Supports tiered relaxation levels to ensure a "Guarantee-Fill" policy.
  */
 export function checkHardEligibility(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
-  varietyCtx: VarietyContext
+  varietyCtx: VarietyContext,
+  tier: 1 | 2 | 3 | 4 = 1
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
-  // 0. Profile Exclusions / Ingredient Exclusions (HARD)
+  // 0. Profile Exclusions / Ingredient Exclusions (HARD - NEVER RELAXED)
   if (contract.hardExclusions && contract.hardExclusions.length > 0) {
     const exclusionMatchFound = contract.hardExclusions.some(exclusion => {
       const pattern = new RegExp(`(?:^|[^a-z])${exclusion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z]|$)`, 'i');
@@ -41,7 +43,7 @@ export function checkHardEligibility(
     }
   }
 
-  // Phase 21: excludedIngredientTags (HARD)
+  // Phase 21: excludedIngredientTags (HARD - NEVER RELAXED)
   if (contract.tasteProfile?.excludedIngredientTags && contract.tasteProfile.excludedIngredientTags.length > 0) {
     const tagMatchFound = contract.tasteProfile.excludedIngredientTags.some(tag => 
        recipe.ingredientTags.includes(tag) || recipe.tags.includes(tag)
@@ -51,70 +53,102 @@ export function checkHardEligibility(
     }
   }
 
-  // 1. Dietary Baseline Enforcement (HARD)
+  // 1. Dietary Baseline Enforcement (HARD - NEVER RELAXED)
   if (!isRecipeAllowedForBaselineDiet(recipe, contract.dietaryBaseline)) {
     failures.push('dietary_mismatch');
   }
 
-  // 2. Usability check
+  // 2. Usability check (HARD - NEVER RELAXED)
   if (!recipe.plannerUsable) {
     failures.push('not_planner_usable');
   }
 
-  // Slot Suitability
-  if (!recipe.suitableFor.includes(contract.slotType as any)) {
+  // Slot Suitability (Relaxed only in Tier 4 for Breakfast/Lunch overlap)
+  let eligibleSlots = [...recipe.suitableFor];
+  if (tier >= 4) {
+    // If we are desperate, allow lunch recipes to fill breakfast/dinner and vice versa
+    // but only if it's not a complete mismatch (e.g. snack vs dinner)
+    if (recipe.suitableFor.includes('lunch')) {
+      eligibleSlots.push('breakfast', 'dinner');
+    }
+  }
+
+  if (!eligibleSlots.includes(contract.slotType as any)) {
     failures.push('no_slot_match');
   }
 
-  // Budget
-  const budgetTolerance = contract.budgetEnvelopeGBP * 1.5; 
+  // Budget (Progressive Relaxation)
+  let budgetMultiplier = 1.5; 
+  if (tier === 3) budgetMultiplier = 2.0;
+  if (tier >= 4) budgetMultiplier = 3.0; // Desperate budget expansion
+
+  const budgetTolerance = contract.budgetEnvelopeGBP * budgetMultiplier; 
   if (recipe.estimatedCostPerServingGBP > budgetTolerance) {
     failures.push('budget_delta_exceeded');
   }
   
-  // Macros (Strict Limits)
-  if (recipe.macrosPerServing.protein < contract.macroTargets.protein.min) {
+  // Macros (Strict Limits -> Progressive Relaxation)
+  let proteinMin = contract.macroTargets.protein.min;
+  let calorieMax = contract.macroTargets.calories.max;
+  let calorieMin = contract.macroTargets.calories.min * 0.75;
+
+  if (tier === 3) {
+    proteinMin *= 0.8; // Relax protein target by 20%
+    calorieMax *= 1.2; // Relax calorie max by 20%
+  }
+  if (tier >= 4) {
+    proteinMin = 5; // Absolute floor for protein
+    calorieMax *= 1.5; // High calorie ceiling
+    calorieMin = 100; // Low calorie floor
+  }
+
+  if (recipe.macrosPerServing.protein < proteinMin) {
     failures.push('protein_minimum_failed');
   }
-  if (recipe.macrosPerServing.calories > contract.macroTargets.calories.max) {
+  if (recipe.macrosPerServing.calories > calorieMax) {
     failures.push('calorie_maximum_exceeded');
   }
-  if (recipe.macrosPerServing.calories < (contract.macroTargets.calories.min * 0.75)) {
+  if (recipe.macrosPerServing.calories < calorieMin) {
     failures.push('calorie_minimum_failed');
   }
 
-  // Archetype & Repeat Caps
-  const cap = contract.archetypeCaps[recipe.archetype];
-  if (cap !== undefined && varietyCtx.archetypeDensity >= cap) {
-    failures.push('archetype_cap_exhausted');
+  // Archetype & Repeat Caps (Relaxed in Tier 2+)
+  if (tier === 1) {
+    const cap = contract.archetypeCaps[recipe.archetype];
+    if (cap !== undefined && varietyCtx.archetypeDensity >= cap) {
+      failures.push('archetype_cap_exhausted');
+    }
+    if (varietyCtx.repeatCount >= contract.repeatCap) {
+      failures.push('repeat_cap_exhausted');
+    }
   }
-  if (varietyCtx.repeatCount >= contract.repeatCap) {
-    failures.push('repeat_cap_exhausted');
-  }
+  // Even in rescue, we still block same-day duplicates
   if (varietyCtx.sameDayArchetypes.has(recipe.id)) {
     failures.push('same_day_duplicate');
   }
 
-  // Leftovers / Batch Cook Rules
-  if (contract.leftoverPreference === 'require_leftover' && !recipe.yieldsLeftovers) {
-    failures.push('leftover_mismatch');
-  }
-  
-  if (contract.batchCookPreference === 'required' && recipe.archetype !== 'Batch_Cook') {
-    failures.push('batch_cook_mismatch');
-  } else if (contract.batchCookPreference === 'discouraged' && recipe.archetype === 'Batch_Cook') {
-    failures.push('batch_cook_mismatch');
-  }
-
-  // Effort Band enforcement (Hard Gates)
-  if (contract.context === 'routine' && recipe.effortBand === 'slow') {
-    failures.push('effort_mismatch');
+  // Leftovers / Batch Cook Rules (Relaxed in Tier 2+)
+  if (tier === 1) {
+    if (contract.leftoverPreference === 'require_leftover' && !recipe.yieldsLeftovers) {
+      failures.push('leftover_mismatch');
+    }
+    
+    if (contract.batchCookPreference === 'required' && recipe.archetype !== 'Batch_Cook') {
+      failures.push('batch_cook_mismatch');
+    } else if (contract.batchCookPreference === 'discouraged' && recipe.archetype === 'Batch_Cook') {
+      failures.push('batch_cook_mismatch');
+    }
   }
 
-  if (contract.preferredEffortBands && contract.preferredEffortBands.length > 0) {
-    // Specifically block slow breakfast/lunch if not preferred
-    if (contract.slotType !== 'dinner' && recipe.effortBand === 'slow') {
-        failures.push('effort_mismatch');
+  // Effort Band enforcement (Hard Gates -> Relaxed in Tier 3+)
+  if (tier < 3) {
+    if (contract.context === 'routine' && recipe.effortBand === 'slow') {
+      failures.push('effort_mismatch');
+    }
+    if (contract.preferredEffortBands && contract.preferredEffortBands.length > 0) {
+      if (contract.slotType !== 'dinner' && recipe.effortBand === 'slow') {
+          failures.push('effort_mismatch');
+      }
     }
   }
 
@@ -128,7 +162,8 @@ export function scoreCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
   varietyCtx: VarietyContext,
-  pantryItems: PantryItem[] = []
+  pantryItems: PantryItem[] = [],
+  tier: 1 | 2 | 3 | 4 = 1
 ): { scores: PlannerCandidate['scores']; penalties: PlannerCandidate['penalties'] } {
   
   // Macro Fit
@@ -172,6 +207,11 @@ export function scoreCandidate(
     });
 
     tasteFitScore = Math.min(100, Math.max(0, 40 + cuisinePoints));
+  }
+
+  // Phase 22: Relax taste preferences if we are in rescue tiers (Tier 2+)
+  if (tier >= 2) {
+    tasteFitScore = 50; // Neutralize taste for rescue
   }
 
   // Pantry Scoring
@@ -315,13 +355,14 @@ export function evaluateCandidate(
   recipe: NormalizedRecipe, 
   contract: SlotContract,
   varietyCtx: VarietyContext,
-  pantryItems: PantryItem[] = []
+  pantryItems: PantryItem[] = [],
+  tier: 1 | 2 | 3 | 4 = 1
 ): { candidate: PlannerCandidate | null, failureReasons: RescueFailureReason[] } {
   
-  const failures = checkHardEligibility(recipe, contract, varietyCtx);
+  const failures = checkHardEligibility(recipe, contract, varietyCtx, tier);
   if (failures.length > 0) return { candidate: null, failureReasons: failures };
 
-  const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx, pantryItems);
+  const { scores, penalties } = scoreCandidate(recipe, contract, varietyCtx, pantryItems, tier);
 
   const candidate: PlannerCandidate = {
     id: `cand_${recipe.id}_${contract.dayIndex}_${contract.slotType}`,
