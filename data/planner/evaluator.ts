@@ -106,6 +106,18 @@ export function checkHardEligibility(
     failures.push('batch_cook_mismatch');
   }
 
+  // Effort Band enforcement (Hard Gates)
+  if (contract.context === 'routine' && recipe.effortBand === 'slow') {
+    failures.push('effort_mismatch');
+  }
+
+  if (contract.preferredEffortBands && contract.preferredEffortBands.length > 0) {
+    // Specifically block slow breakfast/lunch if not preferred
+    if (contract.slotType !== 'dinner' && recipe.effortBand === 'slow') {
+        failures.push('effort_mismatch');
+    }
+  }
+
   return failures;
 }
 
@@ -199,12 +211,30 @@ export function scoreCandidate(
 
   const pantryFitScore = Math.round(Math.min(100, (pantryMetrics.weightedScore / pantryMetrics.totalMeaningful) * 100));
   
-  // Effort / Difficulty Characteristics (Preserved logic layer)
+  // Effort / Difficulty Characteristics (Contextual Logic)
   let slotFitScore = 70;
+  
+  // Effort Band Scoring
+  if (contract.preferredEffortBands && contract.preferredEffortBands.length > 0) {
+    if (contract.preferredEffortBands.includes(recipe.effortBand)) {
+      slotFitScore += 20;
+    } else {
+      // Penalty for non-preferred effort band (if it passed hard gate)
+      slotFitScore -= 30;
+    }
+  }
+
+  // Bonus for quick fixes or easy breakfast/lunch
   if (recipe.difficulty === 'Easy' && (contract.slotType === 'breakfast' || contract.slotType === 'lunch')) {
-    slotFitScore += 20;
+    slotFitScore += 10;
   }
   if (recipe.archetype === 'Quick_Fix') slotFitScore += 10;
+  
+  // High effort / slow recipes in 'routine' context are ALREADY blocked by hard gate,
+  // but we keep a penalty here just in case of future rescue overrides.
+  if (contract.context === 'routine' && recipe.effortBand === 'slow') {
+    slotFitScore -= 50;
+  }
   
   const leftoverFitScore = recipe.yieldsLeftovers && contract.leftoverPreference === 'prefer_fresh' ? 30 : 100;
 

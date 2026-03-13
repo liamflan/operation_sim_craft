@@ -66,6 +66,10 @@ export type RecipeArchetype =
   | 'Quick_Fix' 
   | 'Batch_Cook';
 
+export type EffortBand = 'quick' | 'standard' | 'slow';
+export type SlotContext = 'routine' | 'weekend' | 'special';
+
+
 // ---------------------------------------------------------------------------
 // CUISINE MODELS (Phase 21 Rework)
 // ---------------------------------------------------------------------------
@@ -203,6 +207,8 @@ export interface NormalizedRecipe {
   activePrepMinutes: number;
   totalMinutes: number;
   complexityScore: number; // 1-5 scale
+  effortBand: EffortBand;
+
   
   // Phase 21 Optional Enrichments
   cleanupBurden?: 'Low' | 'Medium' | 'High';
@@ -305,6 +311,8 @@ export interface SlotContract {
   leftoverPreference: 'prefer_fresh' | 'accept_leftover' | 'require_leftover';
   batchCookPreference: 'allowed' | 'discouraged' | 'required';
   rescueThresholdScore: number; 
+  context: SlotContext;
+  preferredEffortBands?: EffortBand[];
 }
 
 export interface InsightMetadata {
@@ -359,7 +367,8 @@ export type RescueFailureReason =
   | 'batch_cook_mismatch'
   | 'leftover_mismatch'
   | 'dietary_mismatch'
-  | 'exclusion_ingredient_match'; 
+  | 'exclusion_ingredient_match'
+  | 'effort_mismatch'; 
 
 export interface RescueMetadata {
   tierTriggered: 1 | 2 | 3; 

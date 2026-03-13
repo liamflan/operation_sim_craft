@@ -38,6 +38,43 @@ import { WAVE3_FIXTURES } from './wave3Fixtures';
 export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
   const servings = recipe.servings || 1;
   const resolvedImageUrl = getRecipeImage(recipe.id, recipe.imageUrl);
+  const totalMinutes = recipe.totalTimeMinutes || (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0));
+
+  // Determine Effort Band based on total duration
+  let effortBand: NormalizedRecipe['effortBand'] = 'standard';
+  if (totalMinutes <= 30) {
+    effortBand = 'quick';
+  } else if (totalMinutes > 60) {
+    effortBand = 'slow';
+  }
+
+  // Tightened suitableFor fallback logic
+  let suitableFor = recipe.suitableFor || [];
+  if (suitableFor.length === 0) {
+    const title = recipe.title.toLowerCase();
+    const tags = (recipe.tags || []).map(t => t.toLowerCase());
+    
+    if (title.includes('breakfast') || tags.includes('breakfast')) {
+      suitableFor = ['breakfast'];
+    } else if (title.includes('lunch') || tags.includes('lunch')) {
+      suitableFor = ['lunch'];
+    } else if (title.includes('dinner') || tags.includes('dinner')) {
+      suitableFor = ['dinner'];
+    } else {
+      // Conservative default based on archetype
+      const arch = (recipe.archetype || 'Staple').toLowerCase();
+      if (arch.includes('breakfast')) {
+        suitableFor = ['breakfast'];
+      } else if (arch.includes('lunch') || arch.includes('quick')) {
+        suitableFor = ['lunch'];
+      } else if (arch.includes('dinner') || effortBand === 'slow') {
+        suitableFor = ['dinner'];
+      } else {
+        // Only allow both if it's a standard mid-range effort staple
+        suitableFor = effortBand === 'standard' ? ['lunch', 'dinner'] : ['dinner'];
+      }
+    }
+  }
 
   return {
     id: recipe.id,
@@ -57,15 +94,12 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     imageUrl: resolvedImageUrl,
 
     activePrepMinutes: recipe.prepTimeMinutes,
-    totalMinutes:
-      recipe.totalTimeMinutes ||
-      (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
+    totalMinutes,
     complexityScore:
       recipe.difficulty === 'Hard' ? 4 : recipe.difficulty === 'Easy' ? 2 : 3,
+    effortBand,
 
-    totalTimeMinutes:
-      recipe.totalTimeMinutes ||
-      (recipe.prepTimeMinutes + (recipe.cookTimeMinutes || 0)),
+    totalTimeMinutes: totalMinutes,
     prepTimeMinutes: recipe.prepTimeMinutes,
     cookTimeMinutes: recipe.cookTimeMinutes,
     difficulty: recipe.difficulty || 'Medium',
@@ -97,7 +131,7 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     freezerFriendly: recipe.freezerFriendly ?? false,
     reheatsWell: recipe.reheatsWell ?? true,
     yieldsLeftovers: true,
-    suitableFor: recipe.suitableFor || ['lunch', 'dinner'],
+    suitableFor,
 
     notes: recipe.notes,
     substitutions: recipe.substitutions,

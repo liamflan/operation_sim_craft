@@ -11,7 +11,8 @@ import {
   RecipeArchetype,
   DietaryBaseline,
   TasteProfile,
-  CuisineId
+  CuisineId,
+  NormalizedRecipe
 } from './plannerTypes';
 import { WeeklyRoutine, DAYS, isPlanned } from '../weeklyRoutine';
 
@@ -74,6 +75,24 @@ export function buildSlotContracts(
         const date = new Date(startDate);
         date.setDate(date.getDate() + dayIndex);
 
+        // Determine context: Mon-Fri is routine, Sat-Sun is weekend
+        const isWeekend = dayIndex === 5 || dayIndex === 6; // 0=Mon, 5=Sat, 6=Sun
+        const context = isWeekend ? 'weekend' : 'routine';
+
+        // Determine preferred effort bands
+        let preferredEffortBands: NormalizedRecipe['effortBand'][] = ['quick', 'standard'];
+        if (slotType === 'breakfast') {
+          preferredEffortBands = ['quick'];
+        } else if (slotType === 'dinner') {
+          if (dayIndex === 6) { // Sunday (weekend)
+            preferredEffortBands = ['standard', 'slow'];
+          } else if (dayIndex === 5) { // Saturday (weekend)
+            preferredEffortBands = ['standard', 'slow'];
+          } else { // Mon-Fri (routine)
+            preferredEffortBands = ['quick', 'standard'];
+          }
+        }
+
         contracts.push({
           planId,
           dayIndex,
@@ -96,7 +115,9 @@ export function buildSlotContracts(
           batchCookPreference: 'allowed',
           rescueThresholdScore: 60,
           dietaryBaseline: payload.diet,
-          tasteProfile
+          tasteProfile,
+          context,
+          preferredEffortBands
         });
       }
     });

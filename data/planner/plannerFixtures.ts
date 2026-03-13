@@ -70,7 +70,8 @@ export const curatedRoast: NormalizedRecipe = {
   cuisineId: 'french',
   ingredientTags: ['chicken', 'herbs'],
   flavourIds: ['savoury', 'herby'],
-  styleIds: ['roasted']
+  styleIds: ['roasted'],
+  effortBand: 'slow'
 };
 
 export const curatedPasta: NormalizedRecipe = {
@@ -99,7 +100,8 @@ export const curatedPasta: NormalizedRecipe = {
   cuisineId: 'italian',
   ingredientTags: ['pasta', 'tomato'],
   flavourIds: ['tomato', 'garlic'],
-  styleIds: ['pasta']
+  styleIds: ['pasta'],
+  effortBand: 'quick'
 };
 
 export const generatedLentilStew: NormalizedRecipe = {
@@ -128,7 +130,8 @@ export const generatedLentilStew: NormalizedRecipe = {
   cuisineId: 'mediterranean',
   ingredientTags: ['lentils', 'beans'],
   flavourIds: ['aromatic'],
-  styleIds: ['stew']
+  styleIds: ['stew'],
+  effortBand: 'standard'
 };
 
 export const highProteinSeitan: NormalizedRecipe = {
@@ -153,7 +156,8 @@ export const highProteinSeitan: NormalizedRecipe = {
   cuisineId: 'french',
   ingredientTags: ['seitan', 'garlic'],
   flavourIds: ['rich'],
-  styleIds: ['refined_comfort']
+  styleIds: ['refined_comfort'],
+  effortBand: 'standard'
 };
 
 export const highProteinTempeh: NormalizedRecipe = {
@@ -178,7 +182,8 @@ export const highProteinTempeh: NormalizedRecipe = {
   cuisineId: 'chinese',
   ingredientTags: ['tempeh', 'peanuts'],
   flavourIds: ['savoury'],
-  styleIds: ['stir_fry']
+  styleIds: ['stir_fry'],
+  effortBand: 'quick'
 };
 
 export const highProteinHalloumi: NormalizedRecipe = {
@@ -203,7 +208,8 @@ export const highProteinHalloumi: NormalizedRecipe = {
   cuisineId: 'mediterranean',
   ingredientTags: ['halloumi', 'peppers'],
   flavourIds: ['herbs'],
-  styleIds: ['roasted']
+  styleIds: ['roasted'],
+  effortBand: 'standard'
 };
 
 export const highProteinTofuScramble: NormalizedRecipe = {
@@ -228,7 +234,8 @@ export const highProteinTofuScramble: NormalizedRecipe = {
   cuisineId: 'chinese',
   ingredientTags: ['tofu'],
   flavourIds: ['smoky'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 // --- BATCH 1: POOL EXPANSION ---
@@ -255,7 +262,8 @@ export const veganTikkaMasala: NormalizedRecipe = {
   cuisineId: 'indian',
   ingredientTags: ['tofu', 'chickpeas'],
   flavourIds: ['warming_spice'],
-  styleIds: ['saucy']
+  styleIds: ['saucy'],
+  effortBand: 'standard'
 };
 
 export const veganMeatloaf: NormalizedRecipe = {
@@ -280,7 +288,8 @@ export const veganMeatloaf: NormalizedRecipe = {
   cuisineId: 'french',
   ingredientTags: ['lentils', 'walnuts'],
   flavourIds: ['rich'],
-  styleIds: ['refined_comfort']
+  styleIds: ['refined_comfort'],
+  effortBand: 'standard'
 };
 
 export const veganOvernightOats: NormalizedRecipe = {
@@ -305,7 +314,8 @@ export const veganOvernightOats: NormalizedRecipe = {
   cuisineId: 'mediterranean',
   ingredientTags: ['oats', 'peanut_butter'],
   flavourIds: ['savoury'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 export const veganTempehBowl: NormalizedRecipe = {
@@ -330,7 +340,8 @@ export const veganTempehBowl: NormalizedRecipe = {
   cuisineId: 'mexican',
   ingredientTags: ['tempeh', 'avocado'],
   flavourIds: ['smoky'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 export const veganOmlette: NormalizedRecipe = {
@@ -355,7 +366,8 @@ export const veganOmlette: NormalizedRecipe = {
   cuisineId: 'french',
   ingredientTags: ['chickpea_flour'],
   flavourIds: ['savoury'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 export const veggieShells: NormalizedRecipe = {
@@ -380,7 +392,8 @@ export const veggieShells: NormalizedRecipe = {
   cuisineId: 'italian',
   ingredientTags: ['pasta', 'cottage_cheese'],
   flavourIds: ['tomato'],
-  styleIds: ['pasta']
+  styleIds: ['pasta'],
+  effortBand: 'standard'
 };
 
 export const veggieMutterPaneer: NormalizedRecipe = {
@@ -405,7 +418,8 @@ export const veggieMutterPaneer: NormalizedRecipe = {
   cuisineId: 'indian',
   ingredientTags: ['paneer', 'peas'],
   flavourIds: ['warming_spice'],
-  styleIds: ['saucy']
+  styleIds: ['saucy'],
+  effortBand: 'standard'
 };
 
 export const veggieFetaWrap: NormalizedRecipe = {
@@ -430,7 +444,8 @@ export const veggieFetaWrap: NormalizedRecipe = {
   cuisineId: 'mediterranean',
   ingredientTags: ['greek_yogurt', 'feta'],
   flavourIds: ['lemon'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 export const pesciSeabass: NormalizedRecipe = {
@@ -455,7 +470,8 @@ export const pesciSeabass: NormalizedRecipe = {
   cuisineId: 'mediterranean',
   ingredientTags: ['seabass', 'cannellini_beans'],
   flavourIds: ['lemon'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'standard'
 };
 
 export const pesciSalmonBagel: NormalizedRecipe = {
@@ -480,7 +496,8 @@ export const pesciSalmonBagel: NormalizedRecipe = {
   cuisineId: 'japanese',
   ingredientTags: ['salmon', 'bagel'],
   flavourIds: ['umami'],
-  styleIds: ['clean']
+  styleIds: ['clean'],
+  effortBand: 'quick'
 };
 
 // --- 3. HARD SLOT CONTRACTS ---
@@ -505,7 +522,9 @@ export const typicalDinnerContract: SlotContract = {
   tasteProfile: {
     preferredCuisineIds: [],
     excludedIngredientTags: []
-  }
+  },
+  context: 'routine',
+  preferredEffortBands: ['quick', 'standard']
 };
 
 export const exhaustedBudgetDinnerContract: SlotContract = {
@@ -528,7 +547,9 @@ export const exhaustedBudgetDinnerContract: SlotContract = {
   tasteProfile: {
     preferredCuisineIds: [],
     excludedIngredientTags: []
-  }
+  },
+  context: 'routine',
+  preferredEffortBands: ['quick', 'standard']
 };
 
 
