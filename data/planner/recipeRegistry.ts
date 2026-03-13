@@ -1,10 +1,22 @@
 /**
  * recipeRegistry.ts
- * The single source of truth for all recipes in the Provision system.
- * Unifies legacy seed recipes and high-fidelity planner fixtures.
+ *
+ * ROLE: ASSEMBLY LAYER / RUNTIME REGISTRY
+ * This is the central wiring point where recipes are gathered, normalized, and indexed.
+ *
+ * ⚠️ AUTHORING GUIDANCE:
+ * - DO NOT edit recipe content directly in this file.
+ * - Author/Edit recipe data in the respective source files:
+ *   - data/seed.ts (Legacy)
+ *   - data/planner/plannerFixtures.ts (Curated)
+ *   - data/planner/wave1Fixtures.ts (Phase 21.1)
+ *   - data/planner/wave2Fixtures.ts (Phase 21.2)
+ *   - data/planner/wave3Fixtures.ts (Phase 21.3)
  */
 
+// --- 1. SCHEMAS & TYPES ---
 import { NormalizedRecipe, RecipeValidationStatus } from './plannerTypes';
+// --- 2. RAW AUTHORING IMPORTS ---
 import { Recipe } from '../schema';
 import { MOCK_RECIPES } from '../seed';
 import {
@@ -31,6 +43,8 @@ import { auditRecipeImage } from './RecipeImageAuditor';
 import { WAVE1_FIXTURES } from './wave1Fixtures';
 import { WAVE2_FIXTURES } from './wave2Fixtures';
 import { WAVE3_FIXTURES } from './wave3Fixtures';
+
+// --- 3. NORMALIZATION LOGIC ---
 
 /**
  * Converts a legacy Recipe object (from seed.ts) into the rigorous NormalizedRecipe format.
@@ -170,8 +184,17 @@ const fixtures = [
   pesciSalmonBagel,
 ];
 
+// --- 4. RUNTIME CATALOG CONSTRUCTION ---
+
 /**
- * The full unified catalog as a Record for O(1) lookups.
+ * FULL_RECIPE_CATALOG
+ * The effective Single Source of Truth for the application at runtime.
+ *
+ * INITIALIZATION FLOW:
+ * 1. Gather raw recipe sources (Fixtures + Normalized Legacy).
+ * 2. Resolve strategic image overrides via RecipeImages.ts.
+ * 3. Calculate image health metadata via RecipeImageAuditor.ts.
+ * 4. Index into an immutable Record for O(1) lookups.
  */
 export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
@@ -184,6 +207,8 @@ export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
     imageMetadata: auditRecipeImage(recipe.title, resolvedImageUrl),
   };
 });
+
+// --- 5. RUNTIME EXPORTS ---
 
 /**
  * The full unified list for planner selection pools.

@@ -1,233 +1,5 @@
 [
   {
-    "recipeId": "rec_roast_01",
-    "title": "Classic Roast Chicken",
-    "cuisineId": "french",
-    "archetype": "Staple",
-    "suitableFor": "dinner, lunch",
-    "keyIngredients": "Classic Roast Chicken",
-    "currentImageUrl": "https://images.unsplash.com/photo-MsIX4c1aP7A?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Classic Roast Chicken, featuring Classic Roast Chicken. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_roast_01.webp"
-  },
-  {
-    "recipeId": "rec_pasta_01",
-    "title": "Quick Tomato Pasta",
-    "cuisineId": "italian",
-    "archetype": "Quick_Fix",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Quick Tomato Pasta",
-    "currentImageUrl": "https://images.unsplash.com/photo-Qp0VyysIuzs?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Quick Tomato Pasta, featuring Quick Tomato Pasta. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_pasta_01.webp"
-  },
-  {
-    "recipeId": "rec_lentil_01",
-    "title": "Spiced Lentil & Bean Stew",
-    "cuisineId": "mediterranean",
-    "archetype": "budget_workhorse",
-    "suitableFor": "dinner, lunch",
-    "keyIngredients": "Spiced Lentil & Bean Stew",
-    "currentImageUrl": "https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Spiced Lentil & Bean Stew, featuring Spiced Lentil & Bean Stew. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_lentil_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_steak_01",
-    "title": "Seitan ",
-    "cuisineId": "french",
-    "archetype": "premium_meal",
-    "suitableFor": "dinner",
-    "keyIngredients": "Seitan ",
-    "currentImageUrl": "https://images.unsplash.com/photo-6DT8J3nZUPE?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Seitan , featuring Seitan . Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_steak_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_tempeh_01",
-    "title": "Smoky Tempeh & Peanut Stir-fry",
-    "cuisineId": "chinese",
-    "archetype": "Staple",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Smoky Tempeh & Peanut Stir-fry",
-    "currentImageUrl": "https://images.unsplash.com/photo-0kD2Wp67wQk?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Smoky Tempeh & Peanut Stir-fry, featuring Smoky Tempeh & Peanut Stir-fry. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_tempeh_01.webp"
-  },
-  {
-    "recipeId": "rec_veggie_halloumi_01",
-    "title": "Baked Halloumi & Mediterranean Veg",
-    "cuisineId": "mediterranean",
-    "archetype": "Staple",
-    "suitableFor": "dinner",
-    "keyIngredients": "Baked Halloumi & Mediterranean Veg",
-    "currentImageUrl": "https://images.unsplash.com/photo-1594970544699-c88f38bb67cc?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Baked Halloumi & Mediterranean Veg, featuring Baked Halloumi & Mediterranean Veg. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_veggie_halloumi_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_scramble_01",
-    "title": "Smoky Tofu Scramble",
-    "cuisineId": "chinese",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Smoky Tofu Scramble",
-    "currentImageUrl": "https://images.unsplash.com/photo-rJ-a9JlgWEc?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Smoky Tofu Scramble, featuring Smoky Tofu Scramble. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_scramble_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_tikka_01",
-    "title": "Tofu & Chickpea Tikka Masala",
-    "cuisineId": "indian",
-    "archetype": "High_Protein",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Tofu & Chickpea Tikka Masala",
-    "currentImageUrl": "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Tofu & Chickpea Tikka Masala, featuring Tofu & Chickpea Tikka Masala. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_tikka_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_meatloaf_01",
-    "title": "Lentil & Walnut ",
-    "cuisineId": "french",
-    "archetype": "High_Protein",
-    "suitableFor": "dinner",
-    "keyIngredients": "Lentil & Walnut ",
-    "currentImageUrl": "https://images.unsplash.com/photo-_bILufSltJM?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Lentil & Walnut , featuring Lentil & Walnut . Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_meatloaf_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_oats_01",
-    "title": "Peanut Butter & Hemp Seed Overnight Oats",
-    "cuisineId": "mediterranean",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Peanut Butter & Hemp Seed Overnight Oats",
-    "currentImageUrl": "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Peanut Butter & Hemp Seed Overnight Oats, featuring Peanut Butter & Hemp Seed Overnight Oats. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_oats_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_tempeh_bowl_01",
-    "title": "Tempeh ",
-    "cuisineId": "mexican",
-    "archetype": "High_Protein",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Tempeh ",
-    "currentImageUrl": "https://images.unsplash.com/photo-j6GwMrgeL_A?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Tempeh , featuring Tempeh . Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_tempeh_bowl_01.webp"
-  },
-  {
-    "recipeId": "rec_vegan_omelette_01",
-    "title": "Savory Chickpea Flour ",
-    "cuisineId": "french",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Savory Chickpea Flour ",
-    "currentImageUrl": "https://images.unsplash.com/photo-PeA56-Gt7Dw?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Savory Chickpea Flour , featuring Savory Chickpea Flour . Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_vegan_omelette_01.webp"
-  },
-  {
-    "recipeId": "rec_veggie_shells_01",
-    "title": "Cottage Cheese & Spinach Stuffed Shells",
-    "cuisineId": "italian",
-    "archetype": "High_Protein",
-    "suitableFor": "dinner",
-    "keyIngredients": "Cottage Cheese & Spinach Stuffed Shells",
-    "currentImageUrl": "https://images.unsplash.com/photo-xd5mqeeg9qE?q=80&w=800&auto=format&fit=crop&uid=v60akm",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Cottage Cheese & Spinach Stuffed Shells, featuring Cottage Cheese & Spinach Stuffed Shells. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_veggie_shells_01.webp"
-  },
-  {
-    "recipeId": "rec_veggie_mutter_paneer_01",
-    "title": "Paneer & Pea Curry (Mutter Paneer)",
-    "cuisineId": "indian",
-    "archetype": "High_Protein",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Paneer & Pea Curry (Mutter Paneer)",
-    "currentImageUrl": "https://images.unsplash.com/photo-AEU9UZstCfs?q=80&w=800&auto=format&fit=crop&uid=k5gblc",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Paneer & Pea Curry (Mutter Paneer), featuring Paneer & Pea Curry (Mutter Paneer). Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_veggie_mutter_paneer_01.webp"
-  },
-  {
-    "recipeId": "rec_veggie_feta_wrap_01",
-    "title": "Greek Yogurt & Feta Protein Wraps",
-    "cuisineId": "mediterranean",
-    "archetype": "High_Protein",
-    "suitableFor": "lunch",
-    "keyIngredients": "Greek Yogurt & Feta Protein Wraps",
-    "currentImageUrl": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Greek Yogurt & Feta Protein Wraps, featuring Greek Yogurt & Feta Protein Wraps. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_veggie_feta_wrap_01.webp"
-  },
-  {
-    "recipeId": "rec_pesci_seabass_01",
-    "title": "Pan-Seared Seabass with Cannellini Bean Mash",
-    "cuisineId": "mediterranean",
-    "archetype": "High_Protein",
-    "suitableFor": "dinner",
-    "keyIngredients": "Pan-Seared Seabass with Cannellini Bean Mash",
-    "currentImageUrl": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop&uid=pao9f",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Pan-Seared Seabass with Cannellini Bean Mash, featuring Pan-Seared Seabass with Cannellini Bean Mash. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_pesci_seabass_01.webp"
-  },
-  {
-    "recipeId": "rec_pesci_salmon_bagel_01",
-    "title": "Smoked Salmon & Cream Cheese Protein Bagel",
-    "cuisineId": "japanese",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Smoked Salmon & Cream Cheese Protein Bagel",
-    "currentImageUrl": "https://images.unsplash.com/photo-1509339020286-1e6ac2bb1b61?q=80&w=800&auto=format&fit=crop&uid=ox1xdk",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Smoked Salmon & Cream Cheese Protein Bagel, featuring Smoked Salmon & Cream Cheese Protein Bagel. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_pesci_salmon_bagel_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_yogurt_bowl_01",
-    "title": "Greek Yogurt & Mixed Berry Protein Bowl",
-    "cuisineId": "unknown",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Greek Yogurt & Mixed Berry Protein Bowl",
-    "currentImageUrl": "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Greek Yogurt & Mixed Berry Protein Bowl, featuring Greek Yogurt & Mixed Berry Protein Bowl. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_yogurt_bowl_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_cottage_toast_01",
-    "title": "Cottage Cheese & Smashed Avocado Sourdough",
-    "cuisineId": "unknown",
-    "archetype": "budget_breakfast",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Cottage Cheese & Smashed Avocado Sourdough",
-    "currentImageUrl": "https://images.unsplash.com/photo-_3iaS5NstQY?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Cottage Cheese & Smashed Avocado Sourdough, featuring Cottage Cheese & Smashed Avocado Sourdough. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_cottage_toast_01.webp"
-  },
-  {
     "recipeId": "rec_wave1_tuna_bean_salad_01",
     "title": "10-Min Tuna & Cannellini Bean Lemon Salad",
     "cuisineId": "unknown",
@@ -236,32 +8,8 @@
     "keyIngredients": "10-Min Tuna & Cannellini Bean Lemon Salad",
     "currentImageUrl": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop",
     "imageStatus": "placeholder",
-    "visualDescription": "Professional gourmet food photography of 10-Min Tuna & Cannellini Bean Lemon Salad, featuring 10-Min Tuna & Cannellini Bean Lemon Salad. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of 10-Min Tuna & Cannellini Bean Lemon Salad, a delicious budget workhorse. Highly detailed shot featuring 10-Min Tuna & Cannellini Bean Lemon Salad. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_rec_wave1_tuna_bean_salad_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_tofu_wrap_01",
-    "title": "Smoked Tofu, Hummus & Cucumber Wrap",
-    "cuisineId": "unknown",
-    "archetype": "Variety_Pack",
-    "suitableFor": "lunch",
-    "keyIngredients": "Smoked Tofu, Hummus & Cucumber Wrap",
-    "currentImageUrl": "https://images.unsplash.com/photo-1549590143-d5855148a9d5?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Smoked Tofu, Hummus & Cucumber Wrap, featuring Smoked Tofu, Hummus & Cucumber Wrap. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_tofu_wrap_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_chicken_bowl_01",
-    "title": "Classic Lemon Herb Chicken & Quinoa",
-    "cuisineId": "unknown",
-    "archetype": "budget_workhorse",
-    "suitableFor": "dinner, lunch",
-    "keyIngredients": "Classic Lemon Herb Chicken & Quinoa",
-    "currentImageUrl": "https://images.unsplash.com/photo-8LxEnrfgjgg?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Classic Lemon Herb Chicken & Quinoa, featuring Classic Lemon Herb Chicken & Quinoa. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_chicken_bowl_01.webp"
   },
   {
     "recipeId": "rec_wave1_chickpea_curry_01",
@@ -272,32 +20,8 @@
     "keyIngredients": "Simple Coconut Chickpea & Spinach Curry",
     "currentImageUrl": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=800&auto=format&fit=crop",
     "imageStatus": "placeholder",
-    "visualDescription": "Professional gourmet food photography of Simple Coconut Chickpea & Spinach Curry, featuring Simple Coconut Chickpea & Spinach Curry. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Simple Coconut Chickpea & Spinach Curry, a delicious batch cook. Highly detailed shot featuring Simple Coconut Chickpea & Spinach Curry. The dish is as a fresh lunch plate, rich steam, deep colors, swirling cream or garnish, rustic bowl. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_rec_wave1_chickpea_curry_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_cod_veg_01",
-    "title": "Baked Cod with Roasted Mediterranean Vegetables",
-    "cuisineId": "unknown",
-    "archetype": "premium_meal",
-    "suitableFor": "dinner",
-    "keyIngredients": "Baked Cod with Roasted Mediterranean Vegetables",
-    "currentImageUrl": "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Baked Cod with Roasted Mediterranean Vegetables, featuring Baked Cod with Roasted Mediterranean Vegetables. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_cod_veg_01.webp"
-  },
-  {
-    "recipeId": "rec_wave1_garlic_prawns_01",
-    "title": "Garlic Butter Prawns & Zucchini Noodles",
-    "cuisineId": "unknown",
-    "archetype": "Variety_Pack",
-    "suitableFor": "dinner",
-    "keyIngredients": "Garlic Butter Prawns & Zucchini Noodles",
-    "currentImageUrl": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Garlic Butter Prawns & Zucchini Noodles, featuring Garlic Butter Prawns & Zucchini Noodles. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_rec_wave1_garlic_prawns_01.webp"
   },
   {
     "recipeId": "w2_r1_lamb",
@@ -308,7 +32,7 @@
     "keyIngredients": "lamb shoulder, potato",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Slow-Roast Lamb Shoulder with Roots, featuring lamb shoulder, potato. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Slow-Roast Lamb Shoulder with Roots, a delicious premium meal. Highly detailed shot featuring lamb shoulder, potato. The dish is plated as a hearty evening dinner, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r1_lamb.webp"
   },
   {
@@ -320,7 +44,7 @@
     "keyIngredients": "arborio rice, mixed mushrooms",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Wild Mushroom & Truffle Risotto, featuring arborio rice, mixed mushrooms. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Wild Mushroom & Truffle Risotto, a delicious premium meal. Highly detailed shot featuring arborio rice, mixed mushrooms. The dish is plated as a hearty evening dinner, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r2_risotto.webp"
   },
   {
@@ -332,7 +56,7 @@
     "keyIngredients": "sausage, sweet potato",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Sheet Pan Sausage & Sweet Potato, featuring sausage, sweet potato. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Sheet Pan Sausage & Sweet Potato, a delicious batch cook. Highly detailed shot featuring sausage, sweet potato. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r3_sausage_tray.webp"
   },
   {
@@ -344,7 +68,7 @@
     "keyIngredients": "chicken breast, mozzarella",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Oven-Baked Caprese Chicken & Veg, featuring chicken breast, mozzarella. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Oven-Baked Caprese Chicken & Veg, a delicious batch cook. Highly detailed shot featuring chicken breast, mozzarella. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r4_caprese_chicken.webp"
   },
   {
@@ -356,7 +80,7 @@
     "keyIngredients": "green lentils, vegetable stock",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Hearty Lentil & Vegetable Stew, featuring green lentils, vegetable stock. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Hearty Lentil & Vegetable Stew, a delicious budget workhorse. Highly detailed shot featuring green lentils, vegetable stock. The dish is as a fresh lunch plate, rich steam, deep colors, swirling cream or garnish, rustic bowl. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r5_lentil_stew.webp"
   },
   {
@@ -368,7 +92,7 @@
     "keyIngredients": "black beans, quinoa",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Spicy Black Bean & Quinoa Bowl, featuring black beans, quinoa. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Spicy Black Bean & Quinoa Bowl, a delicious variety pack. Highly detailed shot featuring black beans, quinoa. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r6_black_bean_quinoa.webp"
   },
   {
@@ -380,7 +104,7 @@
     "keyIngredients": "chickpeas, whole wheat bread",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Smashed Chickpea & Dill Sandwich, featuring chickpeas, whole wheat bread. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Smashed Chickpea & Dill Sandwich, a delicious budget workhorse. Highly detailed shot featuring chickpeas, whole wheat bread. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r7_chickpea_sandwich.webp"
   },
   {
@@ -392,103 +116,7 @@
     "keyIngredients": "egg, gem lettuce",
     "currentImageUrl": "",
     "imageStatus": "missing",
-    "visualDescription": "Professional gourmet food photography of Quick Egg Salad Lettuce Wraps, featuring egg, gem lettuce. Natural lighting, overhead shot.",
+    "visualDescription": "Gourmet food photography of Quick Egg Salad Lettuce Wraps, a delicious budget workhorse. Highly detailed shot featuring egg, gem lettuce. The dish is as a fresh lunch plate, vibrant colors, clean composition, natural overhead lighting, appetizing texture. Professional commercial styling, 8k resolution, elegant presentation.",
     "targetFilename": "recipe_w2_r8_egg_salad_wrap.webp"
-  },
-  {
-    "recipeId": "w3_smoothie_01",
-    "title": "Peanut Butter Maca Smoothie",
-    "cuisineId": "unknown",
-    "archetype": "Variety_Pack",
-    "suitableFor": "breakfast",
-    "keyIngredients": "Peanut Butter Maca Smoothie",
-    "currentImageUrl": "https://images.unsplash.com/photo-1556767576-5ec41e3239ea?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Peanut Butter Maca Smoothie, featuring Peanut Butter Maca Smoothie. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_smoothie_01.webp"
-  },
-  {
-    "recipeId": "w3_crispbread_01",
-    "title": "Smoked Salmon & Cream Cheese Crispbreads",
-    "cuisineId": "unknown",
-    "archetype": "protein_breakfast",
-    "suitableFor": "breakfast, lunch",
-    "keyIngredients": "Smoked Salmon & Cream Cheese Crispbreads",
-    "currentImageUrl": "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Smoked Salmon & Cream Cheese Crispbreads, featuring Smoked Salmon & Cream Cheese Crispbreads. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_crispbread_01.webp"
-  },
-  {
-    "recipeId": "w3_seabass_01",
-    "title": "Pan-Seared Sea Bass with Asparagus",
-    "cuisineId": "unknown",
-    "archetype": "Variety_Pack",
-    "suitableFor": "dinner",
-    "keyIngredients": "Pan-Seared Sea Bass with Asparagus",
-    "currentImageUrl": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Pan-Seared Sea Bass with Asparagus, featuring Pan-Seared Sea Bass with Asparagus. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_seabass_01.webp"
-  },
-  {
-    "recipeId": "w3_tuna_pasta_01",
-    "title": "Spicy Tuna & Cherry Tomato Linguine",
-    "cuisineId": "unknown",
-    "archetype": "Staple",
-    "suitableFor": "dinner, lunch",
-    "keyIngredients": "Spicy Tuna & Cherry Tomato Linguine",
-    "currentImageUrl": "https://images.unsplash.com/photo-1473093226795-af9932fe5856?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Spicy Tuna & Cherry Tomato Linguine, featuring Spicy Tuna & Cherry Tomato Linguine. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_tuna_pasta_01.webp"
-  },
-  {
-    "recipeId": "w3_halloumi_pan_01",
-    "title": "15-Min Halloumi & Mediterranean Veg Pan",
-    "cuisineId": "unknown",
-    "archetype": "Quick_Fix",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "15-Min Halloumi & Mediterranean Veg Pan",
-    "currentImageUrl": "https://images.unsplash.com/photo-1565557612088-71eab05dfaee?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of 15-Min Halloumi & Mediterranean Veg Pan, featuring 15-Min Halloumi & Mediterranean Veg Pan. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_halloumi_pan_01.webp"
-  },
-  {
-    "recipeId": "w3_chicken_soup_01",
-    "title": "Quick Chicken & Sweetcorn Noodle Soup",
-    "cuisineId": "unknown",
-    "archetype": "Quick_Fix",
-    "suitableFor": "lunch, dinner",
-    "keyIngredients": "Quick Chicken & Sweetcorn Noodle Soup",
-    "currentImageUrl": "https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Quick Chicken & Sweetcorn Noodle Soup, featuring Quick Chicken & Sweetcorn Noodle Soup. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_chicken_soup_01.webp"
-  },
-  {
-    "recipeId": "w3_beef_ragu_01",
-    "title": "Slow-Cooked Beef Ragu with Pappardelle",
-    "cuisineId": "unknown",
-    "archetype": "premium_meal",
-    "suitableFor": "dinner",
-    "keyIngredients": "Slow-Cooked Beef Ragu with Pappardelle",
-    "currentImageUrl": "https://images.unsplash.com/photo-1546272989-40c929af9c66?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Slow-Cooked Beef Ragu with Pappardelle, featuring Slow-Cooked Beef Ragu with Pappardelle. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_beef_ragu_01.webp"
-  },
-  {
-    "recipeId": "w3_miso_aubergine_01",
-    "title": "Roasted Aubergine & Miso Traybake",
-    "cuisineId": "unknown",
-    "archetype": "Batch_Cook",
-    "suitableFor": "dinner, lunch",
-    "keyIngredients": "Roasted Aubergine & Miso Traybake",
-    "currentImageUrl": "https://images.unsplash.com/photo-1545093149-618ce3bcf49d?q=80&w=800&auto=format&fit=crop",
-    "imageStatus": "suspect",
-    "visualDescription": "Professional gourmet food photography of Roasted Aubergine & Miso Traybake, featuring Roasted Aubergine & Miso Traybake. Natural lighting, overhead shot.",
-    "targetFilename": "recipe_w3_miso_aubergine_01.webp"
   }
 ]
