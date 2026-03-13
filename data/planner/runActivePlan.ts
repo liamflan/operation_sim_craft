@@ -27,7 +27,8 @@ export async function runActivePlan(
   actor: ActorType = 'planner_autofill',
   globalBudget: number = 50.00,
   pantryItems: PantryItem[] = [],
-  recipePool?: NormalizedRecipe[]
+  recipePool?: NormalizedRecipe[],
+  preferredRecipeId?: string
 ): Promise<OrchestratorOutput> {
   
   const recipes = getApprovedRecipes(recipePool);
@@ -41,7 +42,7 @@ export async function runActivePlan(
   console.log(`[runActivePlan] Generation triggered by ${actor}. Eligible pool: ${recipes.length}`);
 
   // Trigger the orchestrator
-  const result = await generatePlan(contracts, recipes, actor, preservedAssignments, globalBudget, pantryItems);
+  const result = await generatePlan(contracts, recipes, actor, preservedAssignments, globalBudget, pantryItems, preferredRecipeId);
   
   // Attach execution metadata for diagnostics
   const executionMeta: PlannerExecutionDiagnostic = {

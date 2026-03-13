@@ -75,9 +75,10 @@ interface ActivePlanContextType {
   skipAssignment: (assignmentId: string) => void;
   unskipAssignment: (assignmentId: string) => void;
   skipAndKeepIngredients: (assignmentId: string, recipe: NormalizedRecipe) => void;
-  replaceSlot: (dayIndex: number, slotType: SlotType) => Promise<PlannerActionResult>;
+  replaceSlot: (dayIndex: number, slotType: SlotType, selectedRecipeId?: string) => Promise<PlannerActionResult>;
   regenerateDay: (dayIndex: number) => Promise<PlannerActionResult>;
   regenerateWeek: () => Promise<PlannerActionResult>;
+  getSwapCandidates: (dayIndex: number, slotType: SlotType) => Promise<any[]>;
   slotLoading: Record<string, boolean>;
   dayLoading: Record<number, boolean>;
   weekLoading: boolean;
@@ -417,7 +418,86 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     return { changed: changedSlots > 0, changedSlots, details };
   }, []);
 
-  const replaceSlot = async (dayIndex: number, slotType: SlotType): Promise<PlannerActionResult> => {
+  const getSwapCandidates = async (dayIndex: number, slotType: SlotType): Promise<any[]> => {
+    const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
+    const contracts = buildSlotContracts(workspaceRef.current.id || 'temp_swap', routineValue, latestPayload);
+    const contract = contracts.find(c => c.dayIndex === dayIndex && c.slotType === slotType);
+    
+    if (!contract) return [];
+
+    const previousAssignments = workspaceRef.current.output?.assignments || [];
+    const preservedAssignments = previousAssignments.filter(
+      (a: PlannedMealAssignment) => !(a.dayIndex === dayIndex && a.slotType === slotType)
+    );
+
+    // We run a "mock" generation just for this slot
+    const result = await runActivePlan(
+      [contract],
+      preservedAssignments,
+      'swap_request',
+      latestPayload.budgetWeekly ?? 50.00,
+      pantryItems,
+      plannerEligibleRecipes
+    );
+
+    const slotDiag = result.diagnostics[0];
+    if (!slotDiag) return [];
+
+    const currentRecipeId = previousAssignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
+
+    // Standard eligible alternatives
+    const alternatives = (result.assignments[0]?.recipeId) 
+      ? [{ 
+          recipeId: result.assignments[0].recipeId,
+          score: slotDiag.bestScoreAchieved || 0,
+          isRecommended: true
+        }]
+      : [];
+    
+    // Add top alternatives from diagnostics
+    if (slotDiag.topAlternatives) {
+      slotDiag.topAlternatives.forEach(alt => {
+        if (!alternatives.find(a => a.recipeId === alt.recipeId)) {
+          alternatives.push({
+            recipeId: alt.recipeId,
+            score: alt.score,
+            isRecommended: false
+          });
+        }
+      });
+    }
+
+    // Filter out current and map to UI-friendly objects
+    return alternatives
+      .filter(alt => alt.recipeId !== currentRecipeId)
+      .map(alt => {
+        const recipe = plannerEligibleRecipes.find(r => r.id === alt.recipeId)!;
+        const currentRecipe = currentRecipeId ? plannerEligibleRecipes.find(r => r.id === currentRecipeId) : null;
+        
+        // Compute reasons
+        const reasons: string[] = [];
+        if (currentRecipe) {
+          if (recipe.estimatedCostPerServingGBP < currentRecipe.estimatedCostPerServingGBP) reasons.push('Lower cost');
+          if (recipe.macrosPerServing.protein > currentRecipe.macrosPerServing.protein) reasons.push('Higher protein');
+          if (recipe.totalMinutes < currentRecipe.totalMinutes) reasons.push('Faster prep');
+        }
+        if (recipe.cuisineId && currentRecipe?.cuisineId === recipe.cuisineId) reasons.push('Similar cuisine');
+
+        return {
+          ...recipe,
+          score: alt.score,
+          isRecommended: alt.isRecommended,
+          reasonLabel: reasons[0] || 'Good plan match',
+          impact: currentRecipe ? {
+            costDelta: recipe.estimatedCostPerServingGBP - currentRecipe.estimatedCostPerServingGBP,
+            calorieDelta: recipe.macrosPerServing.calories - currentRecipe.macrosPerServing.calories,
+            proteinDelta: recipe.macrosPerServing.protein - currentRecipe.macrosPerServing.protein,
+          } : null
+        };
+      });
+  };
+
+  const replaceSlot = async (dayIndex: number, slotType: SlotType, selectedRecipeId?: string): Promise<PlannerActionResult> => {
     const slotKey = `${dayIndex}_${slotType}`;
     const runId = `swap_${slotKey}_${Date.now()}`;
 
@@ -450,8 +530,16 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         'swap_request', 
         latestPayload.budgetWeekly ?? 50.00, 
         pantryItems,
-        plannerEligibleRecipes
+        plannerEligibleRecipes,
+        selectedRecipeId
       );
+
+      // Validation: did we actually get what we asked for if a manual selection was made?
+      const assignedRecipeForTarget = output.assignments.find(a => a.dayIndex === dayIndex && a.slotType === slotType)?.recipeId;
+      if (selectedRecipeId && assignedRecipeForTarget !== selectedRecipeId) {
+        // The choice became invalid between preview and commit
+        return { ok: false, changed: false, status: 'failed_constraints', reason: 'selected_recipe_no_longer_valid' as any };
+      }
 
       const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
       
@@ -793,6 +881,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       replaceSlot,
       regenerateDay,
       regenerateWeek,
+      getSwapCandidates,
       slotLoading,
       dayLoading,
       weekLoading

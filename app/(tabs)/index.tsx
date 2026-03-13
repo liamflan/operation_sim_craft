@@ -4,6 +4,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import RecipeCard from '../../components/RecipeCard';
 import ImportRecipeModal from '../../components/ImportRecipeModal';
+import SwapDrawer from '../../components/SwapDrawer';
 import { slotLabel, isPlanned, DAYS } from '../../data/weeklyRoutine';
 import { useActivePlan, PlannerActionStatus, getFriendlyReason } from '../../data/ActivePlanContext';
 import { useWeeklyRoutine } from '../../data/WeeklyRoutineContext';
@@ -26,6 +27,10 @@ export default function DashboardScreen() {
   const { workspace, skipAssignment, unskipAssignment, skipAndKeepIngredients, replaceSlot, regenerateDay, regenerateWeek, slotLoading, dayLoading, weekLoading } = useActivePlan();
   const { showToast } = useToast();
   const { updateDebugData } = useDebug();
+
+  // Swap Drawer State
+  const [swapDrawerVisible, setSwapDrawerVisible] = useState(false);
+  const [activeSwapSlot, setActiveSwapSlot] = useState<{ dayIndex: number; slot: SlotType } | null>(null);
 
   // Meal feed fade animation — decoupled so content only swaps after fade-out completes
   const mealFadeAnim = useRef(new Animated.Value(1)).current;
@@ -96,18 +101,9 @@ export default function DashboardScreen() {
     return acc;
   }, { calories: 0, protein: 0 });
 
-  const handleSwap = async (type: string) => {
-    const result = await replaceSlot(displayedDayIndex, type as any);
-    const label = type.charAt(0).toUpperCase() + type.slice(1);
-
-    if (result.status === 'success_changed') {
-      showToast(`${label} swapped`, 'success', { category: 'planner' });
-    } else if (result.status === 'success_unchanged') {
-      showToast(`No better ${type} option found`, 'info', { category: 'planner' });
-    } else if (result.status.startsWith('failed_')) {
-      const friendly = getFriendlyReason(result.status, result.reason);
-      showToast(`Couldn’t swap ${type} - ${friendly}`, 'error', { category: 'planner' });
-    }
+  const handleSwap = (type: string) => {
+    setActiveSwapSlot({ dayIndex: displayedDayIndex, slot: type as SlotType });
+    setSwapDrawerVisible(true);
   };
 
   const handleSkip = (assignmentId: string) => {
@@ -568,6 +564,15 @@ export default function DashboardScreen() {
       <ImportRecipeModal
         visible={importModalVisible}
         onClose={() => setImportModalVisible(false)}
+      />
+
+      {/* Swap Experience Drawer */}
+      <SwapDrawer
+        isVisible={swapDrawerVisible}
+        onClose={() => setSwapDrawerVisible(false)}
+        dayIndex={activeSwapSlot?.dayIndex ?? 0}
+        slotType={activeSwapSlot?.slot ?? 'lunch'}
+        currentRecipeId={activeSwapSlot ? (dayAssignments.find(a => a.slotType === activeSwapSlot.slot)?.recipeId ?? null) : null}
       />
     </View>
   );

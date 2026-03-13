@@ -9,7 +9,8 @@ export type UnchangedReason =
   | 'budget_delta_exceeded'
   | 'zero_target_day_candidates'
   | 'all_meals_locked'
-  | 'no_eligible_slots';
+  | 'no_eligible_slots'
+  | 'selected_recipe_no_longer_valid';
 
 export type ActionPhase =
   | 'click_received'

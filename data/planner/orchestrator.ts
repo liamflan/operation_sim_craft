@@ -33,7 +33,8 @@ export async function generatePlan(
   actor: ActorType = 'planner_autofill',
   preservedAssignments: PlannedMealAssignment[] = [],
   globalBudget: number = 50.00,
-  pantryItems: PantryItem[] = []
+  pantryItems: PantryItem[] = [],
+  preferredRecipeId?: string
 ): Promise<OrchestratorOutput> {
   const assignments: PlannedMealAssignment[] = [];
   const diagnostics: SlotDiagnostic[] = [];
@@ -105,11 +106,24 @@ export async function generatePlan(
     const rejections = evaluationResults
       .filter(res => res.result.candidate === null);
 
-    // 2. Decision logic (No changes to selection path)
+    // 2. Decision logic (Standard selection path)
     const { action, reasons } = determineRescueAction(candidates, recipes, contract, planWideState.archetypeCounts);
 
     const sortedCandidates = [...candidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
     let finalCandidate = sortedCandidates[0] || null;
+
+    // Apply preferred selection IF it's valid
+    if (preferredRecipeId) {
+      const manualMatch = candidates.find(c => c.recipeId === preferredRecipeId);
+      if (manualMatch) {
+         finalCandidate = manualMatch;
+      } else {
+        // Option was not valid or not found in candidates for THIS run.
+        // We do NOT override. We let the planner fail or pick someone else.
+        // The ActivePlanContext will check if the result matches the request.
+        console.warn(`[orchestrator] Choice ${preferredRecipeId} not among eligible candidates for ${slotId}.`);
+      }
+    }
 
     // 3. Diagnostic Aggregation
     const topFailureReasons: Partial<Record<RescueFailureReason, number>> = {};
