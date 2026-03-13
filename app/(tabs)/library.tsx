@@ -33,6 +33,7 @@ const SORT_OPTIONS: { id: SortOption; label: string; icon: string }[] = [
 
 export default function RecipeLibrary() {
   const {
+    allRecipes,
     filteredRecipes,
     searchQuery,
     setSearchQuery,
@@ -152,6 +153,14 @@ export default function RecipeLibrary() {
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+
+        <View style={styles.resultsInfo}>
+          <Text style={styles.resultsText}>
+            {searchQuery || activeCuisine !== 'all'
+              ? `${filteredRecipes.length} of ${allRecipes.length} recipes`
+              : `${allRecipes.length} recipes`}
+          </Text>
         </View>
 
         <View style={styles.grid}>
@@ -301,6 +310,8 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 28, fontWeight: '500', color: '#1B251F', letterSpacing: -0.8 },
   subtitle: { fontSize: 15, color: '#6A766E', marginTop: 2, fontWeight: '400' },
+  resultsInfo: { marginBottom: 16, paddingHorizontal: 4 },
+  resultsText: { fontSize: 12, fontWeight: '600', color: '#A3B3A9', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   importBtn: {
     backgroundColor: '#7BA96A',

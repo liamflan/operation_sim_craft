@@ -127,9 +127,9 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    // 2. Cuisine Filter
+    // 2. Cuisine & Visibility Filter
     if (activeCuisine !== 'all') {
-      result = result.filter(r => resolveCuisineId(r) === activeCuisine);
+      result = result.filter(r => resolveCuisineId(r) === activeCuisine && r.libraryVisible);
     }
 
     // 3. Sorting with Defensive Fallbacks
@@ -194,6 +194,7 @@ export function RecipeProvider({ children }: { children: React.ReactNode }) {
       reheatsWell: true,
       yieldsLeftovers: false,
       suitableFor: ['dinner'],
+      effortBand: 'standard',
       ...recipeData,
     };
 
