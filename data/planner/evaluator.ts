@@ -157,7 +157,7 @@ export function checkHardEligibility(
     }
   }
   // Same-day duplicate block remains HARD even in rescue (exact recipe match)
-  if (varietyCtx.sameDayRecipeIds.has(recipe.id)) {
+  if (varietyCtx.sameDayRecipeIds?.has(recipe.id)) {
     failures.push('same_day_duplicate');
   }
 
@@ -316,7 +316,7 @@ export function scoreCandidate(
   let varietyScore = 100;
   varietyScore -= (varietyCtx.repeatCount * 20);
   varietyScore -= (varietyCtx.archetypeDensity * 5);
-  if (varietyCtx.sameDayArchetypes.has(recipe.archetype)) varietyScore -= 20;
+  if (varietyCtx.sameDayArchetypes?.has(recipe.archetype)) varietyScore -= 20;
   if (varietyCtx.consecutiveArchetypeMatch) varietyScore -= 15;
   const varietyFitScore = Math.max(0, varietyScore);
 

@@ -437,6 +437,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     const archetypeCounts: Record<string, number> = {};
     const globalRepeatRegister = new Map<string, number>();
     const dayArchetypes = new Set<string>();
+    const dayRecipeIds = new Set<string>();
 
     previousAssignments.forEach((a: PlannedMealAssignment) => {
       if (a.dayIndex === dayIndex && a.slotType === slotType) return;
@@ -447,6 +448,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         globalRepeatRegister.set(r.id, (globalRepeatRegister.get(r.id) || 0) + 1);
         if (a.dayIndex === dayIndex) {
           dayArchetypes.add(r.archetype);
+          dayRecipeIds.add(r.id);
         }
       }
     });
@@ -458,7 +460,8 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         const varietyCtx = {
           repeatCount: globalRepeatRegister.get(r.id) || 0,
           archetypeDensity: archetypeCounts[r.archetype] || 0,
-          sameDayArchetypes: dayArchetypes,
+          sameDayArchetypes: dayArchetypes as any,
+          sameDayRecipeIds: dayRecipeIds,
           consecutiveArchetypeMatch: false,
           cuisineSaturationCount: 0 
         };
