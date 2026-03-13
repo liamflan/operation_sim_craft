@@ -167,7 +167,7 @@ export const CUISINE_PROFILES: Record<CuisineId, CuisineProfile> = {
   south_east_asian: {
     id: 'south_east_asian',
     label: 'South East Asian',
-    description: 'Fragrant and complex profiles balancing lime, chilli, and coconut milk.',
+    description: 'Fragrant and complex profiles balancing xlime, chilli, and coconut milk.',
     flavourTags: ['lime', 'chilli', 'coconut'],
     styleTags: ['fragrant_herbs'],
     ingredientBiasTags: ['lemongrass', 'fish_sauce', 'thai_basil']
@@ -370,6 +370,67 @@ export interface RescueMetadata {
   originalTargetHash: string; 
 }
 
+export type FriendlyFailureCategory = 
+  | 'no_slot_match'
+  | 'budget_too_tight'
+  | 'protein_or_calorie_target_mismatch'
+  | 'exclusions_or_diet_conflict'
+  | 'repeat_cap_exhausted'
+  | 'archetype_cap_exhausted'
+  | 'planner_usable_false'
+  | 'metadata_missing'
+  | 'fallback_exhausted'
+  | 'unknown';
+
+export interface NearMissCandidate {
+  recipeId: string;
+  title: string;
+  suitableFor: SlotType[];
+  archetype: RecipeArchetype;
+  cuisineId?: CuisineId;
+  costPerServing: number;
+  calories: number;
+  protein: number;
+  plannerUsable: boolean;
+  failureReasons: RescueFailureReason[];
+  friendlyCategory: FriendlyFailureCategory;
+  score?: number;
+}
+
+export interface AssignmentExplanation {
+  assignedRecipeId: string;
+  assignedTitle: string;
+  slotType: SlotType;
+  suitableFor: SlotType[];
+  archetype: RecipeArchetype;
+  cuisineId?: CuisineId;
+  scoreBreakdown: PlannerCandidate['scores'];
+  isRescue: boolean;
+  winnerMargin?: number;
+}
+
+export interface AlternativeCandidate {
+  recipeId: string;
+  title: string;
+  archetype: RecipeArchetype;
+  score: number;
+  margin: number;
+}
+
+export interface LunchDinnerSemanticAudit {
+  assignedRecipeId: string;
+  assignedTitle: string;
+  slotType: SlotType;
+  suitableFor: SlotType[];
+  archetype: RecipeArchetype;
+  totalMinutes: number;
+  activePrepMinutes: number;
+  leftoverFriendly: boolean;
+  batchFriendly: boolean;
+  scoreBreakdown: PlannerCandidate['scores'];
+  semanticMismatchWarning?: string;
+}
+
 export interface PlannedMealAssignment {
   id: string;
   planId: string;
@@ -399,7 +460,7 @@ export interface PlannedMealAssignment {
   
   rescueData?: RescueMetadata;
   pantryTransferStatus?: 'transferred';
-
+ 
   collapseContext?: {
     reasons: RescueFailureReason[];
     availableCandidatesBeforeCollapse: number;
@@ -411,10 +472,18 @@ export interface PlannedMealAssignment {
 
 export interface SlotDiagnostic {
   slotId: string; 
+  contractAudit: SlotContract; 
   totalConsidered: number;
   eligibleCount: number;
   rejectedCount: number;
   topFailureReasons: Partial<Record<RescueFailureReason, number>>;
+  friendlyFailureSummary: Partial<Record<FriendlyFailureCategory, number>>;
+  
+  nearMisses: NearMissCandidate[];
+  topAlternatives?: AlternativeCandidate[];
+  assignmentExplanation?: AssignmentExplanation;
+  semanticAudit?: LunchDinnerSemanticAudit;
+
   rescueTriggered: boolean;
   actionTaken: 'filled_normally' | 'soft_rescue' | 'gemini_generation_needed' | 'hard_fallback' | 'failed_completely';
   assignedCandidateId: string | null;
@@ -424,6 +493,10 @@ export interface SlotDiagnostic {
 export interface PlannerExecutionDiagnostic {
   runId: string;
   timestamp: string;
+  actor: ActorType;
+  contractCount: number;
+  recipeCount: number;
+  preservedAssignmentCount: number;
   enginePath: 'deterministic_local' | 'real_gemini' | 'fallback_mock';
   planningMode: 'normal' | 'degraded_due_to_infeasible_protein_target';
   isHardRuleValid: boolean;

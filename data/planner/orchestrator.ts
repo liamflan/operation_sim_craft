@@ -12,9 +12,16 @@ import {
   VarietyContext,
   RecipeArchetype,
   CuisineId,
-  ActorType
+  ActorType,
+  AssignmentExplanation,
+  LunchDinnerSemanticAudit,
+  RescueFailureReason,
+  AlternativeCandidate,
+  NearMissCandidate,
+  FriendlyFailureCategory
 } from './plannerTypes';
-import { evaluateCandidate, determineRescueAction } from './evaluator';
+import { evaluateCandidate, determineRescueAction, scoreCandidate } from './evaluator';
+import { classifyFailure, performSemanticAudit } from './plannerDiagnostics';
 import { PantryItem } from '../PantryContext';
 
 /**
@@ -65,43 +72,127 @@ export async function generatePlan(
 
     const slotId = `${contract.dayIndex}_${contract.slotType}`;
     
-    // Build context for this specific slot
-    const varietyCtx: VarietyContext = {
-      repeatCount: 0, // Will be updated per candidate
-      archetypeDensity: 0, // Will be updated per candidate
-      sameDayArchetypes: planWideState.dayClusters.get(contract.dayIndex) || new Set(),
-      consecutiveArchetypeMatch: false,
-      cuisineSaturationCount: 0 
-    };
+    // 1. Evaluate all recipes for this slot
+    // We capture the predicted score and exact variety context for every recipe 
+    // to ensure near-miss reporting doesn't rely on a stale common varietyCtx object.
+    const evaluationResults = recipes.map(r => {
+      const perRecipeCtx: VarietyContext = {
+        repeatCount: planWideState.globalRepeatRegister.get(r.id) || 0,
+        archetypeDensity: planWideState.archetypeCounts[r.archetype] || 0,
+        sameDayArchetypes: planWideState.dayClusters.get(contract.dayIndex) || new Set(),
+        consecutiveArchetypeMatch: false,
+        cuisineSaturationCount: r.cuisineId ? planWideState.cuisineSaturation[r.cuisineId] || 0 : 0 
+      };
 
-    // 1. Evaluate all candidates for this slot
-    const candidates = recipes
-      .map(r => {
-        varietyCtx.repeatCount = planWideState.globalRepeatRegister.get(r.id) || 0;
-        varietyCtx.archetypeDensity = planWideState.archetypeCounts[r.archetype] || 0;
-        if (r.cuisineId) {
-            varietyCtx.cuisineSaturationCount = planWideState.cuisineSaturation[r.cuisineId] || 0;
-        }
-        return evaluateCandidate(r, contract, varietyCtx, pantryItems);
-      })
-      .filter(res => res.candidate !== null)
-      .map(res => res.candidate!);
+      const evalResult = evaluateCandidate(r, contract, perRecipeCtx, pantryItems);
+      
+      // Post-pass diagnostic score capture using unchanged scoring pipeline
+      let diagnosticScore: number | undefined;
+      const { scores } = scoreCandidate(r, contract, perRecipeCtx, pantryItems);
+      diagnosticScore = scores.totalScore;
 
-    // 2. Decision logic
+      return {
+        recipe: r,
+        result: evalResult,
+        diagnosticScore
+      };
+    });
+
+    const candidates = evaluationResults
+      .filter(res => res.result.candidate !== null)
+      .map(res => res.result.candidate!);
+
+    const rejections = evaluationResults
+      .filter(res => res.result.candidate === null);
+
+    // 2. Decision logic (No changes to selection path)
     const { action, reasons } = determineRescueAction(candidates, recipes, contract, planWideState.archetypeCounts);
 
-    let finalCandidate = candidates.sort((a, b) => b.scores.totalScore - a.scores.totalScore)[0] || null;
+    const sortedCandidates = [...candidates].sort((a, b) => b.scores.totalScore - a.scores.totalScore);
+    let finalCandidate = sortedCandidates[0] || null;
 
-    // 3. Update plan-wide variety state if assignment made
+    // 3. Diagnostic Aggregation
+    const topFailureReasons: Partial<Record<RescueFailureReason, number>> = {};
+    const friendlyFailureSummary: Partial<Record<FriendlyFailureCategory, number>> = {};
+    
+    rejections.forEach(rej => {
+      const failures = rej.result.failureReasons;
+      failures.forEach(f => {
+        topFailureReasons[f] = (topFailureReasons[f] || 0) + 1;
+      });
+      const friendly = classifyFailure(failures);
+      friendlyFailureSummary[friendly] = (friendlyFailureSummary[friendly] || 0) + 1;
+    });
+
+    // 3.1 Near-Miss Identification
+    const nearMisses: NearMissCandidate[] = rejections
+      .filter(rej => {
+        const failures = rej.result.failureReasons;
+        return failures.length <= 2 && 
+               !failures.includes('not_planner_usable') && 
+               !failures.includes('dietary_mismatch');
+      })
+      .map(rej => {
+        return {
+          recipeId: rej.recipe.id,
+          title: rej.recipe.title,
+          suitableFor: rej.recipe.suitableFor,
+          archetype: rej.recipe.archetype,
+          cuisineId: rej.recipe.cuisineId,
+          costPerServing: rej.recipe.estimatedCostPerServingGBP,
+          calories: rej.recipe.macrosPerServing.calories,
+          protein: rej.recipe.macrosPerServing.protein,
+          plannerUsable: rej.recipe.plannerUsable,
+          failureReasons: rej.result.failureReasons,
+          friendlyCategory: classifyFailure(rej.result.failureReasons),
+          score: rej.diagnosticScore
+        };
+      })
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 10);
+
+    // 3.2 Assignment Explanation & Alternatives
+    let assignmentExplanation: AssignmentExplanation | undefined;
+    let semanticAudit: LunchDinnerSemanticAudit | undefined;
+    let topAlternatives: AlternativeCandidate[] = [];
+
     if (finalCandidate) {
       const assignedRecipe = recipes.find(r => r.id === finalCandidate!.recipeId)!;
-      
+      const nextBest = sortedCandidates[1];
+      const winnerMargin = nextBest ? finalCandidate.scores.totalScore - nextBest.scores.totalScore : undefined;
+
+      assignmentExplanation = {
+        assignedRecipeId: assignedRecipe.id,
+        assignedTitle: assignedRecipe.title,
+        slotType: contract.slotType,
+        suitableFor: assignedRecipe.suitableFor,
+        archetype: assignedRecipe.archetype,
+        cuisineId: assignedRecipe.cuisineId,
+        scoreBreakdown: finalCandidate.scores,
+        isRescue: action !== 'none',
+        winnerMargin
+      };
+
+      topAlternatives = sortedCandidates.slice(1, 4).map(c => {
+        const recipe = recipes.find(r => r.id === c.recipeId)!;
+        return {
+          recipeId: recipe.id,
+          title: recipe.title,
+          archetype: recipe.archetype,
+          score: c.scores.totalScore,
+          margin: finalCandidate!.scores.totalScore - c.scores.totalScore
+        };
+      });
+
+      if (contract.slotType === 'lunch' || contract.slotType === 'dinner') {
+        semanticAudit = performSemanticAudit(assignedRecipe, contract, finalCandidate.scores);
+      }
+
+      // 4. Update variety context state (Behaviour Neutral)
       planWideState.archetypeCounts[assignedRecipe.archetype] = (planWideState.archetypeCounts[assignedRecipe.archetype] || 0) + 1;
-      
       if (assignedRecipe.cuisineId) {
         planWideState.cuisineSaturation[assignedRecipe.cuisineId] = (planWideState.cuisineSaturation[assignedRecipe.cuisineId] || 0) + 1;
       }
-
       const currentCount = planWideState.globalRepeatRegister.get(assignedRecipe.id) || 0;
       planWideState.globalRepeatRegister.set(assignedRecipe.id, currentCount + 1);
 
@@ -111,7 +202,7 @@ export async function generatePlan(
       planWideState.dayClusters.get(contract.dayIndex)!.add(assignedRecipe.archetype);
     }
 
-    // 4. Record outputs
+    // 5. Build Result objects
     assignments.push({
       id: `assign_${slotId}`,
       planId: contract.planId,
@@ -133,23 +224,22 @@ export async function generatePlan(
 
     diagnostics.push({
       slotId,
+      contractAudit: { ...contract },
       totalConsidered: recipes.length,
       eligibleCount: candidates.length,
-      rejectedCount: recipes.length - candidates.length,
-      topFailureReasons: {}, 
+      rejectedCount: rejections.length,
+      topFailureReasons,
+      friendlyFailureSummary,
+      nearMisses,
+      topAlternatives,
+      assignmentExplanation,
+      semanticAudit,
       rescueTriggered: action !== 'none',
       actionTaken: action === 'none' ? 'filled_normally' : 'soft_rescue',
       assignedCandidateId: finalCandidate?.id || null,
       bestScoreAchieved: finalCandidate?.scores.totalScore || null
     });
   }
-
-  // Sort assignments by day and slot for consistency
-  const slotOrder = { breakfast: 0, lunch: 1, dinner: 2 };
-  assignments.sort((a, b) => {
-      if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
-      return slotOrder[a.slotType as keyof typeof slotOrder] - slotOrder[b.slotType as keyof typeof slotOrder];
-  });
 
   return { assignments, diagnostics };
 }
