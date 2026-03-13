@@ -18,32 +18,50 @@ import { PantryItem } from '../PantryContext';
 const PANTRY_STOPLIST = ['salt', 'pepper', 'water', 'oil', 'olive oil', 'vegetable oil', 'black pepper', 'sea salt'];
 
 /**
- * Validates if a recipe passes hard, non-negotiable eligibility constraints for a slot.
- * Supports tiered relaxation levels to ensure a "Guarantee-Fill" policy.
+ * Validates if a recipe passes hard, non-negotiable safety rules.
+ * These are NEVER relaxed, even in rescue tiers.
  */
-export function checkHardEligibility(
-  recipe: NormalizedRecipe, 
-  contract: SlotContract,
-  varietyCtx: VarietyContext,
-  tier: 1 | 2 | 3 | 4 = 1
+export function checkHardSafetyOnly(
+  recipe: NormalizedRecipe,
+  contract: SlotContract
 ): RescueFailureReason[] {
   const failures: RescueFailureReason[] = [];
 
-  // 0. Profile Exclusions / Ingredient Exclusions (HARD - NEVER RELAXED)
+  // 1. Dietary Baseline Enforcement (HARD)
+  if (!isRecipeAllowedForBaselineDiet(recipe, contract.dietaryBaseline)) {
+    failures.push('dietary_mismatch');
+  }
+
+  // 2. Profile / Ingredient Exclusions (HARD)
   if (contract.hardExclusions && contract.hardExclusions.length > 0) {
     const exclusionMatchFound = contract.hardExclusions.some(exclusion => {
-      const pattern = new RegExp(`(?:^|[^a-z])${exclusion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[^a-z]|$)`, 'i');
-      return recipe.ingredients.some(ingredient => {
-        const normalizedIngredient = ingredient.name.toLowerCase().trim();
-        return pattern.test(normalizedIngredient);
-      });
+      const lowerExclusion = exclusion.toLowerCase();
+      
+      // Check ingredients list
+      const matchesIngredient = recipe.ingredients.some(ing => 
+        ing.name.toLowerCase().includes(lowerExclusion)
+      );
+      if (matchesIngredient) return true;
+
+      // Check ingredient tags (Phase 21/22 consistency)
+      const matchesIngredientTag = recipe.ingredientTags.some(tag => 
+        tag.toLowerCase() === lowerExclusion
+      );
+      if (matchesIngredientTag) return true;
+
+      // Check overall tags
+      const matchesTag = recipe.tags.some(tag => 
+        tag.toLowerCase() === lowerExclusion
+      );
+      if (matchesTag) return true;
+
+      return false;
     });
     if (exclusionMatchFound) {
       failures.push('exclusion_ingredient_match');
     }
   }
 
-  // Phase 21: excludedIngredientTags (HARD - NEVER RELAXED)
   if (contract.tasteProfile?.excludedIngredientTags && contract.tasteProfile.excludedIngredientTags.length > 0) {
     const tagMatchFound = contract.tasteProfile.excludedIngredientTags.some(tag => 
        recipe.ingredientTags.includes(tag) || recipe.tags.includes(tag)
@@ -53,32 +71,48 @@ export function checkHardEligibility(
     }
   }
 
-  // 1. Dietary Baseline Enforcement (HARD - NEVER RELAXED)
-  if (!isRecipeAllowedForBaselineDiet(recipe, contract.dietaryBaseline)) {
-    failures.push('dietary_mismatch');
-  }
-
-  // 2. Usability check (HARD - NEVER RELAXED)
+  // 3. Planner Usability (HARD)
   if (!recipe.plannerUsable) {
     failures.push('not_planner_usable');
   }
 
-  // Slot Suitability (Relaxed only in Tier 4 for Breakfast/Lunch overlap)
+  return failures;
+}
+
+/**
+ * Validates if a recipe passes eligibility constraints for a slot, including 
+ * progressive relaxation tiers for rescue operations.
+ */
+export function checkHardEligibility(
+  recipe: NormalizedRecipe, 
+  contract: SlotContract,
+  varietyCtx: VarietyContext,
+  tier: 1 | 2 | 3 | 4 = 1
+): RescueFailureReason[] {
+  // START WITH NON-NEGOTIABLE SAFETY
+  const safetyFailures = checkHardSafetyOnly(recipe, contract);
+  if (safetyFailures.length > 0) return safetyFailures;
+
+  const failures: RescueFailureReason[] = [];
+
+  // 4. Slot Suitability (Progressive Relaxation)
+  // Tier 1-3: Strict suitability match.
+  // Tier 4: Desperate overlap (Lunch can fill Breakfast, but not vice versa if it's too heavy).
   let eligibleSlots = [...recipe.suitableFor];
   if (tier >= 4) {
-    // If we are desperate, allow lunch recipes to fill breakfast/dinner and vice versa
-    // but only if it's not a complete mismatch (e.g. snack vs dinner)
     if (recipe.suitableFor.includes('lunch')) {
       eligibleSlots.push('breakfast', 'dinner');
     }
+    // Note: We do NOT allow 'breakfast' recipes to fill 'dinner' unless already tagged.
   }
 
   if (!eligibleSlots.includes(contract.slotType as any)) {
     failures.push('no_slot_match');
   }
 
-  // Budget (Progressive Relaxation)
-  let budgetMultiplier = 1.5; 
+  // 5. Budget (Progressive Relaxation)
+  let budgetMultiplier = 1.3; // Tier 1: 30% tolerance
+  if (tier === 2) budgetMultiplier = 1.6;
   if (tier === 3) budgetMultiplier = 2.0;
   if (tier >= 4) budgetMultiplier = 3.0; // Desperate budget expansion
 
@@ -87,17 +121,17 @@ export function checkHardEligibility(
     failures.push('budget_delta_exceeded');
   }
   
-  // Macros (Strict Limits -> Progressive Relaxation)
+  // 6. Macros (Progressive Relaxation)
   let proteinMin = contract.macroTargets.protein.min;
   let calorieMax = contract.macroTargets.calories.max;
-  let calorieMin = contract.macroTargets.calories.min * 0.75;
+  let calorieMin = contract.macroTargets.calories.min * 0.85;
 
   if (tier === 3) {
-    proteinMin *= 0.8; // Relax protein target by 20%
-    calorieMax *= 1.2; // Relax calorie max by 20%
+    proteinMin *= 0.7; // Relax protein target by 30%
+    calorieMax *= 1.25; // Relax calorie max by 25%
   }
   if (tier >= 4) {
-    proteinMin = 5; // Absolute floor for protein
+    proteinMin = 5; // Absolute floor for protein (Tier 4)
     calorieMax *= 1.5; // High calorie ceiling
     calorieMin = 100; // Low calorie floor
   }
@@ -112,7 +146,7 @@ export function checkHardEligibility(
     failures.push('calorie_minimum_failed');
   }
 
-  // Archetype & Repeat Caps (Relaxed in Tier 2+)
+  // 7. Archetype & Repeat Caps (Relaxed in Tier 2+)
   if (tier === 1) {
     const cap = contract.archetypeCaps[recipe.archetype];
     if (cap !== undefined && varietyCtx.archetypeDensity >= cap) {
@@ -122,12 +156,12 @@ export function checkHardEligibility(
       failures.push('repeat_cap_exhausted');
     }
   }
-  // Even in rescue, we still block same-day duplicates
-  if (varietyCtx.sameDayArchetypes.has(recipe.id)) {
+  // Same-day duplicate block remains HARD even in rescue (exact recipe match)
+  if (varietyCtx.sameDayRecipeIds.has(recipe.id)) {
     failures.push('same_day_duplicate');
   }
 
-  // Leftovers / Batch Cook Rules (Relaxed in Tier 2+)
+  // 8. Leftovers / Batch Cook Rules (Relaxed in Tier 2+)
   if (tier === 1) {
     if (contract.leftoverPreference === 'require_leftover' && !recipe.yieldsLeftovers) {
       failures.push('leftover_mismatch');
@@ -140,13 +174,13 @@ export function checkHardEligibility(
     }
   }
 
-  // Effort Band enforcement (Hard Gates -> Relaxed in Tier 3+)
+  // 9. Effort Band enforcement (Relaxed in Tier 3+)
   if (tier < 3) {
     if (contract.context === 'routine' && recipe.effortBand === 'slow') {
       failures.push('effort_mismatch');
     }
     if (contract.preferredEffortBands && contract.preferredEffortBands.length > 0) {
-      if (contract.slotType !== 'dinner' && recipe.effortBand === 'slow') {
+      if (contract.slotType !== 'dinner' && recipe.effortBand === 'slow' && !contract.preferredEffortBands.includes('slow')) {
           failures.push('effort_mismatch');
       }
     }
@@ -389,6 +423,7 @@ export function analyzePoolCollapse(
       repeatCount: 0,
       archetypeDensity: currentArchetypeCounts[r.archetype] || 0,
       sameDayArchetypes: new Set(),
+      sameDayRecipeIds: new Set(),
       consecutiveArchetypeMatch: false,
       cuisineSaturationCount: 0
     }); 

@@ -6,7 +6,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { buildPlannerSetup, buildSlotContracts, CalibrationPayload } from './planner/buildPlannerInput';
-import { evaluateCandidate, scoreCandidate } from './planner/evaluator';
+import { evaluateCandidate, scoreCandidate, checkHardSafetyOnly } from './planner/evaluator';
 import { runActivePlan } from './planner/runActivePlan';
 import { FULL_RECIPE_CATALOG } from './planner/recipeRegistry';
 import { useWeeklyRoutine } from './WeeklyRoutineContext';
@@ -32,7 +32,8 @@ export interface ActiveWorkspace {
 export type PlannerActionStatus = 
   | 'success_changed' 
   | 'success_unchanged' 
-  | 'failed_no_candidates' 
+  | 'failed_no_candidates'
+  | 'failed_safe_regen'
   | 'failed_budget' 
   | 'failed_constraints' 
   | 'failed_locked_state' 
@@ -56,6 +57,7 @@ export type PlannerActionResult = {
  * Maps technical/internal reasons to short friendly user-facing reasons.
  */
 export const getFriendlyReason = (status: PlannerActionStatus, reason?: string) => {
+  if (status === 'failed_safe_regen') return 'could not improve the plan while keeping it safe; previous plan kept';
   if (status === 'failed_locked_state' || reason === 'all_meals_locked' || reason === 'no_eligible_slots') return 'all meals are locked';
   if (status === 'failed_budget' || reason === 'budget_delta_exceeded') return 'budget is too tight';
   if (status === 'failed_constraints') return 'current constraints are too strict';
@@ -668,7 +670,26 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         plannerEligibleRecipes
       );
 
-      const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
+      // PRESERVATION LOGIC (Phase 22)
+      const proposal = output.assignments;
+      const patchedAssignments = proposal.map(next => {
+        const prev = previousAssignments.find(p => p.dayIndex === next.dayIndex && p.slotType === next.slotType);
+        if (!next.recipeId && prev?.recipeId) {
+          const oldRecipe = FULL_RECIPE_CATALOG[prev.recipeId];
+          const contract = contracts.find(c => c.dayIndex === next.dayIndex && c.slotType === next.slotType);
+          if (oldRecipe && contract) {
+            const safetyFailures = checkHardSafetyOnly(oldRecipe, contract);
+            if (safetyFailures.length === 0) {
+              return { ...prev, state: 'proposed' as const };
+            }
+          }
+        }
+        return next;
+      });
+
+      const refinedOutput = { ...output, assignments: patchedAssignments };
+
+      const { changed, changedSlots } = diffAssignments(previousAssignments, refinedOutput.assignments);
 
       if (!changed) {
         setWorkspace(previousWorkspace);
@@ -717,7 +738,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
-        output,
+        output: refinedOutput,
         generatedAt: new Date().toISOString(),
         actionSource: 'regenerate_day'
       }));
@@ -794,7 +815,55 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         plannerEligibleRecipes
       );
 
-      const { changed, changedSlots } = diffAssignments(previousAssignments, output.assignments);
+      // TRANSACTIONAL VALIDATION & PRESERVATION (Phase 22)
+      const proposal = output.assignments;
+      const patchedAssignments = proposal.map(next => {
+        const prev = previousAssignments.find(p => p.dayIndex === next.dayIndex && p.slotType === next.slotType);
+        
+        // If the new plan has a hole but the old plan had a recipe...
+        if (!next.recipeId && prev?.recipeId) {
+          const oldRecipe = FULL_RECIPE_CATALOG[prev.recipeId];
+          const contract = contracts.find(c => c.dayIndex === next.dayIndex && c.slotType === next.slotType);
+          
+          if (oldRecipe && contract) {
+            const safetyFailures = checkHardSafetyOnly(oldRecipe, contract);
+            if (safetyFailures.length === 0) {
+              // PRESERVE OLD ASSIGNMENT: It is still hard-safe
+              return { ...prev, state: 'proposed' as const };
+            }
+          }
+        }
+        return next;
+      });
+
+      // Final Reliability Check: Are there any NEW holes introduced?
+      const hasNewHoles = patchedAssignments.some(a => {
+        if (a.recipeId) return false; 
+        const prev = previousAssignments.find(p => p.dayIndex === a.dayIndex && p.slotType === a.slotType);
+        return (prev?.recipeId); // True if it was previously filled but now is empty
+      });
+
+      if (hasNewHoles) {
+        setWorkspace(previousWorkspace);
+        const res: PlannerActionResult = { 
+          ok: false, 
+          changed: false, 
+          status: 'failed_safe_regen', 
+          message: 'Could not safely regenerate the full week under current constraints. Your previous plan has been kept.',
+          runId 
+        };
+        updateDebugData({
+          lastActionIntent: 'regenerate_week',
+          lastActionRunId: runId,
+          status: 'failed_safe_regen',
+          changed: false
+        });
+        return res;
+      }
+
+      const refinedOutput = { ...output, assignments: patchedAssignments };
+
+      const { changed, changedSlots } = diffAssignments(previousAssignments, refinedOutput.assignments);
 
       if (!changed) {
         setWorkspace(previousWorkspace);
@@ -840,7 +909,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
       setWorkspace(prev => ({
         ...prev,
         status: 'ready',
-        output,
+        output: refinedOutput,
         generatedAt: new Date().toISOString(),
         actionSource: 'regenerate_week'
       }));
@@ -851,7 +920,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         lastActionPhase: 'complete',
         status: 'success_changed',
         changed: true,
-        changedSlots
+        changedSlots,
       });
 
       return { ok: true, changed: true, status: 'success_changed', changedSlots, runId };

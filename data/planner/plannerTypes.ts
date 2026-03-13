@@ -523,7 +523,10 @@ export interface OrchestratorOutput {
 export interface VarietyContext {
   repeatCount: number;
   archetypeDensity: number;
-  sameDayArchetypes: Set<string>;
+  /** Same-day archetypes already assigned (for variety penalties) */
+  sameDayArchetypes: Set<RecipeArchetype>;
+  /** Same-day recipe IDs already assigned (for hard duplicate prevention) */
+  sameDayRecipeIds: Set<string>;
   consecutiveArchetypeMatch: boolean;
   cuisineSaturationCount: number; 
 }

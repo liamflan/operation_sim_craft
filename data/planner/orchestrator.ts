@@ -45,7 +45,8 @@ export async function generatePlan(
     globalRepeatRegister: new Map<string, number>(),
     archetypeCounts: {} as Record<RecipeArchetype, number>,
     cuisineSaturation: {} as Record<CuisineId, number>,
-    dayClusters: new Map<number, Set<string>>(), 
+    dayClustersArchetypes: new Map<number, Set<RecipeArchetype>>(), 
+    dayClustersRecipeIds: new Map<number, Set<string>>(), 
   };
 
   // Pre-fill state with preserved assignments to maintain variety context
@@ -59,10 +60,15 @@ export async function generatePlan(
           const currentCount = planWideState.globalRepeatRegister.get(recipe.id) || 0;
           planWideState.globalRepeatRegister.set(recipe.id, currentCount + 1);
           
-          if (!planWideState.dayClusters.has(a.dayIndex)) {
-              planWideState.dayClusters.set(a.dayIndex, new Set());
+          if (!planWideState.dayClustersArchetypes.has(a.dayIndex)) {
+              planWideState.dayClustersArchetypes.set(a.dayIndex, new Set());
           }
-          planWideState.dayClusters.get(a.dayIndex)!.add(recipe.archetype);
+          planWideState.dayClustersArchetypes.get(a.dayIndex)!.add(recipe.archetype);
+
+          if (!planWideState.dayClustersRecipeIds.has(a.dayIndex)) {
+              planWideState.dayClustersRecipeIds.set(a.dayIndex, new Set());
+          }
+          planWideState.dayClustersRecipeIds.get(a.dayIndex)!.add(recipe.id);
       }
       assignments.push(a);
   });
@@ -88,7 +94,8 @@ export async function generatePlan(
         const perRecipeCtx: VarietyContext = {
           repeatCount: planWideState.globalRepeatRegister.get(r.id) || 0,
           archetypeDensity: planWideState.archetypeCounts[r.archetype] || 0,
-          sameDayArchetypes: planWideState.dayClusters.get(contract.dayIndex) || new Set(),
+          sameDayArchetypes: planWideState.dayClustersArchetypes.get(contract.dayIndex) || new Set(),
+          sameDayRecipeIds: planWideState.dayClustersRecipeIds.get(contract.dayIndex) || new Set(),
           consecutiveArchetypeMatch: false,
           cuisineSaturationCount: r.cuisineId ? planWideState.cuisineSaturation[r.cuisineId] || 0 : 0 
         };
@@ -209,10 +216,15 @@ export async function generatePlan(
       const currentCount = planWideState.globalRepeatRegister.get(assignedRecipe.id) || 0;
       planWideState.globalRepeatRegister.set(assignedRecipe.id, currentCount + 1);
 
-      if (!planWideState.dayClusters.has(contract.dayIndex)) {
-        planWideState.dayClusters.set(contract.dayIndex, new Set());
+      if (!planWideState.dayClustersArchetypes.has(contract.dayIndex)) {
+        planWideState.dayClustersArchetypes.set(contract.dayIndex, new Set());
       }
-      planWideState.dayClusters.get(contract.dayIndex)!.add(assignedRecipe.archetype);
+      planWideState.dayClustersArchetypes.get(contract.dayIndex)!.add(assignedRecipe.archetype);
+
+      if (!planWideState.dayClustersRecipeIds.has(contract.dayIndex)) {
+        planWideState.dayClustersRecipeIds.set(contract.dayIndex, new Set());
+      }
+      planWideState.dayClustersRecipeIds.get(contract.dayIndex)!.add(assignedRecipe.id);
     }
 
     // 5. Build Result objects
@@ -248,7 +260,7 @@ export async function generatePlan(
       assignmentExplanation,
       semanticAudit,
       rescueTriggered: fallbackActionTaken !== 'filled_normally',
-      actionTaken: fallbackActionTaken,
+      actionTaken: finalCandidate ? fallbackActionTaken : 'failed_completely',
       assignedCandidateId: finalCandidate?.id || null,
       bestScoreAchieved: finalCandidate?.scores.totalScore || null
     });

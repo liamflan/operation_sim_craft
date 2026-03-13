@@ -100,7 +100,10 @@ export function buildSlotContracts(
           slotType,
           macroTargets: {
             calories: { min: calories * 0.2, max: calories * 0.5, ideal: calories * 0.33 },
-            protein: { min: slotType === 'breakfast' ? protein * 0.15 : protein * 0.2, ideal: protein * 0.33 }
+            protein: { 
+              min: slotType === 'breakfast' ? protein * 0.12 : protein * 0.2, 
+              ideal: slotType === 'breakfast' ? protein * 0.25 : protein * 0.33 
+            }
           },
           budgetEnvelopeGBP: budgetPerSlot,
           hardExclusions,
