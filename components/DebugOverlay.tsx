@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { usePathname } from 'expo-router';
 import { useDebug } from '../data/DebugContext';
 import { FontAwesome5 } from '@expo/vector-icons';
 
@@ -9,15 +8,6 @@ export default function DebugOverlay() {
   const { debugData, updateDebugData } = useDebug();
   const [expanded, setExpanded] = useState(false);
   const [enabled, setEnabled] = useState(false);
-  const pathname = usePathname();
-
-  // Track route changes
-  useEffect(() => {
-    updateDebugData({ 
-      currentRoute: pathname,
-      plannerLogicFiredThisView: false
-    });
-  }, [pathname, updateDebugData]);
 
   // Track logic execution
   useEffect(() => {
@@ -125,7 +115,7 @@ export default function DebugOverlay() {
           {renderField('CurrentRecipeId', debugData.lastSwapCurrentRecipeId)}
           {renderField('CardStateBefore', debugData.cardStateBefore)}
           {renderField('CardStateAfter', debugData.cardStateAfter)}
-          {renderField('ResultChanged', debugData.resultChanged)}
+          {renderField('ResultChanged', debugData.changed)}
           {renderField('UnchangedReason', debugData.unchangedReason)}
 
           {/* ─── Phase 20G Early Returns ──────────────────────────────────── */}

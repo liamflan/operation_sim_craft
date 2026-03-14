@@ -4,6 +4,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useActivePlan } from '../data/ActivePlanContext';
 import { DietaryBaseline, CuisineId, CUISINE_PROFILES } from '../data/planner/plannerTypes';
+import NavigationObserver from '../components/NavigationObserver';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -635,6 +636,8 @@ export default function CalibrationScreen() {
   );
 
   return (
+    <>
+    <NavigationObserver />
     <SafeAreaView className="flex-1 bg-appBg dark:bg-darkappBg">
       <View className="flex-1 md:flex-row">
         {renderSidebar()}
@@ -660,6 +663,7 @@ export default function CalibrationScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </>
   );
 }
 

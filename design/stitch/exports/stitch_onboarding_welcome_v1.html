@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#8ca18f",
+                "background-light": "#f7f7f7",
+                "background-dark": "#181a18",
+              },
+              fontFamily: {
+                "display": ["Manrope", "sans-serif"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+      </script>
+<title>Provision - Welcome</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-auto min-h-screen w-full flex-col max-w-[480px] mx-auto bg-background-light dark:bg-background-dark shadow-2xl overflow-x-hidden">
+<!-- Header / Logo -->
+<header class="flex flex-col items-center pt-10 pb-6 gap-2">
+<div class="text-primary flex size-10 items-center justify-center" data-icon="Leaf">
+<span class="material-symbols-outlined !text-4xl">eco</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-sm font-extrabold tracking-[0.3em] uppercase leading-tight">
+                Provision
+            </h2>
+</header>
+<!-- Hero Image Container -->
+<main class="flex flex-col grow px-6">
+<div class="w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-xl mb-10">
+<div class="w-full h-full bg-center bg-no-repeat bg-cover transform hover:scale-105 transition-transform duration-700" data-alt="A beautifully plated modern grain bowl with fresh vegetables and poached egg" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBRV5W0fQNad5qYxbTb3Ilgyyj_kJj-L4zY4ZV2FHomge8r8RhrrWpFke4lvAsa9P-_ruRhpv6XbRMIjdH0nzH-bRtikAXXkOzcLsmFofiGHptN8jESDIXThjmhm6OXks8OnX2tIZu-YnK_5B3JxWYHeM0NAip8DhsdmSnB7QG7bS6ZSXDsjYoqVJJsQT_MwuM7bfmGi_9fuy7cPKKsl8paSoKEdhx_lt0b_gc1GVtit1lSh4IDZGdbavMOgsb-_YRoUmSJnX5kMTA");'>
+</div>
+</div>
+<!-- Content Section -->
+<div class="flex flex-col gap-8 text-center">
+<h1 class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-[1.2] tracking-tight px-2">
+                    Taste-led planning for your modern routine.
+                </h1>
+<!-- Benefit Chips -->
+<div class="flex flex-wrap justify-center gap-2 px-2">
+<div class="flex h-9 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 px-4">
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">Personalized Taste</p>
+</div>
+<div class="flex h-9 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 px-4">
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">Goal-Driven</p>
+</div>
+<div class="flex h-9 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 px-4">
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">Intelligent Routine</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer / CTA -->
+<footer class="p-8 mt-auto">
+<button class="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl h-16 px-5 bg-primary text-white text-lg font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 active:scale-[0.98] transition-all">
+<span class="truncate">Get Started</span>
+</button>
+<p class="text-slate-400 dark:text-slate-500 text-[11px] text-center mt-6 tracking-wide">
+                By continuing, you agree to our Terms of Service.
+            </p>
+</footer>
+<!-- Bottom Safe Area Spacer -->
+<div class="h-6 bg-transparent"></div>
+</div>
+</body></html>

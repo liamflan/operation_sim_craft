@@ -13,6 +13,7 @@ import { Recipe, MethodStep as MethodStepType, Substitution as SubstitutionType 
 import { NormalizedRecipe } from '../../data/planner/plannerTypes';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 import { useTheme } from '../../components/ThemeContext';
+import NavigationObserver from '../../components/NavigationObserver';
 
 type DisplayRecipe = (Recipe | NormalizedRecipe);
 
@@ -412,6 +413,8 @@ export default function RecipeDetailPage() {
   // RENDER
   // ────────────────────────────────────────────────────────────────────────────
   return (
+    <>
+    <NavigationObserver />
     <View
       className="flex-1 bg-appBg dark:bg-darkappBg"
       style={Platform.OS === 'web'
@@ -798,5 +801,6 @@ export default function RecipeDetailPage() {
         </View>
       </ScrollView>
     </View>
+    </>
   );
 }

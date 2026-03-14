@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8ca18f",
+                        "background-light": "#f7f7f7",
+                        "background-dark": "#181a18",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex min-h-screen w-full flex-col bg-background-light dark:bg-background-dark overflow-x-hidden max-w-md mx-auto">
+<!-- Top Navigation Bar -->
+<div class="flex items-center p-4 pb-2 justify-between"><div class="text-slate-900 dark:text-slate-100 flex size-10 shrink-0 items-center justify-center cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors"><span class="material-symbols-outlined !text-2xl">arrow_back</span></div><h2 class="text-slate-900 dark:text-slate-100 text-sm font-extrabold tracking-[0.2em] uppercase leading-tight flex-1 text-center pr-10">Provision</h2></div>
+<!-- Progress Indicator (Step 2 of 5) -->
+<div class="flex w-full flex-row items-center justify-center gap-3 py-6"><div class="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div><div class="h-1.5 w-8 rounded-full bg-primary/60"></div><div class="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div><div class="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div><div class="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div></div>
+<!-- Main Content Area -->
+<div class="flex flex-col px-6"><h1 class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-[1.2] tracking-tight pb-2 pt-6 text-center">How do you eat?</h1><p class="text-slate-500 dark:text-slate-400 text-[15px] font-medium mb-10 text-center px-4">Select the dietary profile that best matches your lifestyle.</p></div>
+<!-- Selection Cards Grid -->
+<div class="flex flex-col gap-4 px-6 pb-32"><!-- Omnivore Card --><div class="group relative flex items-center gap-4 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer"><div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"><span class="material-symbols-outlined text-3xl">restaurant</span></div><div class="flex flex-col"><p class="text-slate-900 dark:text-slate-100 text-lg font-bold">Omnivore</p><p class="text-slate-400 dark:text-slate-500 text-sm">Everything, including meat and dairy</p></div><div class="ml-auto"><div class="h-6 w-6 rounded-full border border-slate-200 dark:border-slate-700"></div></div></div><!-- Pescatarian Card (Selected) --><div class="group relative flex items-center gap-4 p-5 rounded-2xl border-2 border-primary/40 bg-primary/5 dark:bg-primary/10 transition-all cursor-pointer shadow-sm"><div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary text-white"><span class="material-symbols-outlined text-3xl">set_meal</span></div><div class="flex flex-col"><p class="text-slate-900 dark:text-slate-100 text-lg font-bold">Pescatarian</p><p class="text-slate-500 dark:text-slate-400 text-sm">Vegetarian plus seafood</p></div><div class="ml-auto"><div class="h-6 w-6 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-white text-base">check</span></div></div></div><!-- Vegetarian Card --><div class="group relative flex items-center gap-4 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer"><div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"><span class="material-symbols-outlined text-3xl">egg_alt</span></div><div class="flex flex-col"><p class="text-slate-900 dark:text-slate-100 text-lg font-bold">Vegetarian</p><p class="text-slate-400 dark:text-slate-500 text-sm">No meat, but includes dairy and eggs</p></div><div class="ml-auto"><div class="h-6 w-6 rounded-full border border-slate-200 dark:border-slate-700"></div></div></div><!-- Vegan Card --><div class="group relative flex items-center gap-4 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer"><div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400"><span class="material-symbols-outlined text-3xl">eco</span></div><div class="flex flex-col"><p class="text-slate-900 dark:text-slate-100 text-lg font-bold">Vegan</p><p class="text-slate-400 dark:text-slate-500 text-sm">Strictly plant-based diet</p></div><div class="ml-auto"><div class="h-6 w-6 rounded-full border border-slate-200 dark:border-slate-700"></div></div></div></div>
+<!-- Sticky Bottom Navigation -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-8 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/95 dark:via-background-dark/95 to-transparent"><button class="w-full flex cursor-pointer items-center justify-center overflow-hidden rounded-2xl h-16 px-5 bg-primary text-white text-lg font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 active:scale-[0.98] transition-all"><span class="truncate">Next</span><span class="material-symbols-outlined ml-2">arrow_forward</span></button></div>
+</div>
+</body></html>

@@ -22,6 +22,7 @@ export interface CalibrationPayload {
   budgetWeekly?: number;
   targetProtein?: number;
   targetCalories?: number;
+  caloriePreset?: string; // e.g. 'light', 'moderate', etc.
   excludedIngredientTags?: string[]; // Normalized (lowercase, trimmed).
 }
 

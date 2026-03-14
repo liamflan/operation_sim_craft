@@ -1,6 +1,7 @@
 import { Tabs, Slot, useRouter, usePathname } from 'expo-router';
 import React from 'react';
 import { useWindowDimensions, View, Text, TouchableOpacity, Platform } from 'react-native';
+import NavigationObserver from '../../components/NavigationObserver';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
@@ -183,6 +184,7 @@ export default function TabLayout() {
 
         {/* Fluid Main Content Area */}
         <View className="flex-1 print-expand" style={Platform.OS === 'web' ? { height: '100%', overflow: 'hidden' } : undefined}>
+          <NavigationObserver />
           <Slot />
         </View>
       </View>
@@ -191,6 +193,7 @@ export default function TabLayout() {
 
   // Mobile Fallback: Standard Bottom Tabs
   return (
+    <>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#9DCD8B',
@@ -251,5 +254,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <NavigationObserver />
+    </>
   );
 }

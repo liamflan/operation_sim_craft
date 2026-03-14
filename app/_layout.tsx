@@ -20,9 +20,9 @@ import UnsupportedMobileWeb from '../components/UnsupportedMobileWeb';
 
 SplashScreen.preventAutoHideAsync();
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+// export const unstable_settings = {
+//   anchor: '(tabs)',
+// };
 
 function RootApp() {
   const colorScheme = useNavColorScheme();
@@ -31,11 +31,15 @@ function RootApp() {
   return (
     <NavThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <View className={`flex-1 ${isDarkMode ? 'dark' : ''} bg-appBg dark:bg-darkappBg`}>
+        {/* GLOBAL DEBUG INDICATOR */}
+        <View style={{ height: 4, backgroundColor: 'red', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999 }} />
         <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="o" options={{ headerShown: false }} />
           <Stack.Screen name="calibration" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="recipe/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="+not-found" />
+          <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
         </Stack>
         <DebugOverlay />
       </View>

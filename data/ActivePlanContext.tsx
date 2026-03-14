@@ -71,7 +71,7 @@ interface ActivePlanContextType {
   regenerateWorkspace: (payload: CalibrationPayload) => Promise<void>;
   updateUserDiet: (diet: DietaryBaseline) => void;
   updateBudget: (budget: number) => void;
-  updateCalories: (calories: number) => void;
+  updateCalories: (calories: number, preset?: string) => void;
   updateProtein: (protein: number) => void;
   updateCuisinePreferences: (cuisines: CuisineId[]) => void;
   updateExclusions: (exclusions: string[]) => void;
@@ -267,7 +267,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateCalories = (calories: number) => {
+  const updateCalories = (calories: number, preset?: string) => {
     setWorkspace(prev => {
       const { payload: latestPayload, routineValue } = buildLatestEffectivePlannerInput();
       return {
@@ -275,7 +275,7 @@ export function ActivePlanProvider({ children }: { children: ReactNode }) {
         profileVersion: prev.profileVersion + 1,
         input: {
           routine: routineValue,
-          payload: { ...latestPayload, targetCalories: calories }
+          payload: { ...latestPayload, targetCalories: calories, caloriePreset: preset }
         }
       };
     });
