@@ -8,9 +8,10 @@ import { DietaryBaseline } from '../../data/planner/plannerTypes';
 import { useActivePlan } from '../../data/ActivePlanContext';
 
 /**
- * OnboardingDietary
- * Page 2 of the new mobile onboarding flow (Stitch fidelity).
- * Feature: Functional wiring to ActivePlanContext.
+ * OnboardingDietary (Native-Safe Pass)
+ * Page 2 of the mobile onboarding flow.
+ * 
+ * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
  */
 export default function OnboardingDietary() {
   const router = useRouter();
@@ -27,7 +28,6 @@ export default function OnboardingDietary() {
     }
   }, []);
 
-  // Preserve approved FontAwesome5 icon set
   const OPTIONS: { id: DietaryBaseline; title: string; description: string; icon: string }[] = [
     { 
       id: 'Omnivore', 
@@ -89,8 +89,12 @@ export default function OnboardingDietary() {
         }}>
           <TouchableOpacity 
             onPress={handleBack} 
-            style={{ position: 'absolute', left: 20, zIndex: 10 }}
-            className="p-2"
+            style={{ 
+                position: 'absolute', 
+                left: 20, 
+                zIndex: 10,
+                padding: 8
+            }}
           >
             <Ionicons name="arrow-back" size={24} color={TOKENS.colors.text.light.emphasis} />
           </TouchableOpacity>
@@ -101,8 +105,10 @@ export default function OnboardingDietary() {
               fontFamily: TOKENS.typography.fontFamily,
               fontSize: 14,
               letterSpacing: 4,
-              color: TOKENS.colors.text.light.emphasis
-            }} className="font-extrabold uppercase">
+              color: TOKENS.colors.text.light.emphasis,
+              fontWeight: '800',
+              textTransform: 'uppercase'
+            }}>
               Provision
             </Text>
           </View>
@@ -134,8 +140,10 @@ export default function OnboardingDietary() {
             lineHeight: 36,
             color: TOKENS.colors.text.light.emphasis,
             marginBottom: 8,
-            textAlign: 'center'
-          }} className="font-bold tracking-tight">
+            textAlign: 'center',
+            fontWeight: 'bold',
+            letterSpacing: -0.5
+          }}>
             How do you eat?
           </Text>
           <Text style={{ 
@@ -143,8 +151,9 @@ export default function OnboardingDietary() {
             lineHeight: 22,
             color: TOKENS.colors.text.light.muted,
             textAlign: 'center',
-            paddingHorizontal: 20
-          }} className="font-medium">
+            paddingHorizontal: 20,
+            fontWeight: '500'
+          }}>
             Select the dietary profile that best matches your lifestyle.
           </Text>
         </View>
@@ -172,11 +181,9 @@ export default function OnboardingDietary() {
                   alignItems: 'center',
                   padding: 20,
                   borderRadius: 24,
-                  // Unified Surface Fix: Use clear solid light sage or white
                   backgroundColor: isSelected ? '#eff3f0' : 'white',
                   borderWidth: isSelected ? 2 : 1,
                   borderColor: isSelected ? 'rgba(140, 161, 143, 0.4)' : '#f1f5f9',
-                  // Soft, clean shadow to prevent "grey shell" regression
                   shadowColor: '#000',
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.03,
@@ -184,7 +191,7 @@ export default function OnboardingDietary() {
                   elevation: isSelected ? 3 : 1
                 }}
               >
-                {/* Unified Icon Container: Blends with card surface */}
+                {/* Unified Icon Container */}
                 <View style={{ 
                   width: 56, 
                   height: 56, 
@@ -201,7 +208,7 @@ export default function OnboardingDietary() {
                   />
                 </View>
 
-                {/* Text Content: Increased Right Margin */}
+                {/* Text Content */}
                 <View style={{ flex: 1, marginRight: 16 }}>
                   <Text style={{ 
                     fontSize: 18, 
@@ -214,13 +221,14 @@ export default function OnboardingDietary() {
                   <Text style={{ 
                     fontSize: 14, 
                     color: TOKENS.colors.text.light.muted,
-                    lineHeight: 18
-                  }} className="font-medium">
+                    lineHeight: 18,
+                    fontWeight: '500'
+                  }}>
                     {option.description}
                   </Text>
                 </View>
 
-                {/* Unified Radio Indicator: Prevents split-layer look */}
+                {/* Unified Radio Indicator */}
                 <View style={{ 
                   width: 24, 
                   height: 24, 
@@ -264,13 +272,23 @@ export default function OnboardingDietary() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: selected ? 1 : 0.8
+            opacity: selected ? 1 : 0.8,
+            // Manual shadow
+            shadowColor: TOKENS.colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 10,
+            elevation: 4
           }}
-          className="shadow-lg shadow-primary/30"
         >
           <Text 
-            style={{ fontSize: 18, color: 'white' }}
-            className="font-bold tracking-wide uppercase"
+            style={{ 
+                fontSize: 18, 
+                color: 'white',
+                fontWeight: 'bold',
+                letterSpacing: 0.5,
+                textTransform: 'uppercase'
+            }}
           >
             Next
           </Text>

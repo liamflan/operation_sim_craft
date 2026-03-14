@@ -17,12 +17,9 @@ import { DebugProvider } from '../data/DebugContext';
 import { ToastProvider } from '../components/ToastContext';
 import DebugOverlay from '../components/DebugOverlay';
 import UnsupportedMobileWeb from '../components/UnsupportedMobileWeb';
+import { RecipeProvider } from '../data/RecipeContext';
 
 SplashScreen.preventAutoHideAsync();
-
-// export const unstable_settings = {
-//   anchor: '(tabs)',
-// };
 
 function RootApp() {
   const colorScheme = useNavColorScheme();
@@ -30,25 +27,26 @@ function RootApp() {
 
   return (
     <NavThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <View className={`flex-1 ${isDarkMode ? 'dark' : ''} bg-appBg dark:bg-darkappBg`}>
-        {/* GLOBAL DEBUG INDICATOR */}
-        <View style={{ height: 4, backgroundColor: 'red', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999 }} />
+      <View 
+        style={{ 
+          flex: 1, 
+          backgroundColor: isDarkMode ? '#000000' : '#ffffff' 
+        }}
+      >
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="o" options={{ headerShown: false }} />
           <Stack.Screen name="calibration" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="recipe/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
         </Stack>
-        <DebugOverlay />
+        {/* DISABLING DEBUG OVERLAY FOR NATIVE ISOLATION */}
+        {Platform.OS === 'web' && <DebugOverlay />}
       </View>
       <StatusBar style={isDarkMode ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
 }
-
-import { RecipeProvider } from '../data/RecipeContext';
 
 export default function RootLayout() {
   const { width } = useWindowDimensions();
@@ -68,8 +66,6 @@ export default function RootLayout() {
     return null;
   }
 
-  // --- M2 Mobile Web Gate ---
-
   const isWeb = Platform.OS === 'web';
   const isMobileOrTabletUa = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent);
   const isNarrowTouch = width < 1024 && typeof window !== 'undefined' && typeof navigator !== 'undefined' && ('ontouchstart' in window || navigator?.maxTouchPoints > 0);
@@ -83,8 +79,6 @@ export default function RootLayout() {
           onBypass={() => setBypassGate(true)}
           config={{
             expoGoInstructions: "Scan the QR code from the Expo CLI using Expo Go.",
-            // These would be populated from environment variables in a real production build
-            // previewBuildUrl: "https://expo.dev/...",
           }}
         />
       </ThemeProvider>

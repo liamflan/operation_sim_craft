@@ -13,7 +13,6 @@ import { Recipe, MethodStep as MethodStepType, Substitution as SubstitutionType 
 import { NormalizedRecipe } from '../../data/planner/plannerTypes';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 import { useTheme } from '../../components/ThemeContext';
-import NavigationObserver from '../../components/NavigationObserver';
 
 type DisplayRecipe = (Recipe | NormalizedRecipe);
 
@@ -208,7 +207,7 @@ function MethodStepCard({ step }: { step: MethodStepType }) {
   );
 }
 
-// ─── NUTRITION WIDGET ────────────────────────────────────────────────────────
+// ─── NUTRITION NUTRITION ROW ────────────────────────────────────────────────────────
 function NutritionRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <View className="flex-row justify-between items-center py-2.5 border-b border-black/[0.03] dark:border-darksoftBorder">
@@ -379,7 +378,7 @@ export default function RecipeDetailPage() {
   const relatedRecipes = getRelatedRecipes();
 
   // ── Ingredient breakdown ─────────────────────────────────────────────────────
-  const ingredientRows = (recipe.ingredients as any[]).map(ing => {
+  const ingredientRows = ((recipe.ingredients ?? []) as any[]).map(ing => {
     const ingId = ing.ingredientId || ing.canonicalIngredientId || '';
     const info = MOCK_INGREDIENTS.find(i => i.id === ingId);
     const status = getIngredientStatus(ingId);
@@ -399,7 +398,7 @@ export default function RecipeDetailPage() {
   };
 
   // ── Timing display ───────────────────────────────────────────────────────────
-  const totalTime = recipe.totalTimeMinutes ?? (recipe.prepTimeMinutes + (recipe.cookTimeMinutes ?? 0));
+  const totalTime = recipe.totalTimeMinutes ?? ((recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0));
   const contextLabel = day && slot ? `${day} ${slot}` : 'Planned Meal';
 
   // ── Difficulty colour ────────────────────────────────────────────────────────
@@ -413,8 +412,6 @@ export default function RecipeDetailPage() {
   // RENDER
   // ────────────────────────────────────────────────────────────────────────────
   return (
-    <>
-    <NavigationObserver />
     <View
       className="flex-1 bg-appBg dark:bg-darkappBg"
       style={Platform.OS === 'web'
@@ -517,7 +514,7 @@ export default function RecipeDetailPage() {
 
               {/* Tag chips */}
               <View className="flex-row flex-wrap gap-x-0 gap-y-0 mb-4">
-                {recipe.tags.map(tag => <TagChip key={tag} label={tag} />)}
+                {(recipe.tags ?? []).map(tag => <TagChip key={tag} label={tag} />)}
               </View>
 
               {/* Hero primary actions */}
@@ -584,9 +581,9 @@ export default function RecipeDetailPage() {
                 ))}
               </View>
 
-              {ingredientRows.map(ing => (
+              {ingredientRows.map((ing, idx) => (
                 <IngredientRow
-                  key={ing.ingredientId}
+                  key={ing.ingredientId || `ing-${idx}`}
                   amount={ing.amount}
                   unit={ing.unit}
                   name={ing.name}
@@ -797,10 +794,8 @@ export default function RecipeDetailPage() {
             </View>
           ) : null}
           {/* ══ END RIGHT COLUMN ════════════════════════════════════════════ */}
-
         </View>
       </ScrollView>
     </View>
-    </>
   );
 }

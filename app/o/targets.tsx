@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, useWindowDimensions, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  useWindowDimensions, 
+  ScrollView, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  StyleSheet,
+  Keyboard
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,14 +18,18 @@ import { TOKENS } from '../../theme/tokens';
 import { useActivePlan } from '../../data/ActivePlanContext';
 
 /**
- * OnboardingTargets
- * Page 4 of the new mobile onboarding flow (Stitch fidelity).
- * Feature: Functional wiring to ActivePlanContext.
+ * OnboardingTargets (Visual Polish & Android Hardening - Rev 18)
+ * Page 4 of the mobile onboarding flow.
+ * 
+ * CORE STABILITY ARCHITECTURE:
+ * 1. SLIDER POLISH: Vertical centering (top offsets) for 6px track and 28px thumb.
+ * 2. ANDROID HARDENING: behavior="height" for KeyboardAvoidingView + refined scroll.
+ * 3. SMOOTHNESS: pageX-based origin math prevents coordinate jitter.
  */
 export default function OnboardingTargets() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height, width } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const { 
     workspace, 
     updateBudget, 
@@ -23,16 +38,13 @@ export default function OnboardingTargets() {
     updateExclusions 
   } = useActivePlan();
 
-  // State mapping for future persistence
-  const [budget, setBudget] = useState('£40');
-  const [activity, setActivity] = useState('moderate');
-  const [proteinLevel, setProteinLevel] = useState('standard');
-  const [avoidances, setAvoidances] = useState(['Mushrooms', 'Cilantro']);
-  const [customAvoidance, setCustomAvoidance] = useState('');
-  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  // ─── CONSTANTS ─────────────────────────────────────────────────────────────
+  const PROTEIN_MIN = 80;
+  const PROTEIN_MAX = 220;
+  const THUMB_SIZE = 28;
+  const THUMB_RADIUS = THUMB_SIZE / 2;
 
   const BUDGETS = ['£30', '£40', '£50', '£60', '£70+'];
-  
   const ACTIVITIES = [
     { id: 'light', name: 'Light', icon: 'leaf', kcal: '1,800' },
     { id: 'moderate', name: 'Moderate', icon: 'walking', kcal: '2,400' },
@@ -40,477 +52,313 @@ export default function OnboardingTargets() {
     { id: 'high', name: 'High', icon: 'fire-alt', kcal: '3,200' }
   ];
 
-  const PROTEIN_LEVELS = [
-    { id: 'basic', name: 'Basic', grams: 110, desc: 'Balanced' },
-    { id: 'standard', name: 'Standard', grams: 140, desc: 'Optimal' },
-    { id: 'athlete', name: 'Athlete', grams: 180, desc: 'High' }
-  ];
+  // ─── STATE ──────────────────────────────────────────────────────────────────
+  const [budget, setBudget] = useState('£40');
+  const [activity, setActivity] = useState('moderate');
+  const [protein, setProtein] = useState(140); 
+  const [exclusions, setExclusions] = useState('');
+  
+  const [sliderWidth, setSliderWidth] = useState(0);
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
+  
+  // Deterministic positioning
+  const [exclusionsY, setExclusionsY] = useState(0);
 
-  // Sync with global state on mount to handle back-navigation persistence
+  // ─── REFS ───────────────────────────────────────────────────────────────────
+  const scrollRef = useRef<ScrollView>(null);
+  const isExclusionsFocused = useRef(false);
+  const trackPageX = useRef(0);
+
+  // ─── EFFECTS ───────────────────────────────────────────────────────────────
   useEffect(() => {
+    
+    // 1. Hydrate state
     const p = workspace.input?.payload;
     if (p) {
       if (p.budgetWeekly) setBudget(`£${p.budgetWeekly}${p.budgetWeekly === 70 ? '+' : ''}`);
-      if (p.caloriePreset) {
-        setActivity(p.caloriePreset);
-      } else if (p.targetCalories) {
-        const act = ACTIVITIES.find(a => parseInt(a.kcal.replace(',', '')) === p.targetCalories);
-        if (act) setActivity(act.id);
-      }
-      if (p.targetProtein) {
-        const prot = PROTEIN_LEVELS.find(pl => pl.grams === p.targetProtein);
-        if (prot) setProteinLevel(prot.id);
-      }
-      if (p.excludedIngredientTags) setAvoidances(p.excludedIngredientTags);
+      if (p.caloriePreset) setActivity(p.caloriePreset);
+      if (p.targetProtein) setProtein(p.targetProtein);
+      if (p.excludedIngredientTags) setExclusions(p.excludedIngredientTags.join(', '));
     }
-  }, []);
 
+    // 2. Absolute Keyboard Scroll Stickiness (Pass 18 refined offset)
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      if (isExclusionsFocused.current) {
+        // Pin the field specifically near the top of the viewport
+        const desiredTopOffset = 20; 
+        const targetScrollY = Math.max(0, exclusionsY - desiredTopOffset);
+        scrollRef.current?.scrollTo({ y: targetScrollY, animated: true });
+      }
+    });
+
+    return () => {
+      showSubscription.remove();
+    };
+  }, [exclusionsY]);
+
+  // ─── HANDLERS ───────────────────────────────────────────────────────────────
   const handleNext = () => {
-    const selectedProtein = PROTEIN_LEVELS.find(p => p.id === proteinLevel)?.grams || 140;
     const currentKcal = ACTIVITIES.find(a => a.id === activity)?.kcal || '2,400';
     const numericBudget = parseInt(budget.replace('£', '').replace('+', ''));
+    const exclusionList = exclusions.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-    // Commit to global state
     updateBudget(numericBudget);
     updateCalories(parseInt(currentKcal.replace(',', '')), activity);
-    updateProtein(selectedProtein);
-    updateExclusions(avoidances);
+    updateProtein(protein);
+    updateExclusions(exclusionList);
 
     router.push('/o/verification' as any);
   };
 
   const handleBack = () => {
-    router.back();
+    if (router.canGoBack()) router.back();
+    else router.replace('/o' as any);
   };
 
-  const isShortScreen = height < 700;
-  const cardWidth = (width - 48 - 12) / 2; // slightly tighter gap (12)
+  // ─── SLIDER MATH ────────────────────────────────────────────────────────────
+  const handleSliderUpdate = (pageX: number) => {
+    if (sliderWidth <= 0 || trackPageX.current === 0) return;
+    const relativeX = pageX - trackPageX.current;
+    const centerX = Math.max(THUMB_RADIUS, Math.min(sliderWidth - THUMB_RADIUS, relativeX));
+    const travelArea = sliderWidth - THUMB_SIZE;
+    const ratio = (centerX - THUMB_RADIUS) / travelArea;
+    const newVal = Math.round(PROTEIN_MIN + ratio * (PROTEIN_MAX - PROTEIN_MIN));
+    setProtein(newVal);
+  };
+
+  // Derived visuals
+  const currentRatio = (protein - PROTEIN_MIN) / (PROTEIN_MAX - PROTEIN_MIN);
+  const thumbLeft = currentRatio * (sliderWidth - THUMB_SIZE);
+  const fillWidth = thumbLeft + THUMB_RADIUS;
+
+  // ─── RENDER ────────────────────────────────────────────────────────────────
+  const cardWidth = (width - 48 - 12) / 2;
 
   return (
-    <View style={{ 
-      flex: 1, 
-      backgroundColor: TOKENS.colors.background.light,
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-    }}>
-      
-      {/* 1. STICKY TOP FRAMING */}
-      <View style={{ backgroundColor: TOKENS.colors.background.light }}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'android' ? 'height' : 'padding'}
+      style={{ flex: 1, backgroundColor: TOKENS.colors.background.light }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+    >
+      <View style={{ flex: 1, paddingTop: insets.top }}>
+        
         {/* Header */}
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          paddingHorizontal: 20,
-          height: 64,
-          position: 'relative'
-        }}>
-          <TouchableOpacity 
-            onPress={handleBack} 
-            style={{ position: 'absolute', left: 20, zIndex: 10 }}
-            className="p-2"
-          >
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={TOKENS.colors.text.light.emphasis} />
           </TouchableOpacity>
-          
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={styles.brand}>
             <FontAwesome5 name="leaf" size={14} color={TOKENS.colors.primary} style={{ marginRight: 8 }} />
-            <Text style={{ 
-              fontFamily: TOKENS.typography.fontFamily,
-              fontSize: 14,
-              letterSpacing: 4,
-              color: TOKENS.colors.text.light.emphasis
-            }} className="font-extrabold uppercase">
-              Provision
+            <Text style={styles.brandText}>Provision</Text>
+          </View>
+        </View>
+
+        <ScrollView 
+          ref={scrollRef}
+          scrollEnabled={!isSliderDragging}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ 
+            paddingHorizontal: 24, 
+            paddingTop: 16, 
+            paddingBottom: insets.bottom + 140 
+          }}
+        >
+
+          {/* Progress Indicators */}
+          <View style={styles.progressContainer}>
+            {[0, 0, 0, 1, 0].map((active, i) => (
+              <View key={i} style={[styles.progressDot, active ? styles.progressDotActive : styles.progressDotInactive]} />
+            ))}
+          </View>
+
+          {/* Title Area */}
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>Set your targets</Text>
+            <Text style={styles.subtitle}>
+              Adjust your daily goals to match your metabolic needs.
             </Text>
           </View>
-        </View>
 
-        {/* Progress (Step 4 of 5) */}
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          paddingVertical: 12,
-          gap: 12 
-        }}>
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 32, borderRadius: 3, backgroundColor: 'rgba(140, 161, 143, 0.7)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-        </View>
-
-        {/* Heading Block */}
-        <View style={{ 
-          paddingHorizontal: 24, 
-          paddingTop: isShortScreen ? 8 : 16, 
-          paddingBottom: 16, 
-          alignItems: 'center' 
-        }}>
-          <Text style={{ 
-            fontFamily: TOKENS.typography.fontFamily,
-            fontSize: 28,
-            lineHeight: 34,
-            color: TOKENS.colors.text.light.emphasis,
-            marginBottom: 6,
-            textAlign: 'center'
-          }} className="font-bold tracking-tight">
-            Set your targets
-          </Text>
-          <Text style={{ 
-            fontSize: 14,
-            lineHeight: 20,
-            color: TOKENS.colors.text.light.muted,
-            textAlign: 'center',
-            paddingHorizontal: 24
-          }} className="font-medium">
-            Help us tailor your meal plans to your lifestyle and budget.
-          </Text>
-        </View>
-      </View>
-
-      {/* 2. SCROLLABLE CONTENT AREA */}
-      <ScrollView 
-        contentContainerStyle={{ 
-          paddingHorizontal: 24, 
-          paddingTop: 8, 
-          paddingBottom: 200 
-        }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={{ gap: 36 }}>
-          
-          {/* Section A: Weekly Food Budget */}
-          <View>
-            <Text style={{ 
-              fontSize: 10, 
-              fontWeight: '900', 
-              color: 'rgba(148, 163, 184, 0.6)', 
-              letterSpacing: 2,
-              marginBottom: 14
-            }} className="uppercase">
-              Weekly Food Budget
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {BUDGETS.map(val => {
-                const isSelected = budget === val;
-                return (
-                  <TouchableOpacity
-                    key={val}
-                    onPress={() => setBudget(val)}
-                    activeOpacity={0.8}
-                    style={{ 
-                      paddingHorizontal: 16, 
-                      paddingVertical: 9,
-                      borderRadius: 100,
-                      backgroundColor: isSelected ? TOKENS.colors.primary : 'white',
-                      borderWidth: 1,
-                      borderColor: isSelected ? TOKENS.colors.primary : '#f1f5f9',
-                    }}
-                    className={isSelected ? "shadow-sm" : ""}
-                  >
-                    <Text style={{ 
-                      fontSize: 12, 
-                      fontWeight: 'bold', 
-                      color: isSelected ? 'white' : TOKENS.colors.text.light.muted
-                    }}>
-                      {val}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Section B: Activity Level / Daily Calorie */}
-          <View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
-              <Text style={{ 
-                fontSize: 10, 
-                fontWeight: '900', 
-                color: 'rgba(148, 163, 184, 0.6)', 
-                letterSpacing: 2
-              }} className="uppercase">
-                Activity Level
-              </Text>
-              <Text style={{ fontSize: 13, fontWeight: 'bold', color: TOKENS.colors.primary }}>
-                {ACTIVITIES.find(a => a.id === activity)?.kcal} kcal
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-              {ACTIVITIES.map(opt => {
-                const isSelected = activity === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setActivity(opt.id)}
-                    activeOpacity={0.8}
-                    style={{ 
-                      width: cardWidth,
-                      paddingVertical: 18,
-                      paddingHorizontal: 16,
-                      borderRadius: 24,
-                      backgroundColor: isSelected ? '#eff3f0' : 'white',
-                      borderWidth: isSelected ? 2 : 1,
-                      borderColor: isSelected ? 'rgba(140, 161, 143, 0.4)' : '#f1f5f9',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      position: 'relative'
-                    }}
-                  >
-                    <FontAwesome5 
-                      name={opt.icon} 
-                      size={20} 
-                      color={isSelected ? TOKENS.colors.primary : 'rgba(148, 163, 184, 0.3)'} 
-                    />
-                    <Text style={{ 
-                      fontSize: 10, 
-                      fontWeight: '900', 
-                      color: isSelected ? TOKENS.colors.primary : TOKENS.colors.text.light.muted,
-                      letterSpacing: 1.5
-                    }} className="uppercase">
-                      {opt.name}
-                    </Text>
-                    {isSelected && (
-                      <View style={{ 
-                        position: 'absolute', 
-                        top: 10, 
-                        right: 10, 
-                        width: 14, 
-                        height: 14, 
-                        borderRadius: 7, 
-                        backgroundColor: TOKENS.colors.primary, 
-                        alignItems: 'center', 
-                        justifyContent: 'center' 
-                      }}>
-                        <MaterialIcons name="check" size={10} color="white" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Section C: Daily Protein Goal (Stepped Selector) */}
-          <View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
-              <Text style={{ 
-                fontSize: 10, 
-                fontWeight: '900', 
-                color: 'rgba(148, 163, 184, 0.6)', 
-                letterSpacing: 2
-              }} className="uppercase">
-                Protein Target
-              </Text>
-              <View style={{ 
-                backgroundColor: '#eff3f0', 
-                paddingHorizontal: 10, 
-                paddingVertical: 2, 
-                borderRadius: 100 
-              }}>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: TOKENS.colors.primary }}>
-                  {PROTEIN_LEVELS.find(p => p.id === proteinLevel)?.grams}g
-                </Text>
+          <View style={{ gap: 54 }}>
+            
+            {/* 1. Food Budget */}
+            <View>
+              <Text style={styles.sectionTitle}>Weekly Food Budget</Text>
+              <View style={styles.chipRow}>
+                {BUDGETS.map(val => {
+                  const isSelected = budget === val;
+                  return (
+                    <TouchableOpacity
+                      key={val}
+                      onPress={() => setBudget(val)}
+                      activeOpacity={0.8}
+                      style={[styles.chip, isSelected && styles.chipActive]}
+                    >
+                      <Text style={[styles.chipText, isSelected && { color: 'white' }]}>{val}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
-            
-            <View style={{ 
-              flexDirection: 'row', 
-              backgroundColor: 'white', 
-              padding: 4, 
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: '#f1f5f9',
-              justifyContent: 'space-between'
-            }}>
-              {PROTEIN_LEVELS.map(level => {
-                const isSelected = proteinLevel === level.id;
-                return (
-                  <TouchableOpacity
-                    key={level.id}
-                    onPress={() => setProteinLevel(level.id)}
-                    activeOpacity={0.8}
-                    style={{ 
-                      flex: 1,
-                      paddingVertical: 10,
-                      borderRadius: 16,
-                      backgroundColor: isSelected ? TOKENS.colors.primary : 'transparent',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Text style={{ 
-                      fontSize: 11, 
-                      fontWeight: 'bold', 
-                      color: isSelected ? 'white' : 'rgba(148, 163, 184, 0.8)'
-                    }}>
-                      {level.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            <Text style={{ 
-              fontSize: 10, 
-              textAlign: 'center', 
-              marginTop: 10, 
-              color: 'rgba(148, 163, 184, 0.6)',
-              fontWeight: '500'
-            }}>
-              {PROTEIN_LEVELS.find(p => p.id === proteinLevel)?.desc} intensity for your lifestyle
-            </Text>
-          </View>
 
-          {/* Section D: Avoidances (Chips + Input) */}
-          <View>
-            <Text style={{ 
-              fontSize: 10, 
-              fontWeight: '900', 
-              color: 'rgba(148, 163, 184, 0.6)', 
-              letterSpacing: 2,
-              marginBottom: 14
-            }} className="uppercase">
-              Anything to avoid?
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {avoidances.map(item => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => setAvoidances(avoidances.filter(a => a !== item))}
-                  style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    gap: 6, 
-                    backgroundColor: '#f8fafc', 
-                    paddingLeft: 12, 
-                    paddingRight: 8, 
-                    paddingVertical: 7, 
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: '#f1f5f9'
-                  }}
-                >
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: TOKENS.colors.text.light.muted }}>{item}</Text>
-                  <Ionicons name="close-circle" size={14} color="rgba(148, 163, 184, 0.4)" />
-                </TouchableOpacity>
-              ))}
-              
-              {!isAddingCustom ? (
-                <TouchableOpacity
-                  onPress={() => setIsAddingCustom(true)}
-                  style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    gap: 6, 
-                    paddingHorizontal: 12, 
-                    paddingVertical: 6.5, 
-                    borderRadius: 14,
-                    borderWidth: 1.5,
-                    borderStyle: 'dashed',
-                    borderColor: 'rgba(203, 213, 225, 0.6)'
-                  }}
-                >
-                  <Ionicons name="add" size={16} color="rgba(148, 163, 184, 0.6)" />
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: 'rgba(148, 163, 184, 0.6)' }}>Add Custom</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  gap: 8, 
-                  backgroundColor: 'white', 
-                  paddingLeft: 14, 
-                  paddingRight: 4, 
-                  paddingVertical: 4, 
-                  borderRadius: 14,
-                  borderWidth: 1.5,
-                  borderColor: TOKENS.colors.primary,
-                  minWidth: 130
-                }}>
-                  <TextInput
-                    autoFocus
-                    placeholder="E.g. Cilantro"
-                    placeholderTextColor="rgba(148, 163, 184, 0.4)"
-                    style={{ flex: 1, fontSize: 13, fontWeight: 'bold', color: TOKENS.colors.text.light.emphasis, padding: 0 }}
-                    value={customAvoidance}
-                    onChangeText={setCustomAvoidance}
-                    onSubmitEditing={() => {
-                      if (customAvoidance.trim()) {
-                        setAvoidances([...avoidances, customAvoidance.trim()]);
-                        setCustomAvoidance('');
-                        setIsAddingCustom(false);
-                      }
-                    }}
-                  />
-                  <TouchableOpacity 
-                    onPress={() => {
-                        if (customAvoidance.trim()) {
-                           setAvoidances([...avoidances, customAvoidance.trim()]);
-                           setCustomAvoidance('');
-                           setIsAddingCustom(false);
-                        } else {
-                           setIsAddingCustom(false);
-                        }
-                    }} 
-                    style={{ padding: 4 }}
-                  >
-                    <Ionicons name="checkmark-circle" size={22} color={TOKENS.colors.primary} />
-                  </TouchableOpacity>
+            {/* 2. Activity Level */}
+            <View>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Activity Level</Text>
+                <Text style={styles.valueLabel}>{ACTIVITIES.find(a => a.id === activity)?.kcal} kcal</Text>
+              </View>
+              <View style={styles.activityGrid}>
+                {ACTIVITIES.map(opt => {
+                  const isSelected = activity === opt.id;
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => setActivity(opt.id)}
+                      activeOpacity={0.8}
+                      style={[styles.activityCard, { width: cardWidth }, isSelected ? styles.activityCardActive : styles.activityCardInactive]}
+                    >
+                      <FontAwesome5 name={opt.icon} size={20} color={isSelected ? TOKENS.colors.primary : 'rgba(148, 163, 184, 0.3)'} />
+                      <Text style={[styles.activityText, { color: isSelected ? TOKENS.colors.primary : TOKENS.colors.text.light.muted }]}>{opt.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* 3. Daily Protein Target (Geometric Polish) */}
+            <View>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Daily Protein Target</Text>
+                <View style={styles.valuePill}>
+                  <Text style={styles.valueLabel}>{protein}g</Text>
                 </View>
-              )}
+              </View>
+
+              <View 
+                style={styles.sliderTrackContainer}
+                onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+                onStartShouldSetResponderCapture={() => true}
+                onMoveShouldSetResponderCapture={() => true}
+                onResponderTerminationRequest={() => false}
+                onResponderGrant={(evt) => {
+                  trackPageX.current = evt.nativeEvent.pageX - evt.nativeEvent.locationX;
+                  setIsSliderDragging(true);
+                  handleSliderUpdate(evt.nativeEvent.pageX);
+                }}
+                onResponderMove={(evt) => {
+                  handleSliderUpdate(evt.nativeEvent.pageX);
+                }}
+                onResponderRelease={() => {
+                  setIsSliderDragging(false);
+                }}
+                onResponderTerminate={() => {
+                  setIsSliderDragging(false);
+                }}
+              >
+                {/* Track Graphics - Explicit vertical centering via TOP offsets */}
+                <View style={[styles.sliderTrackBg, { top: 21 }]} />
+                <View style={[styles.sliderTrackActive, { width: fillWidth, top: 21 }]} />
+                <View style={[styles.sliderThumb, { left: thumbLeft, top: 10 }]} />
+              </View>
+              
+              <View style={[styles.markerRow, { height: 40 }]}>
+                {/* Low @ 80g -> Thumb Center at THUMB_RADIUS */}
+                <View style={[styles.markerItem, { position: 'absolute', left: THUMB_RADIUS - 40 }]}>
+                  <View style={styles.markerTick} />
+                  <Text style={styles.markerLabel}>Low</Text>
+                  <Text style={styles.markerSub}>80g</Text>
+                </View>
+
+                {/* Standard @ 150g -> Thumb Center at width/2 */}
+                <View style={[styles.markerItem, { position: 'absolute', left: (sliderWidth / 2) - 40 }]}>
+                  <View style={styles.markerTick} />
+                  <Text style={styles.markerLabel}>Standard</Text>
+                  <Text style={styles.markerSub}>150g</Text>
+                </View>
+
+                {/* Performance @ 220g -> Thumb Center at width - THUMB_RADIUS */}
+                <View style={[styles.markerItem, { position: 'absolute', right: THUMB_RADIUS - 40 }]}>
+                  <View style={styles.markerTick} />
+                  <Text style={styles.markerLabel}>Performance</Text>
+                  <Text style={styles.markerSub}>220g</Text>
+                </View>
+              </View>
             </View>
+
+            {/* 4. Exclusions (Android Hardened Reveal) */}
+            <View onLayout={(e) => setExclusionsY(e.nativeEvent.layout.y)}>
+              <Text style={styles.sectionTitle}>Anything to avoid?</Text>
+              <View style={styles.exclusionBox}>
+                <TextInput
+                  placeholder="E.g. Cilantro, Mushrooms, Spicy foods..."
+                  placeholderTextColor="rgba(148, 163, 184, 0.4)"
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top" 
+                  style={styles.exclusionInput}
+                  value={exclusions}
+                  onChangeText={setExclusions}
+                  onFocus={() => { isExclusionsFocused.current = true; }}
+                  onBlur={() => { isExclusionsFocused.current = false; }}
+                  blurOnSubmit={false}
+                />
+              </View>
+              <Text style={styles.exclusionHint}>
+                We'll ensure these are swapped out of your plan automatically.
+              </Text>
+            </View>
+
+            {/* Native Scroll Continue Button */}
+            <TouchableOpacity onPress={handleNext} activeOpacity={0.9} style={styles.ctaButton}>
+              <Text style={styles.ctaText}>Continue</Text>
+              <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+
           </View>
-
-        </View>
-      </ScrollView>
-
-      {/* 3. STICKY FOOTER CTA */}
-      <View style={{ 
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 32,
-        paddingBottom: Math.max(insets.bottom, 32),
-        paddingTop: 24,
-        backgroundColor: TOKENS.colors.background.light
-      }}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={handleNext}
-          style={{ 
-            height: 60, 
-            borderRadius: 18,
-            backgroundColor: TOKENS.colors.primary,
-            width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          className="shadow-md shadow-primary/20"
-        >
-          <Text 
-            style={{ fontSize: 16, color: 'white' }}
-            className="font-bold tracking-wide uppercase"
-          >
-            Continue
-          </Text>
-          <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />
-        </TouchableOpacity>
-        <Text style={{ 
-          fontSize: 10, 
-          color: 'rgba(148, 163, 184, 0.5)', 
-          textAlign: 'center', 
-          marginTop: 14,
-          fontWeight: '700',
-          letterSpacing: 0.5
-        }} className="uppercase">
-          Settings can be modified in profile later.
-        </Text>
+        </ScrollView>
       </View>
-      
-    </View>
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  header: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  backBtn: { position: 'absolute', left: 20, padding: 8 },
+  brand: { flexDirection: 'row', alignItems: 'center' },
+  brandText: { letterSpacing: 4, color: TOKENS.colors.text.light.emphasis, fontWeight: '800', textTransform: 'uppercase', fontSize: 13, fontFamily: TOKENS.typography.fontFamily },
+  progressContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 24, gap: 12 },
+  progressDot: { height: 6, borderRadius: 3 },
+  progressDotActive: { width: 32, backgroundColor: 'rgba(140, 161, 143, 0.7)' },
+  progressDotInactive: { width: 6, backgroundColor: 'rgba(203, 213, 225, 0.4)' },
+  titleBlock: { alignItems: 'center', marginBottom: 40 },
+  title: { fontSize: 28, color: TOKENS.colors.text.light.emphasis, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
+  subtitle: { fontSize: 14, color: TOKENS.colors.text.light.muted, textAlign: 'center', fontWeight: '500', paddingHorizontal: 20, lineHeight: 20 },
+  sectionTitle: { fontSize: 10, fontWeight: '900', color: 'rgba(148, 163, 184, 0.6)', letterSpacing: 2, marginBottom: 16, textTransform: 'uppercase' },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100, borderWidth: 1, borderColor: '#f1f5f9', backgroundColor: 'white' },
+  chipActive: { backgroundColor: TOKENS.colors.primary, borderColor: TOKENS.colors.primary },
+  chipText: { fontSize: 12, fontWeight: 'bold', color: TOKENS.colors.text.light.muted },
+  valueLabel: { fontSize: 13, fontWeight: 'bold', color: TOKENS.colors.primary },
+  valuePill: { backgroundColor: '#eff3f0', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 100 },
+  activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
+  activityCard: { paddingVertical: 22, borderRadius: 24, alignItems: 'center', justifyContent: 'center', gap: 12, borderWidth: 1 },
+  activityCardActive: { backgroundColor: '#f6f9f7', borderColor: 'rgba(140, 161, 143, 0.4)', borderWidth: 2 },
+  activityCardInactive: { backgroundColor: 'white', borderColor: '#f1f5f9' },
+  activityText: { fontSize: 10, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase' },
+  sliderTrackContainer: { height: 48, justifyContent: 'center', width: '100%', position: 'relative' },
+  sliderTrackBg: { height: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.25)', width: '100%', position: 'absolute' },
+  sliderTrackActive: { height: 6, borderRadius: 3, backgroundColor: TOKENS.colors.primary, position: 'absolute', left: 0 },
+  sliderThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'white', borderWidth: 4, borderColor: TOKENS.colors.primary, position: 'absolute', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  markerRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  markerItem: { alignItems: 'center', width: 80 },
+  markerTick: { width: 1, height: 5, backgroundColor: 'rgba(148, 163, 184, 0.3)', marginBottom: 6 },
+  markerLabel: { fontSize: 9, fontWeight: '900', textTransform: 'uppercase', color: 'rgba(148, 163, 184, 0.4)', letterSpacing: 1 },
+  markerSub: { fontSize: 9, fontWeight: '700', color: 'rgba(148, 163, 184, 0.25)' },
+  exclusionBox: { backgroundColor: 'white', borderRadius: 24, borderWidth: 1, borderColor: '#f1f5f9', padding: 20, minHeight: 150 },
+  exclusionInput: { fontSize: 16, color: TOKENS.colors.text.light.emphasis, fontWeight: '500', lineHeight: 24 },
+  exclusionHint: { fontSize: 11, color: 'rgba(148, 163, 184, 0.6)', marginTop: 12, fontWeight: '500' },
+  ctaButton: { height: 62, borderRadius: 20, backgroundColor: TOKENS.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32 },
+  ctaText: { fontSize: 16, color: 'white', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 }
+});

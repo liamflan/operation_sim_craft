@@ -6,9 +6,10 @@ import { useRouter } from 'expo-router';
 import { TOKENS } from '../../theme/tokens';
 
 /**
- * OnboardingWelcome
- * Page 1 of the new mobile onboarding flow (Stitch fidelity).
- * Final Cleanup: Minimalist brand-led refinement with optimized spacing and legibility.
+ * OnboardingWelcome (Native-Safe Pass)
+ * Page 1 of the new mobile onboarding flow.
+ * 
+ * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
  */
 export default function OnboardingWelcome() {
   const router = useRouter();
@@ -34,21 +35,22 @@ export default function OnboardingWelcome() {
       justifyContent: 'flex-start'
     }}>
       
-      {/* 1. Brand Hero Area - Tightened Spacing */}
+      {/* 1. Brand Hero Area */}
       <View style={{ 
         alignItems: 'center', 
-        marginTop: isShortScreen ? 32 : 64, // Reduced from 40/80
-        marginBottom: isShortScreen ? 24 : 40  // Reduced from 30/50
+        marginTop: isShortScreen ? 32 : 64, 
+        marginBottom: isShortScreen ? 24 : 40 
       }}>
         <View 
           style={{ 
             width: isShortScreen ? 48 : 64, 
             height: isShortScreen ? 48 : 64, 
             borderRadius: 16,
-            backgroundColor: 'rgba(140, 161, 143, 0.15)', // Increased opacity for better contrast
-            marginBottom: 12 // Reduced from 16
+            backgroundColor: 'rgba(140, 161, 143, 0.15)',
+            marginBottom: 12,
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
-          className="items-center justify-center"
         >
           <FontAwesome5 
             name="leaf" 
@@ -61,18 +63,19 @@ export default function OnboardingWelcome() {
             fontFamily: TOKENS.typography.fontFamily,
             fontSize: TOKENS.typography.size.brand,
             letterSpacing: 0.35 * TOKENS.typography.size.brand,
-            color: TOKENS.colors.text.light.emphasis
+            color: TOKENS.colors.text.light.emphasis,
+            fontWeight: '800',
+            textTransform: 'uppercase'
           }}
-          className="font-extrabold uppercase"
         >
           Provision
         </Text>
       </View>
 
-      {/* 2. Headline - Natural Wrap & Constrained Width */}
+      {/* 2. Headline */}
       <View style={{ 
         alignItems: 'center', 
-        paddingHorizontal: 32, // More constrained for better wrapping
+        paddingHorizontal: 32, 
         marginBottom: isShortScreen ? 20 : 40 
       }}>
         <Text 
@@ -81,15 +84,15 @@ export default function OnboardingWelcome() {
             fontSize: isShortScreen ? 26 : 32,
             lineHeight: isShortScreen ? 32 : 40,
             color: TOKENS.colors.text.light.emphasis,
-            textAlign: 'center'
+            textAlign: 'center',
+            fontWeight: 'bold'
           }}
-          className="font-bold"
         >
           Taste-led planning for your modern routine.
         </Text>
       </View>
 
-      {/* 3. Benefit Pills - Improved Contrast */}
+      {/* 3. Benefit Pills */}
       <View style={{ 
         flexDirection: 'row', 
         flexWrap: 'wrap', 
@@ -107,19 +110,23 @@ export default function OnboardingWelcome() {
             key={benefit.id}
             style={{ 
               height: TOKENS.spacing.chipHeight - 6,
-              borderColor: 'rgba(140, 161, 143, 0.35)', // Increased contrast
-              backgroundColor: 'rgba(140, 161, 143, 0.08)', // Slightly more present
-              paddingHorizontal: 20
+              borderColor: 'rgba(140, 161, 143, 0.35)',
+              backgroundColor: 'rgba(140, 161, 143, 0.08)',
+              paddingHorizontal: 20,
+              borderWidth: 1,
+              borderRadius: 100,
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-            className="border rounded-full items-center justify-center"
           >
             <Text 
               style={{ 
                 fontSize: TOKENS.typography.size.chip - 2,
                 color: TOKENS.colors.primary,
-                letterSpacing: 1.0
+                letterSpacing: 1.0,
+                fontWeight: '600',
+                textTransform: 'uppercase'
               }}
-              className="font-semibold uppercase"
             >
               {benefit.label}
             </Text>
@@ -127,7 +134,7 @@ export default function OnboardingWelcome() {
         ))}
       </View>
 
-      {/* 4. Footer - Pushed to bottom */}
+      {/* 4. Footer */}
       <View style={{ 
         marginTop: 'auto', 
         paddingHorizontal: 32, 
@@ -141,13 +148,26 @@ export default function OnboardingWelcome() {
             height: TOKENS.spacing.ctaHeight - 4, 
             borderRadius: 20,
             backgroundColor: TOKENS.colors.primary,
-            width: '100%'
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            // Manual shadow
+            shadowColor: TOKENS.colors.primary,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 6
           }}
-          className="flex-row items-center justify-center shadow-lg shadow-primary/30"
         >
           <Text 
-            style={{ fontSize: TOKENS.typography.size.cta - 1 }}
-            className="text-white font-bold tracking-widest uppercase"
+            style={{ 
+                fontSize: TOKENS.typography.size.cta - 1,
+                color: 'white',
+                fontWeight: 'bold',
+                letterSpacing: 1.1,
+                textTransform: 'uppercase'
+            }}
           >
             Get Started
           </Text>
@@ -155,16 +175,17 @@ export default function OnboardingWelcome() {
         </TouchableOpacity>
 
         {/* 5. Legal Text */}
-        <TouchableOpacity className="mt-6">
+        <TouchableOpacity style={{ marginTop: 24 }}>
           <Text 
             style={{ 
               fontSize: TOKENS.typography.size.legal,
-              color: TOKENS.colors.text.light.muted
+              color: TOKENS.colors.text.light.muted,
+              textAlign: 'center',
+              letterSpacing: 0.5
             }}
-            className="text-center tracking-wide"
           >
             By continuing, you agree to our{"\n"}
-            <Text className="underline text-slate-900">Terms of Service</Text> and <Text className="underline text-slate-900">Privacy Policy</Text>.
+            <Text style={{ textDecorationLine: 'underline', color: '#0f172a' }}>Terms of Service</Text> and <Text style={{ textDecorationLine: 'underline', color: '#0f172a' }}>Privacy Policy</Text>.
           </Text>
         </TouchableOpacity>
       </View>

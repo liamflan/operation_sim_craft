@@ -8,9 +8,10 @@ import { useActivePlan } from '../../data/ActivePlanContext';
 import { CuisineId } from '../../data/planner/plannerTypes';
 
 /**
- * OnboardingCuisines
- * Page 3 of the new mobile onboarding flow (Stitch fidelity).
- * Feature: Functional wiring to ActivePlanContext.
+ * OnboardingCuisines (Native-Safe Pass)
+ * Page 3 of the mobile onboarding flow.
+ * 
+ * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
  */
 export default function OnboardingCuisines() {
   const router = useRouter();
@@ -86,8 +87,12 @@ export default function OnboardingCuisines() {
         }}>
           <TouchableOpacity 
             onPress={handleBack} 
-            style={{ position: 'absolute', left: 20, zIndex: 10 }}
-            className="p-2"
+            style={{ 
+                position: 'absolute', 
+                left: 20, 
+                zIndex: 10,
+                padding: 8
+            }}
           >
             <Ionicons name="arrow-back" size={24} color={TOKENS.colors.text.light.emphasis} />
           </TouchableOpacity>
@@ -98,8 +103,10 @@ export default function OnboardingCuisines() {
               fontFamily: TOKENS.typography.fontFamily,
               fontSize: 14,
               letterSpacing: 4,
-              color: TOKENS.colors.text.light.emphasis
-            }} className="font-extrabold uppercase">
+              color: TOKENS.colors.text.light.emphasis,
+              fontWeight: '800',
+              textTransform: 'uppercase'
+            }}>
               Provision
             </Text>
           </View>
@@ -133,8 +140,10 @@ export default function OnboardingCuisines() {
             lineHeight: 34,
             color: TOKENS.colors.text.light.emphasis,
             marginBottom: 6,
-            textAlign: 'center'
-          }} className="font-bold tracking-tight">
+            textAlign: 'center',
+            fontWeight: 'bold',
+            letterSpacing: -0.5
+          }}>
             Explore your tastes
           </Text>
           <Text style={{ 
@@ -143,8 +152,9 @@ export default function OnboardingCuisines() {
             color: TOKENS.colors.text.light.muted,
             textAlign: 'center',
             paddingHorizontal: 20,
-            marginBottom: 12
-          }} className="font-medium">
+            marginBottom: 12,
+            fontWeight: '500'
+          }}>
             Pick at least 1 cuisine you'd love to see this week.
           </Text>
 
@@ -161,8 +171,9 @@ export default function OnboardingCuisines() {
               fontSize: 10, 
               color: TOKENS.colors.primary, 
               letterSpacing: 1,
-              fontWeight: 'bold' 
-            }} className="uppercase">
+              fontWeight: 'bold',
+              textTransform: 'uppercase'
+            }}>
               {selected.length} Selected
             </Text>
           </View>
@@ -234,9 +245,13 @@ export default function OnboardingCuisines() {
                     {cuisine.name}
                   </Text>
                   <Text 
-                    style={{ fontSize: 11, color: TOKENS.colors.text.light.muted, lineHeight: 14 }}
+                    style={{ 
+                        fontSize: 11, 
+                        color: TOKENS.colors.text.light.muted, 
+                        lineHeight: 14,
+                        fontWeight: '500'
+                    }}
                     numberOfLines={2}
-                    className="font-medium"
                   >
                     {cuisine.desc}
                   </Text>
@@ -287,13 +302,23 @@ export default function OnboardingCuisines() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: selected.length > 0 ? 1 : 0.8
+            opacity: selected.length > 0 ? 1 : 0.8,
+            // Manual shadow
+            shadowColor: TOKENS.colors.primary,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 10,
+            elevation: 4
           }}
-          className="shadow-lg shadow-primary/30"
         >
           <Text 
-            style={{ fontSize: 18, color: 'white' }}
-            className="font-bold tracking-wide uppercase"
+            style={{ 
+                fontSize: 18, 
+                color: 'white',
+                fontWeight: 'bold',
+                letterSpacing: 0.5,
+                textTransform: 'uppercase'
+            }}
           >
             Next
           </Text>

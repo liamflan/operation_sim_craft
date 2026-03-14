@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import NavigationObserver from '../../components/NavigationObserver';
 
 /**
  * OnboardingLayout
@@ -10,7 +9,6 @@ import NavigationObserver from '../../components/NavigationObserver';
 export default function OnboardingLayout() {
   return (
     <>
-      <NavigationObserver />
       <Stack
         screenOptions={{
           headerShown: false,

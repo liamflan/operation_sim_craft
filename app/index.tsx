@@ -1,12 +1,19 @@
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { StorageService } from '../data/storage';
-import NavigationObserver from '../components/NavigationObserver';
+import { TOKENS } from '../theme/tokens';
 
+/**
+ * Entry Index (Harden Phase 2)
+ * 
+ * FIX: Removed className/NativeWind to ensure no navigation-context race 
+ * occurs via the interop layer on cold boot.
+ */
 export default function Index() {
   const router = useRouter();
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
     const checkState = async () => {
@@ -28,19 +35,60 @@ export default function Index() {
     checkState();
   }, []);
 
-  // --- Unavoidable Developer Entry (For Debugging) ---
   return (
-    <>
-    <NavigationObserver />
-    <View className="flex-1 items-center justify-center bg-white dark:bg-black p-10">
-      <Text className="text-3xl font-bold mb-2 text-slate-900 dark:text-slate-100">Provision</Text>
-      <Text className="text-slate-500 mb-10 text-center">Select entry point (Dev Force)</Text>
+    <View style={{ 
+      flex: 1, 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      backgroundColor: TOKENS.colors.background.light, 
+      padding: 40 
+    }}>
+      <Text style={{ 
+        fontSize: 34, 
+        fontWeight: 'bold', 
+        marginBottom: 8, 
+        color: TOKENS.colors.text.light.emphasis,
+        letterSpacing: -1
+      }}>
+        Provision
+      </Text>
+      <Text style={{ 
+        color: TOKENS.colors.text.light.muted, 
+        marginBottom: 40, 
+        textAlign: 'center',
+        fontSize: 15,
+        fontWeight: '500'
+      }}>
+        Select entry point (Dev Force)
+      </Text>
       
       <TouchableOpacity 
         onPress={() => router.replace('/o/welcome')}
-        className="bg-primary p-6 rounded-3xl w-full mb-4 items-center shadow-xl active:opacity-80"
+        activeOpacity={0.8}
+        style={{ 
+          backgroundColor: TOKENS.colors.primary, 
+          padding: 24, 
+          borderRadius: 28, 
+          width: '100%', 
+          maxWidth: 400,
+          marginBottom: 16, 
+          alignItems: 'center', 
+          shadowColor: TOKENS.colors.primary, 
+          shadowOffset: { width: 0, height: 10 }, 
+          shadowOpacity: 0.15, 
+          shadowRadius: 20, 
+          elevation: 5 
+        }}
       >
-        <Text className="text-white font-extrabold text-xl">Preview New Onboarding</Text>
+        <Text style={{ 
+          color: 'white', 
+          fontWeight: '800', 
+          fontSize: 18,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase'
+        }}>
+          Preview New Onboarding
+        </Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
@@ -49,15 +97,37 @@ export default function Index() {
           router.replace(hasPlan ? "/(tabs)" : "/calibration");
         }}
         disabled={hasPlan === null}
-        className="bg-slate-100 dark:bg-slate-800 p-6 rounded-3xl w-full items-center active:opacity-80"
+        activeOpacity={0.8}
+        style={{ 
+          backgroundColor: '#f1f5f9', 
+          padding: 24, 
+          borderRadius: 28, 
+          width: '100%', 
+          maxWidth: 400,
+          alignItems: 'center',
+          opacity: hasPlan === null ? 0.5 : 1
+        }}
       >
-        <Text className="text-slate-600 dark:text-slate-400 font-bold text-lg">
+        <Text style={{ 
+          color: '#475569', 
+          fontWeight: 'bold', 
+          fontSize: 16,
+          letterSpacing: 0.3
+        }}>
           {hasPlan === null ? "Loading Plan State..." : (hasPlan ? "Open Dashboard" : "Start Old Onboarding")}
         </Text>
       </TouchableOpacity>
 
-      <Text className="mt-8 text-xs text-slate-300">Route: app/index.tsx</Text>
+      <Text style={{ 
+        marginTop: 40, 
+        fontSize: 11, 
+        color: '#cbd5e1', 
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1
+      }}>
+        Route: app/index.tsx
+      </Text>
     </View>
-    </>
   );
 }

@@ -7,9 +7,10 @@ import { useActivePlan } from '../../data/ActivePlanContext';
 import { TOKENS } from '../../theme/tokens';
 
 /**
- * OnboardingVerification
+ * OnboardingVerification (Native-Safe Pass)
  * Final Page 5 of the onboarding flow.
- * Triggers meal plan generation based on collected preferences and targets.
+ * 
+ * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
  */
 export default function OnboardingVerification() {
   const router = useRouter();
@@ -88,8 +89,12 @@ export default function OnboardingVerification() {
           {!isLoading && !isSuccess && (
             <TouchableOpacity 
               onPress={() => router.back()} 
-              style={{ position: 'absolute', left: 20, zIndex: 10 }}
-              className="p-2"
+              style={{ 
+                position: 'absolute', 
+                left: 20, 
+                zIndex: 10,
+                padding: 8
+              }}
             >
               <Ionicons name="arrow-back" size={24} color={TOKENS.colors.text.light.emphasis} />
             </TouchableOpacity>
@@ -101,8 +106,10 @@ export default function OnboardingVerification() {
               fontFamily: TOKENS.typography.fontFamily,
               fontSize: 14,
               letterSpacing: 4,
-              color: TOKENS.colors.text.light.emphasis
-            }} className="font-extrabold uppercase">
+              color: TOKENS.colors.text.light.emphasis,
+              fontWeight: '800',
+              textTransform: 'uppercase'
+            }}>
               Provision
             </Text>
           </View>
@@ -120,7 +127,12 @@ export default function OnboardingVerification() {
           <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
           <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
           <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 32, borderRadius: 3, backgroundColor: isSuccess ? TOKENS.colors.primary : 'rgba(140, 161, 143, 0.7)' }} />
+          <View style={{ 
+            height: 6, 
+            width: 32, 
+            borderRadius: 3, 
+            backgroundColor: isSuccess ? TOKENS.colors.primary : 'rgba(140, 161, 143, 0.7)' 
+          }} />
         </View>
       </View>
 
@@ -157,8 +169,10 @@ export default function OnboardingVerification() {
           lineHeight: 34,
           color: TOKENS.colors.text.light.emphasis,
           marginBottom: 12,
-          textAlign: 'center'
-        }} className="font-bold tracking-tight">
+          textAlign: 'center',
+          fontWeight: 'bold',
+          letterSpacing: -0.5
+        }}>
           {isSuccess ? 'Your plan is ready' : isError ? 'Something went wrong' : 'Shaping your week'}
         </Text>
 
@@ -167,8 +181,9 @@ export default function OnboardingVerification() {
           lineHeight: 24,
           color: TOKENS.colors.text.light.muted,
           textAlign: 'center',
-          paddingHorizontal: 20
-        }} className="font-medium">
+          paddingHorizontal: 20,
+          fontWeight: '500'
+        }}>
           {isSuccess 
             ? 'We have tailored a custom meal plan based on your tastes and targets.' 
             : isError 
@@ -214,13 +229,23 @@ export default function OnboardingVerification() {
               width: '100%',
               flexDirection: 'row',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              // Manual shadow
+              shadowColor: TOKENS.colors.primary,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 6
             }}
-            className="shadow-md shadow-primary/20"
           >
             <Text 
-              style={{ fontSize: 16, color: 'white' }}
-              className="font-bold tracking-wide uppercase"
+              style={{ 
+                  fontSize: 16, 
+                  color: 'white',
+                  fontWeight: 'bold',
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase'
+              }}
             >
               See My Plan
             </Text>
