@@ -6,22 +6,20 @@ import { useRouter } from 'expo-router';
 import { TOKENS } from '../../theme/tokens';
 
 /**
- * OnboardingWelcome (Native-Safe Pass)
- * Page 1 of the new mobile onboarding flow.
+ * OnboardingWelcome (Pass 24 - Consistency Polish)
  * 
- * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
+ * PASS 24 IMPROVEMENTS:
+ * 1. UNIFIED CTA: Changed "Get Started" to "Continue" for journey consistency.
  */
 export default function OnboardingWelcome() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
-  const handleGetStarted = () => {
-    console.log('Routing to Onboarding Page 2: /o/dietary');
+  const handleContinue = () => {
     router.push('/o/dietary' as any); 
   };
 
-  // Adaptive Sizing variables
   const isShortScreen = height < 700;
 
   return (
@@ -141,9 +139,10 @@ export default function OnboardingWelcome() {
         paddingBottom: isShortScreen ? 20 : 30, 
         alignItems: 'center' 
       }}>
+        {/* PASS 24: Unified CTA copy "Continue" */}
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={handleGetStarted}
+          onPress={handleContinue}
           style={{ 
             height: TOKENS.spacing.ctaHeight - 4, 
             borderRadius: 20,
@@ -152,7 +151,6 @@ export default function OnboardingWelcome() {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            // Manual shadow
             shadowColor: TOKENS.colors.primary,
             shadowOffset: { width: 0, height: 6 },
             shadowOpacity: 0.3,
@@ -169,7 +167,7 @@ export default function OnboardingWelcome() {
                 textTransform: 'uppercase'
             }}
           >
-            Get Started
+            Continue
           </Text>
           <FontAwesome5 name="arrow-right" size={14} color="white" style={{ marginLeft: 12 }} />
         </TouchableOpacity>

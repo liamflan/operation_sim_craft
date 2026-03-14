@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,10 +7,11 @@ import { useActivePlan } from '../../data/ActivePlanContext';
 import { TOKENS } from '../../theme/tokens';
 
 /**
- * OnboardingVerification (Native-Safe Pass)
- * Final Page 5 of the onboarding flow.
+ * OnboardingVerification (Pass 30 - Header Spacing Refinement)
  * 
- * FIX: Removed 'className' attributes to bypass interop-driven navigation context crashes.
+ * PASS 30 IMPROVEMENTS:
+ * 1. BALANCED SPACING: Achieving even gaps between subtitle -> dots and dots -> separator.
+ * 2. SLIMMER BAND: Compacted the sticky band further for a tighter, premium rhythm.
  */
 export default function OnboardingVerification() {
   const router = useRouter();
@@ -66,194 +67,143 @@ export default function OnboardingVerification() {
     }
   };
 
-  const isShortScreen = height < 700;
+  const handleBack = () => {
+    router.back();
+  };
 
   return (
-    <View style={{ 
-      flex: 1, 
-      backgroundColor: TOKENS.colors.background.light,
-      paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-    }}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       
-      {/* 1. STICKY TOP FRAMING */}
-      <View style={{ backgroundColor: TOKENS.colors.background.light }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          paddingHorizontal: 20,
-          height: 64,
-          position: 'relative'
-        }}>
-          {!isLoading && !isSuccess && (
-            <TouchableOpacity 
-              onPress={() => router.back()} 
-              style={{ 
-                position: 'absolute', 
-                left: 20, 
-                zIndex: 10,
-                padding: 8
-              }}
-            >
-              <Ionicons name="arrow-back" size={24} color={TOKENS.colors.text.light.emphasis} />
+      <ScrollView 
+        contentContainerStyle={{ 
+          paddingBottom: insets.bottom + 60 
+        }}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[3]} // Branding(0), Title(1), Subtitle(2), Progress(3) sticky
+      >
+        {/* 1. SCROLLABLE BRAND ROW */}
+        <View style={styles.brandingRow}>
+          {(!isLoading && !isSuccess) ? (
+            <TouchableOpacity onPress={handleBack} style={styles.backBtnInline}>
+              <Ionicons name="arrow-back" size={22} color={TOKENS.colors.text.light.emphasis} />
             </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
           )}
           
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <FontAwesome5 name="leaf" size={14} color={TOKENS.colors.primary} style={{ marginRight: 8 }} />
-            <Text style={{ 
-              fontFamily: TOKENS.typography.fontFamily,
-              fontSize: 14,
-              letterSpacing: 4,
-              color: TOKENS.colors.text.light.emphasis,
-              fontWeight: '800',
-              textTransform: 'uppercase'
-            }}>
-              Provision
-            </Text>
+          <View style={styles.brandWordmarkRow}>
+            <FontAwesome5 name="leaf" size={12} color={TOKENS.colors.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.brandText}>Provision</Text>
           </View>
+          
+          <View style={{ width: 40 }} />
         </View>
 
-        {/* Progress (Step 5 of 5) */}
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          paddingVertical: 12,
-          gap: 12 
-        }}>
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' }} />
-          <View style={{ 
-            height: 6, 
-            width: 32, 
-            borderRadius: 3, 
-            backgroundColor: isSuccess ? TOKENS.colors.primary : 'rgba(140, 161, 143, 0.7)' 
-          }} />
-        </View>
-      </View>
-
-      {/* 2. MAIN CONTENT AREA */}
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-        
-        {/* Status Illustration / Spinner */}
-        <View style={{ 
-          width: 100, 
-          height: 100, 
-          borderRadius: 50, 
-          backgroundColor: isSuccess ? TOKENS.colors.primary : '#f8fafc',
-          alignItems: 'center', 
-          justifyContent: 'center',
-          marginBottom: 32,
-          shadowColor: isSuccess ? TOKENS.colors.primary : '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isSuccess ? 0.3 : 0.05,
-          shadowRadius: 12,
-          elevation: 5
-        }}>
-          {isSuccess ? (
-            <MaterialIcons name="check" size={48} color="white" />
-          ) : isError ? (
-            <MaterialIcons name="error-outline" size={48} color="#ef4444" />
-          ) : (
-            <ActivityIndicator size="large" color={TOKENS.colors.primary} />
-          )}
+        {/* 2. SCROLLABLE TITLE */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>
+            {isSuccess ? 'Plan Created' : 'Generating Plan'}
+          </Text>
         </View>
 
-        <Text style={{ 
-          fontFamily: TOKENS.typography.fontFamily,
-          fontSize: 28,
-          lineHeight: 34,
-          color: TOKENS.colors.text.light.emphasis,
-          marginBottom: 12,
-          textAlign: 'center',
-          fontWeight: 'bold',
-          letterSpacing: -0.5
-        }}>
-          {isSuccess ? 'Your plan is ready' : isError ? 'Something went wrong' : 'Shaping your week'}
-        </Text>
+        {/* 3. SCROLLABLE SUBTITLE */}
+        <View style={styles.subtitleContainer}>
+          <Text style={styles.subtitleText}>
+            {isSuccess 
+              ? 'Your first plan is ready to review.' 
+              : 'Shaping your custom meal plan...'}
+          </Text>
+        </View>
 
-        <Text style={{ 
-          fontSize: 16,
-          lineHeight: 24,
-          color: TOKENS.colors.text.light.muted,
-          textAlign: 'center',
-          paddingHorizontal: 20,
-          fontWeight: '500'
-        }}>
-          {isSuccess 
-            ? 'We have tailored a custom meal plan based on your tastes and targets.' 
-            : isError 
-            ? 'We couldn\'t generate a plan with these constraints. Please try again or adjust your targets.' 
-            : loadingMessages[loadingStage]}
-        </Text>
+        {/* 4. BALANCED STICKY PROGRESS BAND (PASS 30) */}
+        <View style={styles.stickyProgressBand}>
+            <View style={styles.progressRow}>
+                <View style={styles.dotInactive} />
+                <View style={styles.dotInactive} />
+                <View style={styles.dotInactive} />
+                <View style={styles.dotInactive} />
+                <View style={[styles.dotActive, isSuccess && { backgroundColor: TOKENS.colors.primary }]} />
+            </View>
+        </View>
 
-        {isError && (
-          <TouchableOpacity 
-            onPress={handleRetry}
-            style={{ 
-              marginTop: 32,
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 12,
-              backgroundColor: '#f1f5f9'
-            }}
-          >
-            <Text style={{ fontWeight: 'bold', color: TOKENS.colors.text.light.emphasis }}>Retry Generation</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        {/* 5. MAIN CONTENT AREA */}
+        <View style={styles.content}>
+            {/* Status Illustration / Spinner */}
+            <View style={[styles.statusCircle, isSuccess && styles.statusCircleSuccess]}>
+            {isSuccess ? (
+                <MaterialIcons name="check" size={48} color="white" />
+            ) : isError ? (
+                <MaterialIcons name="error-outline" size={48} color="#ef4444" />
+            ) : (
+                <ActivityIndicator size="large" color={TOKENS.colors.primary} />
+            )}
+            </View>
 
-      {/* 3. STICKY FOOTER CTA (Success only) */}
-      {isSuccess && (
-        <View style={{ 
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          paddingHorizontal: 32,
-          paddingBottom: Math.max(insets.bottom, 32),
-          paddingTop: 24,
-          backgroundColor: TOKENS.colors.background.light
-        }}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleFinish}
-            style={{ 
-              height: 60, 
-              borderRadius: 18,
-              backgroundColor: TOKENS.colors.primary,
-              width: '100%',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              // Manual shadow
-              shadowColor: TOKENS.colors.primary,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 6
-            }}
-          >
-            <Text 
-              style={{ 
-                  fontSize: 16, 
-                  color: 'white',
-                  fontWeight: 'bold',
-                  letterSpacing: 0.5,
-                  textTransform: 'uppercase'
-              }}
-            >
-              See My Plan
+            <Text style={styles.contentTitle}>
+            {isSuccess ? 'All set' : isError ? 'Something went wrong' : 'Crafting flavors'}
             </Text>
-            <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />
-          </TouchableOpacity>
+
+            <Text style={styles.contentSubtitle}>
+            {isSuccess 
+                ? 'We have tailored a custom meal plan based on your tastes and targets.' 
+                : isError 
+                ? "We couldn't generate a plan with these constraints. Please try again or adjust your targets." 
+                : loadingMessages[loadingStage]}
+            </Text>
+
+            {isError && (
+            <TouchableOpacity onPress={handleRetry} style={styles.retryBtn}>
+                <Text style={styles.retryText}>Retry Generation</Text>
+            </TouchableOpacity>
+            )}
+
+            {/* Locked CTA wording: View My Plan */}
+            {isSuccess && (
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={handleFinish}
+                    style={styles.ctaButton}
+                >
+                    <Text style={styles.ctaText}>View My Plan</Text>
+                    <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+            )}
         </View>
-      )}
-      
+      </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: TOKENS.colors.background.light },
+  brandingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 12 },
+  backBtnInline: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: 12 },
+  brandWordmarkRow: { flexDirection: 'row', alignItems: 'center' },
+  brandText: { fontSize: 12, fontWeight: '900', color: TOKENS.colors.text.light.emphasis, textTransform: 'uppercase', letterSpacing: 1.5 },
+  titleContainer: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 6 },
+  titleText: { fontSize: 26, color: TOKENS.colors.text.light.emphasis, fontWeight: 'bold', letterSpacing: -0.5, textAlign: 'center' },
+  subtitleContainer: { paddingHorizontal: 40, paddingBottom: 10 },
+  subtitleText: { fontSize: 15, color: TOKENS.colors.text.light.muted, textAlign: 'center', fontWeight: '500', lineHeight: 22 },
+  stickyProgressBand: { 
+    backgroundColor: TOKENS.colors.background.light, 
+    paddingTop: 10, 
+    paddingBottom: 10, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    zIndex: 10, 
+    borderBottomWidth: 1, 
+    borderBottomColor: 'rgba(0,0,0,0.02)' 
+  },
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  dotInactive: { height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' },
+  dotActive: { height: 6, width: 32, borderRadius: 3, backgroundColor: 'rgba(140, 161, 143, 0.7)' },
+  content: { flex: 1, paddingHorizontal: 32, paddingTop: 32 },
+  statusCircle: { alignSelf: 'center', width: 100, height: 100, borderRadius: 50, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 5 },
+  statusCircleSuccess: { backgroundColor: TOKENS.colors.primary, shadowColor: TOKENS.colors.primary, shadowOpacity: 0.3 },
+  contentTitle: { fontSize: 28, color: TOKENS.colors.text.light.emphasis, marginBottom: 12, textAlign: 'center', fontWeight: 'bold', letterSpacing: -0.5 },
+  contentSubtitle: { fontSize: 16, color: TOKENS.colors.text.light.muted, textAlign: 'center', paddingHorizontal: 20, fontWeight: '500', lineHeight: 24 },
+  retryBtn: { alignSelf: 'center', marginTop: 32, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#f1f5f9' },
+  retryText: { fontWeight: 'bold', color: TOKENS.colors.text.light.emphasis },
+  ctaButton: { height: 64, borderRadius: 18, backgroundColor: TOKENS.colors.primary, width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 40, shadowColor: TOKENS.colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
+  ctaText: { fontSize: 16, color: 'white', fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase' }
+});
