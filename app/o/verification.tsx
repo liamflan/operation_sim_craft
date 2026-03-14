@@ -1,44 +1,46 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, useWindowDimensions, ScrollView, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useActivePlan } from '../../data/ActivePlanContext';
 import { TOKENS } from '../../theme/tokens';
 
 /**
- * OnboardingVerification (Pass 30 - Header Spacing Refinement)
- * 
- * PASS 30 IMPROVEMENTS:
- * 1. BALANCED SPACING: Achieving even gaps between subtitle -> dots and dots -> separator.
- * 2. SLIMMER BAND: Compacted the sticky band further for a tighter, premium rhythm.
+ * OnboardingVerification (Pass 31 - Generation Screen Overhaul)
  */
+
+const GENERATION_PHASES = [
+  { title: 'Mapping your preferences', message: 'Analyzing your favorite cuisines and flavor patterns...' },
+  { title: 'Balancing your budget', message: 'Optimizing ingredient costs for your weekly target...' },
+  { title: 'Matching nutrition targets', message: 'Ensuring your macros align with your calorie goals...' },
+  { title: 'Building your week', message: 'Assembling a balanced, variety-packed rotation...' },
+  { title: 'Finalizing your plan', message: 'Preparing your first shopping list and instructions...' }
+];
+
 export default function OnboardingVerification() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
   const { workspace, regenerateWorkspace } = useActivePlan();
 
   const [loadingStage, setLoadingStage] = useState(0);
   const generationTriggered = useRef(false);
 
-  const loadingMessages = [
-    'Mapping your taste preferences...',
-    'Matching flavors to your goals and budget...',
-    'Optimizing protein and variety...',
-    'Shaping your routine-friendly week...',
-    'Your first plan is ready',
-  ];
-
-  const isSuccess = workspace.status === 'ready' && loadingStage >= loadingMessages.length - 1;
+  const isSuccess = workspace.status === 'ready' && loadingStage >= GENERATION_PHASES.length - 1;
   const isError = workspace.status === 'error';
   const isLoading = workspace.status === 'generating' || (workspace.status === 'ready' && !isSuccess);
+
+  // Payload extraction for summary - HARDENED BOUNDARY
+  const payload = workspace.input?.payload;
+  const preferredCuisines = payload?.preferredCuisineIds ?? [];
+  const diet = payload?.diet ?? 'Omnivore';
+  const calories = payload?.targetCalories ?? 2000;
+  const budget = payload?.budgetWeekly ?? 50.00;
+  const exclusions = payload?.excludedIngredientTags ?? [];
 
   useEffect(() => {
     if (!generationTriggered.current) {
       generationTriggered.current = true;
-      
-      const payload = workspace.input?.payload;
       if (payload) {
         regenerateWorkspace(payload);
       }
@@ -46,10 +48,10 @@ export default function OnboardingVerification() {
   }, []);
 
   useEffect(() => {
-    if (workspace.status === 'generating' || (workspace.status === 'ready' && loadingStage < loadingMessages.length - 1)) {
+    if (workspace.status === 'generating' || (workspace.status === 'ready' && loadingStage < GENERATION_PHASES.length - 1)) {
       const timer = setTimeout(() => {
-        setLoadingStage(prev => Math.min(prev + 1, loadingMessages.length - 1));
-      }, 1500);
+        setLoadingStage(prev => Math.min(prev + 1, GENERATION_PHASES.length - 1));
+      }, 1800);
       return () => clearTimeout(timer);
     }
   }, [workspace.status, loadingStage]);
@@ -61,7 +63,6 @@ export default function OnboardingVerification() {
   const handleRetry = () => {
     generationTriggered.current = false;
     setLoadingStage(0);
-    const payload = workspace.input?.payload;
     if (payload) {
       regenerateWorkspace(payload);
     }
@@ -71,21 +72,20 @@ export default function OnboardingVerification() {
     router.back();
   };
 
+  const currentPhase = GENERATION_PHASES[loadingStage];
+  const progressPercent = isSuccess ? 100 : ((loadingStage + 1) / GENERATION_PHASES.length) * 85;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      
       <ScrollView 
-        contentContainerStyle={{ 
-          paddingBottom: insets.bottom + 60 
-        }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[3]} // Branding(0), Title(1), Subtitle(2), Progress(3) sticky
       >
-        {/* 1. SCROLLABLE BRAND ROW */}
+        {/* 1. BRAND ROW */}
         <View style={styles.brandingRow}>
           {(!isLoading && !isSuccess) ? (
             <TouchableOpacity onPress={handleBack} style={styles.backBtnInline}>
-              <Ionicons name="arrow-back" size={22} color={TOKENS.colors.text.light.emphasis} />
+              <Ionicons name="arrow-back" size={20} color={TOKENS.colors.text.light.emphasis} />
             </TouchableOpacity>
           ) : (
             <View style={{ width: 40 }} />
@@ -99,111 +99,241 @@ export default function OnboardingVerification() {
           <View style={{ width: 40 }} />
         </View>
 
-        {/* 2. SCROLLABLE TITLE */}
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>
-            {isSuccess ? 'Plan Created' : 'Generating Plan'}
+        {/* 2. PROGRESS DOTS */}
+        <View style={styles.dotsContainer}>
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+          <View style={styles.dotLong} />
+        </View>
+
+        {/* 3. MAIN HEADING */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Shaping your week</Text>
+          <Text style={styles.subtitle}>
+            Combining your tastes, budget, and goals into your first weekly plan.
           </Text>
         </View>
 
-        {/* 3. SCROLLABLE SUBTITLE */}
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitleText}>
-            {isSuccess 
-              ? 'Your first plan is ready to review.' 
-              : 'Shaping your custom meal plan...'}
-          </Text>
-        </View>
+        <View style={styles.mainContent}>
+          {/* 4. GENERATION STATUS CARD */}
+          <View style={[styles.statusCard, isError && styles.statusCardError]}>
+            <View style={styles.statusContent}>
+              <View style={styles.statusRow}>
+                {isError ? (
+                  <MaterialIcons name="error-outline" size={22} color="#ef4444" />
+                ) : isSuccess ? (
+                  <MaterialIcons name="check-circle" size={22} color={TOKENS.colors.primary} />
+                ) : (
+                  <MaterialCommunityIcons name="auto-fix" size={22} color={TOKENS.colors.primary} />
+                )}
+                <Text style={styles.statusTitle}>
+                  {isError ? 'Generation failed' : isSuccess ? 'Your plan is ready' : currentPhase.title}
+                </Text>
+              </View>
 
-        {/* 4. BALANCED STICKY PROGRESS BAND (PASS 30) */}
-        <View style={styles.stickyProgressBand}>
-            <View style={styles.progressRow}>
-                <View style={styles.dotInactive} />
-                <View style={styles.dotInactive} />
-                <View style={styles.dotInactive} />
-                <View style={styles.dotInactive} />
-                <View style={[styles.dotActive, isSuccess && { backgroundColor: TOKENS.colors.primary }]} />
+              <View style={styles.progressBarContainer}>
+                <View 
+                  style={[
+                    styles.progressBarFill, 
+                    { width: `${progressPercent}%` },
+                    isError && { backgroundColor: '#ef4444' }
+                  ]} 
+                />
+              </View>
+
+              <Text style={styles.statusMessage}>
+                {isError ? workspace.error : isSuccess ? 'Tailoring complete. Launching your journey.' : currentPhase.message}
+              </Text>
             </View>
-        </View>
+          </View>
 
-        {/* 5. MAIN CONTENT AREA */}
-        <View style={styles.content}>
-            {/* Status Illustration / Spinner */}
-            <View style={[styles.statusCircle, isSuccess && styles.statusCircleSuccess]}>
-            {isSuccess ? (
-                <MaterialIcons name="check" size={48} color="white" />
-            ) : isError ? (
-                <MaterialIcons name="error-outline" size={48} color="#ef4444" />
-            ) : (
-                <ActivityIndicator size="large" color={TOKENS.colors.primary} />
-            )}
+          {/* 5. PREFERENCES SUMMARY */}
+          {!isError && (
+            <View style={styles.summarySection}>
+              <View style={styles.summaryHeader}>
+                <MaterialCommunityIcons name="silverware-variant" size={20} color={TOKENS.colors.primary} />
+                <Text style={styles.summaryTitle}>Your preferences</Text>
+              </View>
+
+              <View style={styles.summaryGrid}>
+                {/* Cuisines */}
+                {preferredCuisines.length > 0 && (
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.itemLabel}>Favorite Cuisines</Text>
+                    <View style={styles.chipRow}>
+                      {preferredCuisines.slice(0, 3).map(id => (
+                        <View key={id} style={styles.chip}>
+                          <Text style={styles.chipText}>{id.replace(/_/g, ' ')}</Text>
+                        </View>
+                      ))}
+                      {preferredCuisines.length > 3 && (
+                        <View style={styles.chip}>
+                          <Text style={styles.chipText}>+{preferredCuisines.length - 3}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                {/* Diet & Calories */}
+                <View style={styles.pairRow}>
+                  <View style={styles.halfItem}>
+                    <View style={styles.itemHeader}>
+                      <MaterialCommunityIcons name="leaf" size={14} color={TOKENS.colors.primary} />
+                      <Text style={styles.itemLabel}>Diet</Text>
+                    </View>
+                    <Text style={styles.itemValue}>{diet}</Text>
+                  </View>
+                  <View style={styles.halfItem}>
+                    <View style={styles.itemHeader}>
+                      <MaterialCommunityIcons name="lightning-bolt" size={14} color={TOKENS.colors.primary} />
+                      <Text style={styles.itemLabel}>Target</Text>
+                    </View>
+                    <Text style={styles.itemValue}>{calories.toLocaleString()} kcal</Text>
+                  </View>
+                </View>
+
+                {/* Budget */}
+                <View style={styles.fullItem}>
+                  <View style={styles.budgetRow}>
+                    <View>
+                      <View style={styles.itemHeader}>
+                        <MaterialIcons name="payments" size={14} color={TOKENS.colors.primary} />
+                        <Text style={styles.itemLabel}>Weekly Budget</Text>
+                      </View>
+                      <Text style={styles.itemValue}>
+                        {budget >= 70 ? '£70+' : `£${budget.toFixed(2)}`}
+                      </Text>
+                    </View>
+                    <View style={styles.budgetIcons}>
+                      {[1, 2, 3].map(i => {
+                        const activeCount = budget >= 70 ? 3 : (budget >= 50 ? 2 : 1);
+                        return (
+                          <Text 
+                            key={i} 
+                            style={[styles.currencyIcon, i > activeCount && { opacity: 0.2 }]}
+                          >
+                            £
+                          </Text>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </View>
+
+                {/* Exclusions */}
+                {exclusions.length > 0 && (
+                  <View style={styles.fullItem}>
+                    <View style={styles.itemHeader}>
+                      <MaterialIcons name="block" size={14} color="#f87171" />
+                      <Text style={styles.itemLabel}>Exclusions</Text>
+                    </View>
+                    <View style={styles.chipRow}>
+                      {exclusions.slice(0, 5).map(ex => (
+                        <View key={ex} style={[styles.chip, { backgroundColor: '#fef2f2', borderColor: '#fee2e2' }]}>
+                          <Text style={[styles.chipText, { color: '#991b1b' }]}>{ex}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
             </View>
+          )}
 
-            <Text style={styles.contentTitle}>
-            {isSuccess ? 'All set' : isError ? 'Something went wrong' : 'Crafting flavors'}
-            </Text>
+          {/* 6. DECORATIVE ELEMENT */}
+          {!isError && (
+            <View style={styles.visualContainer}>
+              <Image 
+                source={{ uri: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=800' }}
+                style={styles.visualImage}
+              />
+              <View style={styles.visualOverlay}>
+                <Text style={styles.visualText}>Ready to start your journey?</Text>
+              </View>
+            </View>
+          )}
 
-            <Text style={styles.contentSubtitle}>
-            {isSuccess 
-                ? 'We have tailored a custom meal plan based on your tastes and targets.' 
-                : isError 
-                ? "We couldn't generate a plan with these constraints. Please try again or adjust your targets." 
-                : loadingMessages[loadingStage]}
-            </Text>
-
-            {isError && (
-            <TouchableOpacity onPress={handleRetry} style={styles.retryBtn}>
-                <Text style={styles.retryText}>Retry Generation</Text>
+          {/* 7. ERROR STATE RETRY */}
+          {isError && (
+            <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+              <Text style={styles.retryButtonText}>Retry Generation</Text>
+              <MaterialIcons name="refresh" size={20} color="white" />
             </TouchableOpacity>
-            )}
-
-            {/* Locked CTA wording: View My Plan */}
-            {isSuccess && (
-                <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={handleFinish}
-                    style={styles.ctaButton}
-                >
-                    <Text style={styles.ctaText}>View My Plan</Text>
-                    <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />
-                </TouchableOpacity>
-            )}
+          )}
         </View>
       </ScrollView>
+
+      {/* 8. FOOTER ACTION */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={isSuccess ? handleFinish : undefined}
+          disabled={!isSuccess}
+          style={[styles.ctaButton, (!isSuccess && !isError) && styles.ctaDisabled]}
+        >
+          <Text style={styles.ctaText}>
+            {isError ? 'Review Settings' : isSuccess ? 'View My Plan' : 'Creating your plan...'}
+          </Text>
+          {isSuccess && <MaterialIcons name="arrow-forward" size={18} color="white" style={{ marginLeft: 6 }} />}
+          {!isSuccess && !isError && <ActivityIndicator size="small" color="white" style={{ marginLeft: 8 }} />}
+        </TouchableOpacity>
+        
+        <Text style={styles.reassurance}>You can refine these settings later</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: TOKENS.colors.background.light },
-  brandingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 12 },
-  backBtnInline: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: 12 },
+  container: { flex: 1, backgroundColor: '#fcfcfc' },
+  brandingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtnInline: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f4f0', borderRadius: 10 },
   brandWordmarkRow: { flexDirection: 'row', alignItems: 'center' },
-  brandText: { fontSize: 12, fontWeight: '900', color: TOKENS.colors.text.light.emphasis, textTransform: 'uppercase', letterSpacing: 1.5 },
-  titleContainer: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 6 },
-  titleText: { fontSize: 26, color: TOKENS.colors.text.light.emphasis, fontWeight: 'bold', letterSpacing: -0.5, textAlign: 'center' },
-  subtitleContainer: { paddingHorizontal: 40, paddingBottom: 10 },
-  subtitleText: { fontSize: 15, color: TOKENS.colors.text.light.muted, textAlign: 'center', fontWeight: '500', lineHeight: 22 },
-  stickyProgressBand: { 
-    backgroundColor: TOKENS.colors.background.light, 
-    paddingTop: 10, 
-    paddingBottom: 10, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    zIndex: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: 'rgba(0,0,0,0.02)' 
-  },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  dotInactive: { height: 6, width: 6, borderRadius: 3, backgroundColor: 'rgba(203, 213, 225, 0.4)' },
-  dotActive: { height: 6, width: 32, borderRadius: 3, backgroundColor: 'rgba(140, 161, 143, 0.7)' },
-  content: { flex: 1, paddingHorizontal: 32, paddingTop: 32 },
-  statusCircle: { alignSelf: 'center', width: 100, height: 100, borderRadius: 50, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 32, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 5 },
-  statusCircleSuccess: { backgroundColor: TOKENS.colors.primary, shadowColor: TOKENS.colors.primary, shadowOpacity: 0.3 },
-  contentTitle: { fontSize: 28, color: TOKENS.colors.text.light.emphasis, marginBottom: 12, textAlign: 'center', fontWeight: 'bold', letterSpacing: -0.5 },
-  contentSubtitle: { fontSize: 16, color: TOKENS.colors.text.light.muted, textAlign: 'center', paddingHorizontal: 20, fontWeight: '500', lineHeight: 24 },
-  retryBtn: { alignSelf: 'center', marginTop: 32, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, backgroundColor: '#f1f5f9' },
-  retryText: { fontWeight: 'bold', color: TOKENS.colors.text.light.emphasis },
-  ctaButton: { height: 64, borderRadius: 18, backgroundColor: TOKENS.colors.primary, width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 40, shadowColor: TOKENS.colors.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 },
-  ctaText: { fontSize: 16, color: 'white', fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase' }
+  brandText: { fontSize: 13, fontWeight: '900', color: TOKENS.colors.text.light.emphasis, textTransform: 'uppercase', letterSpacing: 2 },
+  dotsContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 10 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: TOKENS.colors.primary, opacity: 0.4 },
+  dotLong: { width: 32, height: 8, borderRadius: 4, backgroundColor: TOKENS.colors.primary },
+  header: { paddingHorizontal: 24, paddingVertical: 20, alignItems: 'center' },
+  title: { fontSize: 32, fontWeight: '900', color: TOKENS.colors.text.light.emphasis, textAlign: 'center', letterSpacing: -1 },
+  subtitle: { fontSize: 15, color: TOKENS.colors.text.light.muted, textAlign: 'center', marginTop: 8, lineHeight: 22, paddingHorizontal: 20 },
+  mainContent: { paddingHorizontal: 20 },
+  statusCard: { backgroundColor: 'rgba(140, 161, 143, 0.05)', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(140, 161, 143, 0.1)' },
+  statusCardError: { backgroundColor: '#fef2f2', borderColor: '#fee2e2' },
+  statusContent: { gap: 12 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statusTitle: { fontSize: 16, fontWeight: '700', color: TOKENS.colors.text.light.emphasis },
+  progressBarContainer: { height: 6, backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: TOKENS.colors.primary, borderRadius: 3 },
+  statusMessage: { fontSize: 13, color: TOKENS.colors.text.light.muted, fontStyle: 'italic', lineHeight: 18 },
+  summarySection: { marginTop: 32 },
+  summaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  summaryTitle: { fontSize: 18, fontWeight: '800', color: TOKENS.colors.text.light.emphasis },
+  summaryGrid: { gap: 12 },
+  summaryItem: { backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f0f0f0' },
+  itemHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  itemLabel: { fontSize: 10, fontWeight: '800', color: TOKENS.colors.text.light.muted, textTransform: 'uppercase', letterSpacing: 1 },
+  itemValue: { fontSize: 16, fontWeight: '700', color: TOKENS.colors.text.light.emphasis },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  chip: { backgroundColor: '#f1f5f1', borderWidth: 1, borderColor: '#e0eae0', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  chipText: { fontSize: 10, fontWeight: '800', color: TOKENS.colors.primary, textTransform: 'uppercase' },
+  pairRow: { flexDirection: 'row', gap: 12 },
+  halfItem: { flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f0f0f0' },
+  fullItem: { backgroundColor: 'white', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f0f0f0' },
+  budgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  budgetIcons: { flexDirection: 'row', gap: 2 },
+  currencyIcon: { fontSize: 14, fontWeight: 'bold', color: TOKENS.colors.primary },
+  visualContainer: { marginTop: 32, height: 120, borderRadius: 24, overflow: 'hidden', position: 'relative' },
+  visualImage: { width: '100%', height: '100%', opacity: 0.6 },
+  visualOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(140, 161, 143, 0.4)', justifyContent: 'flex-end', padding: 16 },
+  visualText: { color: 'white', fontWeight: '700', fontSize: 15 },
+  retryButton: { backgroundColor: '#ef4444', height: 56, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24 },
+  retryButtonText: { color: 'white', fontWeight: '700', fontSize: 16 },
+  footer: { padding: 20, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#f0f0f0' },
+  ctaButton: { height: 60, borderRadius: 18, backgroundColor: TOKENS.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', shadowColor: TOKENS.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  ctaDisabled: { backgroundColor: '#cbd5e1', shadowOpacity: 0 },
+  ctaText: { color: 'white', fontSize: 16, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  reassurance: { textAlign: 'center', fontSize: 10, fontWeight: '700', color: '#94a3b8', marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 }
 });

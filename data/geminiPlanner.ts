@@ -28,9 +28,9 @@ function buildPrompt(input: PlannerInput): string {
         ? Math.round((c.estimatedCostGBP / input.profile.weeklyBudgetGBP) * 100)
         : 0;
       return (
-        `  - [${c.archetype}] id: "${c.id}", title: "${c.title}", suitableFor: [${c.suitableFor.join(', ')}], ` +
+        `  - [${c.archetype}] id: "${c.id}", title: "${c.title}", suitableFor: [${(c.suitableFor ?? []).join(', ')}], ` +
         `calories: ${c.macros.calories}, protein: ${c.macros.protein}g, ` +
-        `tags: [${c.tags.join(', ')}], pantryIngredients: ${c.pantryIngredients.length > 0 ? 'yes' : 'none'}, ` +
+        `tags: [${(c.tags ?? []).join(', ')}], pantryIngredients: ${c.pantryIngredients?.length > 0 ? 'yes' : 'none'}, ` +
         `cost: £${c.estimatedCostGBP.toFixed(2)} (${share}% of weekly budget)`
       );
     })
@@ -57,10 +57,10 @@ Your only output is a valid JSON object — no prose, no markdown, no extra text
 
 PLANNING CONTEXT:
 - Dietary preference: ${input.profile.dietaryPreference}
-- Allergies/exclusions: ${input.profile.allergies.join(', ') || 'none'}
+- Allergies/exclusions: ${(input.profile.allergies ?? []).join(', ') || 'none'}
 - Calorie target: ${input.profile.targetCalories} kcal/day
 - Protein target: ${input.profile.targetProteinG}g/day
-- Goals: ${input.profile.goalTags.join(', ') || 'none specified'}
+- Goals: ${(input.profile.goalTags ?? []).join(', ') || 'none specified'}
 - Weekly budget: £${input.profile.weeklyBudgetGBP.toFixed(2)} HARD LIMIT
 - Slots to fill: ${totalSlots} meals → average budget per meal = £${perMealBudget.toFixed(2)}
 

@@ -6,12 +6,7 @@
  *
  * ⚠️ AUTHORING GUIDANCE:
  * - DO NOT edit recipe content directly in this file.
- * - Author/Edit recipe data in the respective source files:
- *   - data/seed.ts (Legacy)
- *   - data/planner/plannerFixtures.ts (Curated)
- *   - data/planner/wave1Fixtures.ts (Phase 21.1)
- *   - data/planner/wave2Fixtures.ts (Phase 21.2)
- *   - data/planner/wave3Fixtures.ts (Phase 21.3)
+ * - Author/Edit recipe data in the respective source files.
  */
 
 // --- 1. SCHEMAS & TYPES ---
@@ -131,14 +126,14 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     },
     macrosPerServing: recipe.macros,
 
-    ingredients: recipe.ingredients.map((ingredient) => ({
+    ingredients: (recipe.ingredients ?? []).map((ingredient) => ({
       name: `Ingredient ${ingredient.ingredientId}`,
       amount: ingredient.amount,
       unit: ingredient.unit,
       canonicalIngredientId: ingredient.ingredientId,
     })),
     method: recipe.method ? recipe.method.map((step) => ({ step: step.step, text: step.text })) : [],
-    tags: recipe.tags,
+    tags: recipe.tags || [],
 
     archetype: (recipe.archetype as any) || 'Staple',
     cuisineId: (recipe as any).cuisineId,
@@ -150,9 +145,9 @@ export function normalizeLegacyRecipe(recipe: Recipe): NormalizedRecipe {
     notes: recipe.notes,
     substitutions: recipe.substitutions,
     relatedRecipeIds: recipe.relatedRecipeIds,
-    ingredientTags: (recipe as any).ingredientTags || [],
-    flavourIds: (recipe as any).flavourIds || [],
-    styleIds: (recipe as any).styleIds || [],
+    ingredientTags: (recipe as any).ingredientTags ?? [],
+    flavourIds: (recipe as any).flavourIds ?? [],
+    styleIds: (recipe as any).styleIds ?? [],
 
     plannerUsable: true,
     libraryVisible: true,
@@ -186,16 +181,6 @@ const fixtures = [
 
 // --- 4. RUNTIME CATALOG CONSTRUCTION ---
 
-/**
- * FULL_RECIPE_CATALOG
- * The effective Single Source of Truth for the application at runtime.
- *
- * INITIALIZATION FLOW:
- * 1. Gather raw recipe sources (Fixtures + Normalized Legacy).
- * 2. Resolve strategic image overrides via RecipeImages.ts.
- * 3. Calculate image health metadata via RecipeImageAuditor.ts.
- * 4. Index into an immutable Record for O(1) lookups.
- */
 export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
 [...normalizedLegacy, ...fixtures].forEach((recipe) => {
@@ -203,6 +188,9 @@ export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
   FULL_RECIPE_CATALOG[recipe.id] = {
     ...recipe,
+    ingredientTags: recipe.ingredientTags ?? [],
+    flavourIds: recipe.flavourIds ?? [],
+    styleIds: recipe.styleIds ?? [],
     imageUrl: resolvedImageUrl,
     imageMetadata: auditRecipeImage(recipe.title, resolvedImageUrl),
   };
@@ -210,7 +198,4 @@ export const FULL_RECIPE_CATALOG: Record<string, NormalizedRecipe> = {};
 
 // --- 5. RUNTIME EXPORTS ---
 
-/**
- * The full unified list for planner selection pools.
- */
 export const FULL_RECIPE_LIST: NormalizedRecipe[] = Object.values(FULL_RECIPE_CATALOG);

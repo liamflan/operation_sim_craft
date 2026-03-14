@@ -283,6 +283,8 @@ export interface RecipeImageMetadata {
 export interface TasteProfile {
   preferredCuisineIds: CuisineId[];
   excludedIngredientTags: string[];
+  goalTags?: string[];
+  allergies?: string[];
 }
 
 // ---------------------------------------------------------------------------

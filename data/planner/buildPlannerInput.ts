@@ -16,6 +16,11 @@ import {
 } from './plannerTypes';
 import { WeeklyRoutine, DAYS, isPlanned } from '../weeklyRoutine';
 
+/**
+ * CalibrationPayload
+ * RIGOROUS: This interface now matches the full onboarding payload 
+ * to ensure no user selections are lost during the transformation boundary.
+ */
 export interface CalibrationPayload {
   preferredCuisineIds: CuisineId[];
   diet: DietaryBaseline;
@@ -24,6 +29,10 @@ export interface CalibrationPayload {
   targetCalories?: number;
   caloriePreset?: string; // e.g. 'light', 'moderate', etc.
   excludedIngredientTags?: string[]; // Normalized (lowercase, trimmed).
+  goalTags?: string[];
+  allergies?: string[];
+  preferredFlavourIds?: string[];
+  preferredStyleIds?: string[];
 }
 
 const DEFAULT_BUDGET = 50;
@@ -42,14 +51,23 @@ export function buildSlotContracts(
   const budget = payload.budgetWeekly ?? DEFAULT_BUDGET;
   const protein = payload.targetProtein ?? DEFAULT_PROTEIN;
   const calories = payload.targetCalories ?? DEFAULT_CALORIES;
+  
+  // Normalization Boundary: Ensure all optional arrays are at least [] 
+  // to prevent 'some' of undefined in evaluators/validators.
   const hardExclusions: string[] = (payload.excludedIngredientTags ?? [])
     .map(e => e.toLowerCase().trim())
     .filter(e => e.length > 0);
 
-  // Build the TasteProfile from user's selected cuisines
+  const preferredCuisineIds = payload.preferredCuisineIds ?? [];
+  const goalTags = payload.goalTags ?? [];
+  const allergies = payload.allergies ?? [];
+
+  // Build the TasteProfile from user's selected cuisines and goals
   const tasteProfile: TasteProfile = {
-    preferredCuisineIds: payload.preferredCuisineIds,
-    excludedIngredientTags: hardExclusions
+    preferredCuisineIds,
+    excludedIngredientTags: hardExclusions,
+    goalTags,
+    allergies
   };
 
   const today = new Date();
