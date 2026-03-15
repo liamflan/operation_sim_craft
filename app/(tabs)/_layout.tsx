@@ -45,7 +45,7 @@ function NavItem({ icon, label, isActive, onPress }: { icon: string, label: stri
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 768; // Tailwind md breakpoint
+  const isDesktop = Platform.OS === 'web' && width >= 1024;
   const router = useRouter();
   const pathname = usePathname();
   const { clearWorkspace } = useActivePlan();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import PageHeader from '../../components/PageHeader';
@@ -25,7 +25,8 @@ const InfoRow = ({ label, value, icon, color, onPress, testID }: { label: string
     testID={testID}
     onPress={onPress}
     disabled={!onPress}
-    className="flex-row items-center justify-between py-5 border-b border-black/[0.03] dark:border-darksoftBorder last:border-0 hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors"
+    activeOpacity={onPress ? 0.7 : 1}
+    className="flex-row items-center justify-between py-5 border-b border-black/[0.03] dark:border-darksoftBorder last:border-0 hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
   >
     <View className="flex-row items-center pl-2">
       <View className={`w-12 h-12 rounded-[16px] ${color} items-center justify-center mr-5 shadow-sm`}>
@@ -83,7 +84,8 @@ const CoreRuleModal = ({
                 <TouchableOpacity 
                   key={option}
                   onPress={() => setTempValue(option)}
-                  className={`py-4 px-5 rounded-[20px] border transition-all ${tempValue === option ? 'bg-primary border-primary shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'}`}
+                  activeOpacity={0.7}
+                  className={`py-4 px-5 rounded-[20px] border ${tempValue === option ? 'bg-primary border-primary shadow-sm' : 'bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/5 hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'}`}
                 >
                   <Text className={`font-medium text-[16px] ${tempValue === option ? 'text-white' : 'text-textSec dark:text-darktextSec'}`}>{option}</Text>
                 </TouchableOpacity>
@@ -105,10 +107,10 @@ const CoreRuleModal = ({
           )}
 
           <View className="flex-row gap-3 mt-8">
-            <TouchableOpacity onPress={onClose} className="flex-1 py-4 rounded-full border border-black/10 dark:border-white/10 items-center justify-center transition-colors hover:bg-black/5 dark:hover:bg-white/5 active:scale-95">
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7} className="flex-1 py-4 rounded-full border border-black/10 dark:border-white/10 items-center justify-center hover:bg-black/5 dark:hover:bg-white/5">
               <Text className="text-textSec dark:text-darktextSec font-medium text-[15px]">Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => { onSave(tempValue); onClose(); }} className="flex-1 bg-primary py-4 rounded-full items-center justify-center shadow-sm hover:bg-primary-hover active:scale-95 transition-all">
+            <TouchableOpacity onPress={() => { onSave(tempValue); onClose(); }} activeOpacity={0.7} className="flex-1 bg-primary py-4 rounded-full items-center justify-center shadow-sm hover:bg-primary-hover">
               <Text className="text-white font-medium text-[15px]">Save</Text>
             </TouchableOpacity>
           </View>
@@ -136,7 +138,8 @@ const ChipSelector = ({
             key={tag}
             testID={`chip-selector-${tag.replace(/\s+/g, '-').toLowerCase()}`}
             onPress={() => onToggle(tag)}
-            className={`px-5 py-3 rounded-full border transition-all active:scale-95 ${isSelected ? `${activeColor} shadow-sm border-transparent` : 'bg-surface dark:bg-darksurface border-black/[0.05] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}`}
+            activeOpacity={0.7}
+            className={`px-5 py-3 rounded-full border ${isSelected ? `${activeColor} shadow-sm border-transparent` : 'bg-surface dark:bg-darksurface border-black/[0.05] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'}`}
           >
             <Text className={`font-medium text-[14px] ${isSelected ? 'text-white' : 'text-textSec dark:text-darktextSec'}`}>
               {tag}
@@ -165,7 +168,8 @@ const ChipSelector = ({
         <TouchableOpacity
           testID="chip-selector-add-btn"
           onPress={() => setIsAddingCustom(true)}
-          className="px-5 py-3 rounded-full border border-dashed border-black/10 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-all active:scale-95 flex-row items-center"
+          activeOpacity={0.7}
+          className="px-5 py-3 rounded-full border border-dashed border-black/10 dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] hover:bg-black/[0.03] dark:hover:bg-white/[0.03] flex-row items-center"
         >
           <FontAwesome5 name="plus" size={10} color="#8C9A90" className="mr-2" />
           <Text className="font-medium text-[14px] text-textSec dark:text-darktextSec">Add</Text>
@@ -192,7 +196,8 @@ function SlotPicker({ options, value, onChange }: {
           <TouchableOpacity
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            className={`flex-1 h-full items-center justify-center rounded-[8px] transition-all ${
+            activeOpacity={0.7}
+            className={`flex-1 h-full items-center justify-center rounded-[8px] ${
               active
                 ? 'bg-surface dark:bg-[#343A36] shadow-[0_1px_4px_rgba(0,0,0,0.08)] dark:shadow-none border border-black/[0.02] dark:border-white/5'
                 : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.02] border border-transparent'
@@ -232,7 +237,8 @@ function WeeklyRoutineSection() {
           <TouchableOpacity
             key={preset.key}
             onPress={() => handlePreset(preset.key, preset.routine)}
-            className={`px-5 py-2.5 rounded-full border transition-all active:scale-95 ${
+            activeOpacity={0.7}
+            className={`px-5 py-2.5 rounded-full border ${
               activePreset === preset.key
                 ? 'bg-primary/10 border-primary/20 shadow-sm dark:bg-darksageTint dark:border-darksageTint'
                 : 'bg-surface dark:bg-darksurface border-black/[0.03] dark:border-darksoftBorder hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
@@ -245,7 +251,8 @@ function WeeklyRoutineSection() {
         ))}
         <TouchableOpacity
           onPress={() => handlePreset('full', ROUTINE_PRESETS[0].routine)}
-          className="px-5 py-2.5 rounded-full border border-dashed border-black/10 dark:border-white/10 hover:bg-black/[0.02] transition-all active:scale-95"
+          activeOpacity={0.7}
+          className="px-5 py-2.5 rounded-full border border-dashed border-black/10 dark:border-white/10 hover:bg-black/[0.02]"
         >
           <Text className="text-[13px] font-medium text-textSec/60 dark:text-darktextSec/60">Reset Defaults</Text>
         </TouchableOpacity>
@@ -370,7 +377,7 @@ export default function TasteProfileScreen() {
     if (diet === 'Vegan' || diet === 'Vegetarian') {
        badges.push({ label: 'Plant-Based', icon: 'leaf', color: 'bg-avocado/10 border-avocado/20 text-avocado' });
     }
-
+ 
     // 2. Inferred from Recipes (If we need more badges to get to 3)
     const tagCounts: Record<string, number> = {};
     scrapedRecipes.forEach(recipe => {
@@ -584,7 +591,8 @@ export default function TasteProfileScreen() {
                 <TouchableOpacity 
                   testID="taste-profile-add-recipe-btn"
                   onPress={() => setIsImportOpen(true)}
-                  className="bg-primary hover:bg-primary-hover active:scale-95 transition-all px-5 py-3 rounded-full shadow-sm flex-row items-center justify-center"
+                  activeOpacity={0.7}
+                  className="bg-primary hover:bg-primary-hover active:opacity-70 px-5 py-3 rounded-full shadow-sm flex-row items-center justify-center"
                 >
                   <FontAwesome5 name="plus" size={12} color="white" className="mr-2" />
                   <Text className="text-white font-medium text-[14px] tracking-wide">Import</Text>
@@ -646,9 +654,10 @@ export default function TasteProfileScreen() {
                       <TouchableOpacity 
                         testID={`taste-profile-delete-recipe-${item.id}`}
                         onPress={() => deleteRecipe(item.id)}
-                        className="w-11 h-11 bg-black/[0.02] dark:bg-white/[0.02] rounded-full items-center justify-center border border-black/[0.03] dark:border-white/[0.03] hover:bg-danger/10 hover:border-danger/20 transition-colors group active:scale-95"
+                        activeOpacity={0.7}
+                        className="w-11 h-11 bg-black/[0.02] dark:bg-white/[0.02] rounded-full items-center justify-center border border-black/[0.03] dark:border-white/[0.03] hover:bg-danger/10 hover:border-danger/20 group"
                       >
-                        <FontAwesome5 name="trash-alt" size={14} color="#8C9A90" className="group-hover:text-danger transition-colors" />
+                        <FontAwesome5 name="trash-alt" size={14} color="#8C9A90" className="group-hover:text-danger" />
                       </TouchableOpacity>
                     </View>
                   ))
@@ -664,18 +673,49 @@ export default function TasteProfileScreen() {
               </View>
               
               <View className="flex-row gap-4">
-                {MOCK_RECIPES.slice(0, 2).map((recipe) => (
-                  <View key={recipe.id} className="flex-1 h-[200px] rounded-[32px] overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder bg-black/5 dark:bg-white/5">
-                    <Image source={recipe.imageUrl} style={{width: '100%', height: '100%', position: 'absolute'}} contentFit="cover" />
-                    {/* Subtle Top Inner Highlight for premium feel */}
-                    <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/20 z-20" />
-                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']} locations={[0, 0.4, 1]} className="absolute inset-0 justify-end p-6">
-                       <Text className="text-white font-medium text-[18px] leading-tight tracking-tight shadow-sm" numberOfLines={2}>
-                        {recipe.title}
-                       </Text>
-                    </LinearGradient>
-                  </View>
-                ))}
+                {MOCK_RECIPES.slice(0, 2).map((recipe) => {
+                  // STRICT IMAGE NORMALIZATION
+                  const safeSource = (() => {
+                    const val = recipe.imageUrl;
+                    if (!val) return null;
+                    if (typeof val === 'string' && val.trim().startsWith('http')) return { uri: val };
+                    if (typeof val === 'number') return val;
+                    return null;
+                  })();
+                  
+                  return (
+                    <View key={recipe.id} className="flex-1 h-[200px] rounded-[32px] overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder bg-black/5 dark:bg-white/5">
+                      {Platform.OS !== 'web' ? (
+                        safeSource ? (
+                          <RNImage 
+                            source={safeSource} 
+                            style={{width: '100%', height: '100%', position: 'absolute'}} 
+                            resizeMode="cover" 
+                          />
+                        ) : (
+                          <View style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F0F4F0' }}>
+                            <FontAwesome5 name="utensils" size={24} color="#CBD5E1" />
+                          </View>
+                        )
+                      ) : (
+                        safeSource && (
+                          <Image source={safeSource} style={{width: '100%', height: '100%', position: 'absolute'}} contentFit="cover" />
+                        )
+                      )}
+                      {/* Original placeholder logic for web/missing fallback */}
+                      <View className="absolute inset-0 items-center justify-center -z-10 bg-slate-50 dark:bg-slate-800">
+                        <FontAwesome5 name="utensils" size={24} color="#CBD5E1" />
+                      </View>
+                      {/* Subtle Top Inner Highlight for premium feel */}
+                      <View className="absolute top-0 left-0 right-0 h-[1.5px] bg-white/20 z-20" />
+                      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.9)']} locations={[0, 0.4, 1]} className="absolute inset-0 justify-end p-6">
+                         <Text className="text-white font-medium text-[18px] leading-tight tracking-tight shadow-sm" numberOfLines={2}>
+                          {recipe.title}
+                         </Text>
+                      </LinearGradient>
+                    </View>
+                  );
+                })}
               </View>
             </View>
 

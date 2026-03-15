@@ -9,7 +9,8 @@ import {
   Platform, 
   ActivityIndicator,
   Pressable,
-  Easing
+  Easing,
+  Image as RNImage
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -19,6 +20,18 @@ import { FULL_RECIPE_CATALOG } from '../data/planner/recipeRegistry';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = Platform.OS === 'web' ? 620 : SCREEN_WIDTH;
+
+// Helper to normalize image sources for native stability
+const getSafeSource = (imageUrl: any) => {
+  if (!imageUrl) return null;
+  if (typeof imageUrl === 'string' && imageUrl.trim().startsWith('http')) {
+    return { uri: imageUrl };
+  }
+  if (typeof imageUrl === 'number') {
+    return imageUrl; // Local require()
+  }
+  return null;
+};
 
 interface SwapDrawerProps {
   isVisible: boolean;
@@ -177,7 +190,8 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
             </View>
             <TouchableOpacity 
               onPress={onClose} 
-              className="w-8 h-8 items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+              activeOpacity={0.7}
+              className="w-8 h-8 items-center justify-center opacity-40 hover:opacity-100"
             >
               <FontAwesome5 name="times" size={16} color="#000" />
             </TouchableOpacity>
@@ -193,11 +207,27 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
               <Text className="text-textMain text-[10px] font-bold uppercase tracking-[0.15em] mb-4 opacity-40 px-1">Your current choice</Text>
               {currentRecipe ? (
                 <View className="bg-white rounded-[20px] p-3 border border-black/[0.03] shadow-[0_2px_12px_rgba(0,0,0,0.01)] flex-row items-center">
-                  <Image 
-                    source={currentRecipe.imageUrl} 
-                    style={{ width: 72, height: 72, borderRadius: 14 }} 
-                    contentFit="cover"
-                  />
+                  <View style={{ width: 72, height: 72, borderRadius: 14, overflow: 'hidden', backgroundColor: '#F0F2EF', alignItems: 'center', justifyContent: 'center' }}>
+                    {Platform.OS !== 'web' ? (
+                      getSafeSource(currentRecipe.imageUrl) ? (
+                        <RNImage 
+                          source={getSafeSource(currentRecipe.imageUrl)!} 
+                          style={{ width: '100%', height: '100%' }} 
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F1' }}>
+                          <FontAwesome5 name="utensils" size={14} color="#CBD5E1" />
+                        </View>
+                      )
+                    ) : (
+                      <Image 
+                        source={getSafeSource(currentRecipe.imageUrl)!} 
+                        style={{ width: '100%', height: '100%' }} 
+                        contentFit="cover"
+                      />
+                    )}
+                  </View>
                   <View className="flex-1 ml-4 justify-center py-1">
                     <View className="flex-row justify-between items-start mb-2 pr-2">
                       <Text className="flex-1 text-textMain text-[16px] font-medium leading-[1.25] mr-4" numberOfLines={2}>{currentRecipe.title}</Text>
@@ -237,7 +267,7 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
                       onPress={() => setActiveFilter(filter.id)}
                       activeOpacity={0.7}
                       style={{ flexShrink: 0 }}
-                      className={`flex-row items-center px-4 py-2 rounded-xl border transition-all ${
+                      className={`flex-row items-center px-4 py-2 rounded-xl border ${
                         isActive 
                           ? 'bg-primary/5 border-primary/20 shadow-sm' 
                           : 'bg-white border-black/[0.04]'
@@ -285,19 +315,35 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
                       <TouchableOpacity 
                         key={item.id}
                         onPress={() => setSelectedId(item.id)}
-                        activeOpacity={0.94}
-                        className={`bg-white rounded-[20px] border transition-all duration-300 overflow-hidden ${
+                        activeOpacity={0.7}
+                        className={`bg-white rounded-[20px] border overflow-hidden ${
                           isSelected 
                             ? 'border-primary/30 bg-[#F6F8F5] shadow-[0_4px_16px_rgba(0,0,0,0.02)]' 
                             : 'border-black/[0.03] hover:border-black/[0.06]'
                         }`}
                       >
                         <View className="flex-row p-3 items-center">
-                          <Image 
-                            source={item.imageUrl} 
-                            style={{ width: 72, height: 72, borderRadius: 14 }} 
-                            contentFit="cover"
-                          />
+                          <View style={{ width: 72, height: 72, borderRadius: 14, overflow: 'hidden', backgroundColor: '#F0F2EF', alignItems: 'center', justifyContent: 'center' }}>
+                            {Platform.OS !== 'web' ? (
+                              getSafeSource(item.imageUrl) ? (
+                                <RNImage 
+                                  source={getSafeSource(item.imageUrl)!} 
+                                  style={{ width: '100%', height: '100%' }} 
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F1' }}>
+                                  <FontAwesome5 name="utensils" size={14} color="#CBD5E1" />
+                                </View>
+                              )
+                            ) : (
+                              <Image 
+                                source={getSafeSource(item.imageUrl)!} 
+                                style={{ width: '100%', height: '100%' }} 
+                                contentFit="cover"
+                              />
+                            )}
+                          </View>
                           <View className="flex-1 ml-4 justify-center py-1">
                             <View className="flex-row justify-between items-start mb-2 pr-2">
                               <Text className="flex-1 text-textMain text-[16px] font-medium leading-[1.25] mr-4" numberOfLines={2}>{item.title}</Text>
@@ -395,14 +441,16 @@ export default function SwapDrawer({ isVisible, onClose, dayIndex, slotType, cur
               <View className="flex-row gap-4">
                 <TouchableOpacity 
                   onPress={onClose}
-                  className="flex-1 py-4.5 rounded-xl border border-black/[0.05] items-center justify-center bg-white active:bg-black/[0.01] transition-all"
+                  activeOpacity={0.7}
+                  className="flex-1 py-4.5 rounded-xl border border-black/[0.05] items-center justify-center bg-white active:bg-black/[0.01]"
                 >
                   <Text className="text-textMain font-bold text-[14px]">Keep Current</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   disabled={!selectedId || confirming}
                   onPress={handleConfirm}
-                  className={`flex-[1.6] py-4.5 rounded-xl items-center justify-center border transition-all ${
+                  activeOpacity={selectedId && !confirming ? 0.7 : 1}
+                  className={`flex-[1.6] py-4.5 rounded-xl items-center justify-center border ${
                     !selectedId || confirming 
                       ? 'bg-black/[0.01] border-black/[0.03] opacity-20' 
                       : 'bg-[#F4F7F4] border-primary/10 active:bg-[#EDF2ED]'

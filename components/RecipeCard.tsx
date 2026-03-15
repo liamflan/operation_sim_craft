@@ -1,6 +1,6 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { View, Text, Pressable, Animated, PanResponder, Dimensions, Platform } from 'react-native';
-import { Image } from 'expo-image';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
+import { View, Text, Pressable, Animated, PanResponder, Dimensions, Platform, ActivityIndicator, TouchableOpacity, GestureResponderEvent, Image as RNImage } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -23,14 +23,17 @@ type Props = {
   day?: string;
   slot?: string;
   isSkipped?: boolean;
+  isLocked?: boolean;
   isGenerating?: boolean;
   pantryTransferStatus?: 'transferred' | null;
+  variant?: 'desktop' | 'mobile';
   onPress?: () => void;
   onSwipe?: () => void;
   onSkip?: () => void;
   onSkipAndKeep?: () => void;
   onUnskip?: () => void;
   onReplace?: () => void;
+  onLock?: () => void;
 };
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -78,7 +81,6 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
       end={{ x: 1, y: 1 }}
       style={{ position: 'absolute', width: '100%', height: '100%' }}
     >
-      {/* Large ambient circle — top-right */}
       <View
         style={{
           position: 'absolute',
@@ -91,7 +93,6 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
           transform: [{ scaleY: 1.2 }],
         }}
       />
-      {/* Medium circle — bottom-left */}
       <View
         style={{
           position: 'absolute',
@@ -103,7 +104,6 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
           left: -60,
         }}
       />
-      {/* Small accent circle — mid-left */}
       <View
         style={{
           position: 'absolute',
@@ -119,17 +119,33 @@ function FallbackCard({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boole
   );
 }
 
+const TOKENS = {
+  colors: {
+    primary: '#8ca18f',
+  }
+};
+
+// Helper to normalize image sources for native stability
+const getSafeSource = (imageUrl: any) => {
+  if (!imageUrl) return null;
+  if (typeof imageUrl === 'string' && imageUrl.trim().startsWith('http')) {
+    return { uri: imageUrl };
+  }
+  if (typeof imageUrl === 'number') {
+    return imageUrl; // Local require()
+  }
+  return null;
+};
+
 export default function RecipeCard({ 
-  recipe, slotLabel, day, slot, isSkipped, isGenerating, pantryTransferStatus, 
-  onPress, onSwipe, onSkip, onSkipAndKeep, onUnskip, onReplace 
+  recipe, slotLabel, day, slot, isSkipped, isLocked, isGenerating, pantryTransferStatus, 
+  variant = 'desktop', onPress, onSwipe, onSkip, onSkipAndKeep, onUnskip, onReplace, onLock 
 }: Props) {
   const router = useRouter();
   const { isDarkMode } = useTheme();
-  // Track whether the remote image has failed so we can suppress the broken-img UI entirely
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const handleImageError = useCallback(() => setImageLoadFailed(true), []);
 
-  // Navigate to the dedicated recipe detail page
   const handleViewRecipe = () => {
     const params = new URLSearchParams();
     if (day) params.set('day', day);
@@ -137,6 +153,7 @@ export default function RecipeCard({
     const query = params.toString();
     router.push(`/recipe/${recipe.id}${query ? `?${query}` : ''}` as any);
   };
+
   const pan = useRef(new Animated.ValueXY()).current;
   const opacity = pan.x.interpolate({
     inputRange: [-SCREEN_WIDTH / 3, 0, SCREEN_WIDTH / 3],
@@ -179,6 +196,203 @@ export default function RecipeCard({
     })
   ).current;
 
+  // STRICT IMAGE NORMALIZATION for both paths
+  const safeImageSource = useMemo(() => getSafeSource((recipe as any).imageUrl), [(recipe as any).imageUrl]);
+
+  // HARD RUNTIME FIX: MOBILE VARIANT (Robust Image + No Unsafe Transforms)
+  if (variant === 'mobile') {
+    const calories = recipe.calories ?? (recipe as NormalizedRecipe).macrosPerServing?.calories ?? (recipe as Recipe).macros?.calories ?? 0;
+    const minutes = (recipe as any).totalTimeMinutes || (recipe as any).totalMinutes || 30;
+    const archetype = (recipe as any).archetype || 'Healthy';
+    
+    // Header Style Mapping (Primary Identification)
+    const slotColors: Record<string, string> = {
+      'BREAKFAST': '#fef3c7', // amber-100
+      'LUNCH': '#dcfce7',     // green-100
+      'DINNER': '#e0f2fe',    // sky-100
+    };
+    const slotTextColors: Record<string, string> = {
+      'BREAKFAST': '#92400e', // amber-800
+      'LUNCH': '#166534',     // green-800
+      'DINNER': '#075985',    // sky-800
+    };
+
+    const displaySlot = (slotLabel || slot || 'Meal').toUpperCase();
+    const headerBg = slotColors[displaySlot] || '#f1f5f9';
+    const headerText = slotTextColors[displaySlot] || '#475569';
+
+    return (
+      <TouchableOpacity 
+        activeOpacity={0.8}
+        onPress={isSkipped || isGenerating ? undefined : handleViewRecipe}
+        className={`mb-6 rounded-[24px] bg-white shadow-sm border border-slate-100 overflow-hidden ${isSkipped ? 'opacity-70 grayscale' : ''}`}
+      >
+        {/* Card Header - SLOT INFO */}
+        <View className="px-5 py-3.5 flex-row justify-between items-center border-b border-slate-50">
+          <View className="flex-row items-center gap-2.5">
+            <View 
+              style={{ backgroundColor: headerBg }}
+              className="px-3 py-1 rounded-full"
+            >
+              <Text style={{ color: headerText }} className="text-[10px] font-bold tracking-[0.05em]">{displaySlot}</Text>
+            </View>
+            <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{day}</Text>
+          </View>
+          
+          <View className="flex-row items-center gap-2">
+            {!isSkipped && (
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  onLock?.();
+                }}
+                className={`size-8 rounded-full items-center justify-center ${isLocked ? 'bg-primary' : 'bg-slate-50 border border-slate-100'}`}
+              >
+                <FontAwesome5 name={isLocked ? "lock" : "lock-open"} size={11} color={isLocked ? 'white' : '#94a3b8'} />
+              </TouchableOpacity>
+            )}
+            {!isSkipped && (
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  onSwipe?.();
+                }}
+                className="size-8 rounded-full bg-slate-50 border border-slate-100 items-center justify-center"
+              >
+                <FontAwesome5 name="random" size={12} color="#94a3b8" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+ 
+        <View className="p-4 flex-row gap-4">
+          {/* HARD RUNTIME FIX: Standard RN Image for Mobile Stability */}
+          <View className="relative">
+            <View className="size-24 rounded-[20px] bg-slate-50 overflow-hidden shadow-sm">
+                {safeImageSource && !imageLoadFailed ? (
+                <RNImage 
+                    source={safeImageSource} 
+                    className="size-full"
+                    resizeMode="cover"
+                    onError={handleImageError}
+                />
+                ) : (
+                <View className="size-full items-center justify-center">
+                    <FontAwesome5 name="utensils" size={24} color="#CBD5E1" />
+                </View>
+                )}
+            </View>
+            {isGenerating && (
+              <View className="absolute inset-0 bg-white/70 items-center justify-center rounded-[20px]">
+                <ActivityIndicator size="small" color="#8ca18f" />
+              </View>
+            )}
+            {isLocked && !isSkipped && (
+               <View className="absolute -top-1.5 -right-1.5 size-6 rounded-full bg-primary border-2 border-white items-center justify-center shadow-sm">
+                 <FontAwesome5 name="lock" size={9} color="white" />
+               </View>
+            )}
+          </View>
+   
+          <View className="flex-1 justify-center py-0.5">
+            <View className="flex-row items-center gap-1.5 mb-1">
+              <Text className="text-[10px] font-bold text-primary uppercase tracking-widest">{archetype.replace('_', ' ')}</Text>
+            </View>
+            <Text className="text-slate-900 text-[17px] font-bold leading-tight" numberOfLines={2}>
+              {recipe.title}
+            </Text>
+            <Text className="text-slate-400 text-[12px] mt-1.5 font-medium">
+              {Math.round(calories)} kcal • {minutes} mins
+            </Text>
+          </View>
+        </View>
+   
+        {/* TRUE CTA PARITY - Aligning with Onboarding Generate Plan Button (60px height, 20px radius) */}
+        <View className="px-4 pb-4 flex-row gap-3">
+          {isSkipped ? (
+            <>
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  onUnskip?.();
+                }}
+                className="flex-1 h-[60px] rounded-[20px] bg-white border border-slate-100 flex-row items-center justify-center gap-2"
+              >
+                <FontAwesome5 name="undo" size={12} color="#64748b" />
+                <Text className="text-slate-600 font-bold text-[13px] uppercase tracking-wide">Undo Skip</Text>
+              </TouchableOpacity>
+              
+              {pantryTransferStatus === 'transferred' ? (
+                <View className="flex-1 h-[60px] rounded-[20px] bg-slate-50 border border-primary/20 flex-row items-center justify-center gap-2">
+                  <FontAwesome5 name="check-circle" size={14} color="#8ca18f" />
+                  <Text className="text-primary font-bold text-[13px] uppercase tracking-wide">Pantry Updated</Text>
+                </View>
+              ) : (
+                <TouchableOpacity 
+                  activeOpacity={0.9}
+                  onPress={(e: GestureResponderEvent) => {
+                    e.stopPropagation();
+                    onSkipAndKeep?.();
+                  }}
+                  className="flex-[1.2] h-[60px] rounded-[20px] bg-primary flex-row items-center justify-center gap-2 shadow-sm"
+                  style={{
+                    shadowColor: '#8ca18f',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 8,
+                    elevation: 4
+                  }}
+                >
+                  <FontAwesome5 name="plus" size={12} color="white" />
+                  <Text className="text-white font-bold text-[15px] uppercase tracking-[0.05em]">Add Groceries</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            <>
+              <TouchableOpacity 
+                activeOpacity={0.8}
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  onSkip?.();
+                }}
+                className="flex-1 h-[60px] rounded-[20px] bg-white border border-slate-100 flex-row items-center justify-center gap-2"
+              >
+                <FontAwesome5 name="calendar-times" size={16} color="#94a3b8" />
+                <Text className="text-slate-500 font-bold text-[13px] uppercase tracking-widest">Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                activeOpacity={0.9}
+                onPress={handleViewRecipe}
+                className="flex-[1.5] h-[60px] rounded-[20px] bg-primary flex-row items-center justify-center gap-3 shadow-sm"
+                style={{
+                  shadowColor: '#8ca18f',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4
+                }}
+              >
+                <Text className="text-white font-bold text-[16px] uppercase tracking-[0.1em]">View Recipe</Text>
+                <FontAwesome5 name="chevron-right" size={12} color="white" />
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+   
+        {isSkipped && (
+          <View className="absolute top-[4.5rem] right-4 bg-slate-900/10 px-3 py-1 rounded-full">
+            <Text className="text-slate-900/40 text-[9px] font-black uppercase tracking-[0.2em]">Inactive</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
+
+  // Desktop Variant (Preserving visuals, fixing potential transform bridge issues)
   return (
     <Animated.View
       testID="recipe-card"
@@ -190,23 +404,14 @@ export default function RecipeCard({
     >
       <Pressable
         testID="recipe-card-pressable"
-        onPress={isSkipped || isGenerating ? undefined : onPress}
-        className={`w-full h-56 md:h-[220px] rounded-3xl overflow-hidden transition-transform duration-300 relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder ${isSkipped ? 'opacity-50 grayscale' : 'active:scale-[0.99]'} transition-all duration-300`}
+        onPress={isSkipped || isGenerating ? undefined : handleViewRecipe}
+        className={`w-full h-56 md:h-[220px] rounded-3xl overflow-hidden relative shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-darksoftBorder ${isSkipped ? 'opacity-50 grayscale' : ''}`}
       >
-        {/* Premium fallback — always renders first, image crossfades over it once loaded */}
         <FallbackCard recipe={recipe} isDark={isDarkMode} />
-
-        {/* Full Bleed Image — only rendered when URL exists AND hasn't errored.
-            On error, imageLoadFailed flips to true, unmounting this element
-            which ensures the browser's broken-image icon is never visible.
-            
-            Phase 17: We also check imageAuditStatus. 
-            'missing' or 'placeholder-match' forces fallback. */}
-        {(recipe as any).imageUrl && !imageLoadFailed && 
-         recipe.imageMetadata?.status !== 'missing' && 
-         !recipe.imageMetadata?.reasons.includes('placeholder-image') ? (
-          <Image
-            source={(recipe as any).imageUrl}
+        {safeImageSource && !imageLoadFailed && 
+         recipe.imageMetadata?.status !== 'missing' ? (
+          <ExpoImage
+            source={safeImageSource}
             style={{ width: '100%', height: '100%', position: 'absolute' }}
             contentFit="cover"
             transition={{ duration: 500, effect: 'cross-dissolve' }}
@@ -214,14 +419,6 @@ export default function RecipeCard({
           />
         ) : null}
 
-        {recipe.imageMetadata && 
-         (recipe.imageMetadata.status === 'suspect' || recipe.imageMetadata.status === 'needs-review') && (
-          <View className="absolute top-20 left-4 z-40 bg-amber-500/80 backdrop-blur-md px-2 py-0.5 rounded border border-white/20">
-            <Text className="text-white text-[9px] font-bold uppercase tracking-widest">Audit: {recipe.imageMetadata.status}</Text>
-          </View>
-        )}
-
-        {/* Top Controls Row */}
         <View className="absolute top-4 left-4 right-4 z-30 flex-row justify-between items-start pointer-events-none">
           {slotLabel ? (
             <View className="bg-white/10 dark:bg-black/20 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/30 dark:border-white/10 shadow-sm">
@@ -229,95 +426,83 @@ export default function RecipeCard({
             </View>
           ) : <View />}
 
-          {onSwipe && !isSkipped && (
-            <View className="flex-row items-center gap-2 pointer-events-auto">
-              <Pressable
-                testID="recipe-card-swap-desktop-btn"
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onSwipe();
-                }}
-                className="bg-black/20 hover:bg-black/30 dark:bg-black/40 dark:hover:bg-black/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
+          <View className="flex-row items-center gap-2 pointer-events-auto">
+            {onSwipe && !isSkipped && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={(e) => { e.stopPropagation(); onSwipe(); }}
+                className="bg-black/20 dark:bg-black/40 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm"
               >
                 <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
                 <Text className="text-white font-medium text-[13px] tracking-wide">Swap</Text>
-              </Pressable>
-              
-              {onSkip && (
-                <Pressable
-                  testID="recipe-card-skip-btn"
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onSkip();
-                  }}
-                  className="bg-red-500/20 hover:bg-red-500/30 dark:bg-red-900/40 dark:hover:bg-red-900/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
-                >
-                  <FontAwesome5 name="fast-forward" size={12} color="white" className="mr-2" />
-                  <Text className="text-white font-medium text-[13px] tracking-wide">Skip</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
+              </TouchableOpacity>
+            )}
+            
+            {!isSkipped && onLock && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={(e) => { e.stopPropagation(); onLock(); }}
+                className={`${isLocked ? 'bg-primary/80' : 'bg-black/20'} backdrop-blur-md size-10 rounded-full items-center justify-center border border-white/20 shadow-sm`}
+              >
+                <FontAwesome5 name={isLocked ? "lock" : "lock-open"} size={12} color="white" />
+              </TouchableOpacity>
+            )}
 
-          {isSkipped && (
-            <View className="flex-row items-center gap-2 pointer-events-auto">
-              {onReplace && (
-                <Pressable
-                  testID="recipe-card-replace-btn"
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onReplace();
-                  }}
-                  className="bg-black/20 hover:bg-black/30 dark:bg-black/40 dark:hover:bg-black/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
-                >
-                  <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
-                  <Text className="text-white font-medium text-[13px] tracking-wide">Replace</Text>
-                </Pressable>
-              )}
-              
-              {onUnskip && (
-                <Pressable
-                  testID="recipe-card-unskip-btn"
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onUnskip();
-                  }}
-                  className="bg-primary/20 hover:bg-primary/30 dark:bg-darksageTint/40 dark:hover:bg-darksageTint/60 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 dark:border-white/10 shadow-sm active:scale-95 transition-all"
-                >
-                  <FontAwesome5 name="undo" size={12} color="white" className="mr-2" />
-                  <Text className="text-white font-medium text-[13px] tracking-wide">Restore</Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-          
-          {isSkipped && (
-            <View className="absolute top-16 right-4 sm:static sm:top-auto sm:right-auto bg-red-500/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
-               <FontAwesome5 name="ban" size={10} color="white" className="mr-2" />
-               <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Skipped</Text>
-            </View>
-          )}
+            {!isSkipped && onSkip && (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={(e) => { e.stopPropagation(); onSkip(); }}
+                className="bg-red-500/20 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20 shadow-sm"
+              >
+                <FontAwesome5 name="fast-forward" size={12} color="white" className="mr-2" />
+                <Text className="text-white font-medium text-[13px] tracking-wide">Skip</Text>
+              </TouchableOpacity>
+            )}
 
-          {isGenerating && (
-            <View className="absolute top-16 right-4 sm:static sm:top-auto sm:right-auto bg-primary/80 dark:bg-darksageTint/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
-               <FontAwesome5 name="spinner" size={10} color="white" className="mr-2 animate-spin" />
-               <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Generating</Text>
-            </View>
-          )}
+            {isSkipped && (
+              <>
+                {onReplace && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={(e) => { e.stopPropagation(); onReplace(); }}
+                    className="bg-black/20 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20"
+                  >
+                    <FontAwesome5 name="random" size={12} color="white" className="mr-2" />
+                    <Text className="text-white font-medium text-[13px] tracking-wide">Replace</Text>
+                  </TouchableOpacity>
+                )}
+                {onUnskip && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={(e) => { e.stopPropagation(); onUnskip(); }}
+                    className="bg-primary/20 backdrop-blur-md px-4 h-10 rounded-full flex-row items-center border border-white/20"
+                  >
+                    <FontAwesome5 name="undo" size={12} color="white" className="mr-2" />
+                    <Text className="text-white font-medium text-[13px] tracking-wide">Restore</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
         </View>
 
-        {/* Swipe overlay feedback */}
+        {isSkipped && (
+          <View className="absolute top-16 right-4 bg-red-500/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/30 shadow-sm flex-row items-center">
+             <FontAwesome5 name="ban" size={10} color="white" className="mr-2" />
+             <Text className="text-white font-bold text-[11px] uppercase tracking-widest">Skipped</Text>
+          </View>
+        )}
+
         <Animated.View
           style={{ opacity: swipeOverlayOpacity }}
           className="absolute inset-0 bg-[#F4F7F2]/80 dark:bg-[#181C1A]/80 justify-center items-center z-20 pointer-events-none backdrop-blur-sm"
         >
-          <View className="bg-white dark:bg-darksurface rounded-full px-6 py-4 flex-row items-center shadow-lg dark:shadow-sm border border-softBorder/50 dark:border-darksoftBorder">
+          <View className="bg-white dark:bg-darksurface rounded-full px-6 py-4 flex-row items-center shadow-lg border border-softBorder/50">
             <FontAwesome5 name="random" size={18} color="#9DCD8B" />
             <Text className="text-textMain dark:text-darktextMain font-bold text-[16px] ml-3 tracking-widest uppercase">Swap Meal</Text>
           </View>
         </Animated.View>
 
-        {/* Bottom gradient + content */}
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.85)']}
           locations={[0.4, 0.7, 1]}
@@ -329,54 +514,47 @@ export default function RecipeCard({
 
           <View className="flex-row items-center justify-between">
             <View className="flex-row flex-wrap gap-2.5">
-              <View className="bg-white/20 dark:bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20 dark:border-white/10">
+              <View className="bg-white/20 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20">
                 <FontAwesome5 name="clock" size={10} color="white" />
-                <Text className="text-white text-[12px] font-medium ml-2">{recipe.prepTimeMinutes} Mins</Text>
+                <Text className="text-white text-[12px] font-medium ml-2">{recipe.prepTimeMinutes || (recipe as any).totalMinutes || 30} Mins</Text>
               </View>
 
-              <View className="bg-white/20 dark:bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20 dark:border-white/10">
+              <View className="bg-white/20 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20">
                 <FontAwesome5 name="fire" size={10} color="white" />
                 <Text className="text-white text-[12px] font-medium ml-2">
                   {recipe.calories ?? (recipe as NormalizedRecipe).macrosPerServing?.calories ?? (recipe as Recipe).macros?.calories ?? 0} kcal
                 </Text>
               </View>
-
-              <View className="bg-white/20 dark:bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full flex-row items-center border border-white/20 dark:border-white/10">
-                <FontAwesome5 name="seedling" size={10} color="white" />
-                <Text className="text-white text-[12px] font-medium ml-2">
-                  {recipe.protein ?? (recipe as NormalizedRecipe).macrosPerServing?.protein ?? (recipe as Recipe).macros?.protein ?? 0}g Protein
-                </Text>
-              </View>
             </View>
 
             {!isSkipped && (
-              <Pressable
-                testID="recipe-card-view-recipe-btn"
+              <TouchableOpacity
+                activeOpacity={0.8}
                 onPress={(e) => { e.stopPropagation(); handleViewRecipe(); }}
-                className="flex-row items-center opacity-90 bg-white/15 backdrop-blur-sm px-3.5 py-2 rounded-full border border-white/20 hover:bg-white/25 active:scale-95 transition-all pointer-events-auto"
+                className="flex-row items-center opacity-90 bg-white/15 backdrop-blur-sm px-3.5 py-2 rounded-full border border-white/20"
               >
                 <Text className="text-white font-medium text-[13px] mr-2">View Recipe</Text>
                 <FontAwesome5 name="arrow-right" size={10} color="rgba(255,255,255,0.9)" />
-              </Pressable>
+              </TouchableOpacity>
             )}
             
             {isSkipped && pantryTransferStatus !== 'transferred' && onSkipAndKeep && (
-              <Pressable
-                testID="recipe-card-keep-ingredients-btn"
+              <TouchableOpacity
+                activeOpacity={0.8}
                 onPress={(e) => { e.stopPropagation(); onSkipAndKeep(); }}
-                className="flex-row items-center opacity-90 bg-sageTint/20 backdrop-blur-sm px-4 py-2 rounded-full border border-sageTint/40 hover:bg-sageTint/30 active:scale-95 transition-all pointer-events-auto"
+                className="flex-row items-center opacity-90 bg-sageTint/20 backdrop-blur-sm px-4 py-2 rounded-full border border-sageTint/40"
               >
                 <FontAwesome5 name="box-open" size={10} color="#9DCD8B" className="mr-2" />
-                <Text className="text-[#9DCD8B] font-medium text-[13px]">Add Groceries to Pantry</Text>
-              </Pressable>
+                <Text className="text-[#9DCD8B] font-medium text-[13px]">Add Groceries</Text>
+              </TouchableOpacity>
             )}
 
             {isSkipped && pantryTransferStatus === 'transferred' && (
               <View
-                className="flex-row items-center opacity-90 bg-[#9DCD8B] backdrop-blur-sm px-4 py-2 rounded-full border border-[#9DCD8B] pointer-events-auto"
+                className="flex-row items-center opacity-90 bg-[#9DCD8B] backdrop-blur-sm px-4 py-2 rounded-full border border-[#9DCD8B]"
               >
                 <FontAwesome5 name="check" size={10} color="#1A1F1B" className="mr-2" />
-                <Text className="text-[#1A1F1B] font-bold tracking-tight text-[13px]">Pantry Updated</Text>
+                <Text className="text-[#1A1F1B] font-bold text-[13px]">Pantry Updated</Text>
               </View>
             )}
           </View>

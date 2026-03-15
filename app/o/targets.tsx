@@ -30,10 +30,7 @@ export default function OnboardingTargets() {
   const { width } = useWindowDimensions();
   const { 
     workspace, 
-    updateBudget, 
-    updateCalories, 
-    updateProtein, 
-    updateExclusions 
+    updateFullOnboardingPayload,
   } = useActivePlan();
 
   // ─── CONSTANTS ─────────────────────────────────────────────────────────────
@@ -96,15 +93,20 @@ export default function OnboardingTargets() {
   }, [exclusionsY]);
 
   // ─── HANDLERS ───────────────────────────────────────────────────────────────
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const currentKcal = ACTIVITIES.find(a => a.id === activity)?.kcal || '2,400';
     const numericBudget = parseInt(budget.replace('£', '').replace('+', ''));
     const cleanTags = exclusions.map(s => s.toLowerCase().trim()).filter(s => s.length > 0);
 
-    updateBudget(numericBudget);
-    updateCalories(parseInt(currentKcal.replace(',', '')), activity);
-    updateProtein(protein);
-    updateExclusions(cleanTags);
+    const kcalValue = parseInt(currentKcal.replace(',', ''));
+    
+    await updateFullOnboardingPayload({
+      budgetWeekly: numericBudget,
+      targetCalories: kcalValue,
+      caloriePreset: activity,
+      targetProtein: protein,
+      excludedIngredientTags: cleanTags
+    });
 
     router.push('/o/verification' as any);
   };
