@@ -15,22 +15,10 @@ import { NormalizedRecipe } from '../../data/planner/plannerTypes';
 import { FULL_RECIPE_CATALOG } from '../../data/planner/recipeRegistry';
 import { useTheme } from '../../components/ThemeContext';
 
-// Helper to normalize image sources for native stability
-const getSafeSource = (imageUrl: any) => {
-  if (!imageUrl) return null;
-  if (typeof imageUrl === 'string') {
-    const trimmed = imageUrl.trim();
-    if (trimmed.startsWith('http')) return { uri: trimmed };
-    if (Platform.OS === 'web') return { uri: trimmed }; // Handle local paths on web
-  }
-  if (typeof imageUrl === 'number') return imageUrl; // asset from require()
-  return null;
-};
-
 type DisplayRecipe = (Recipe | NormalizedRecipe);
 
-// ΓöÇΓöÇΓöÇ MOCK PANTRY STATE (mirrors PantryContext placeholder) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-// ingredientId ΓåÆ status: 'in_pantry' | 'low_stock' | 'in_fuel_list'
+// ─── MOCK PANTRY STATE (mirrors PantryContext placeholder) ───────────────────
+// ingredientId → status: 'in_pantry' | 'low_stock' | 'in_fuel_list'
 const MOCK_PANTRY: Record<string, 'in_pantry' | 'low_stock' | 'in_fuel_list'> = {
   i7: 'in_pantry',    // Basmati Rice
   i8: 'in_pantry',    // Olive Oil
@@ -45,7 +33,7 @@ function getIngredientStatus(ingredientId: string): IngredientStatus {
   return MOCK_PANTRY[ingredientId] ?? 'need_to_buy';
 }
 
-// ΓöÇΓöÇΓöÇ FALLBACK GRADIENTS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── FALLBACK GRADIENTS ──────────────────────────────────────────────────────
 const FALLBACK_LIGHT: [string, string][] = [
   ['#E8F2E0', '#C8DFC0'],
   ['#F3E9DB', '#E5D5BE'],
@@ -68,7 +56,7 @@ function getGradient(id: string, isDark: boolean): [string, string] {
   return arr[n % arr.length];
 }
 
-// ΓöÇΓöÇΓöÇ RECIPE IMAGE / FALLBACK ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── RECIPE IMAGE / FALLBACK ─────────────────────────────────────────────────
 function RecipeHeroImage({ recipe, isDark }: { recipe: DisplayRecipe; isDark: boolean }) {
   const [failed, setFailed] = useState(false);
   const n = parseInt(recipe.id.replace(/\D/g, ''), 10) || 0;
@@ -95,7 +83,7 @@ function RecipeHeroImage({ recipe, isDark }: { recipe: DisplayRecipe; isDark: bo
           </View>
         </View>
       </View>
-      {/* Actual image ΓÇö unmounted on error so browser broken-img never shows */}
+      {/* Actual image — unmounted on error so browser broken-img never shows */}
       {recipe.imageUrl && !failed ? (
         Platform.OS === 'web' ? (
           <Image
@@ -105,24 +93,19 @@ function RecipeHeroImage({ recipe, isDark }: { recipe: DisplayRecipe; isDark: bo
             transition={{ duration: 500, effect: 'cross-dissolve' }}
             onError={() => setFailed(true)}
           />
-        ) : (
-          (() => {
-            const safeSrc = getSafeSource(recipe.imageUrl);
-            return safeSrc ? (
-              <RNImage
-                source={safeSrc}
-                style={{ width: '100%', height: '100%', position: 'absolute' }}
-                resizeMode="cover"
-              />
-            ) : null;
-          })()
-        )
+        ) : (() => {
+          const val = recipe.imageUrl;
+          const src = typeof val === 'string' && val.trim().startsWith('http') ? { uri: val } : typeof val === 'number' ? val : null;
+          return src ? (
+            <RNImage source={src} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" onError={() => setFailed(true)} />
+          ) : null;
+        })()
       ) : null}
     </View>
   );
 }
 
-// ΓöÇΓöÇΓöÇ SMALL METADATA CHIP ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── SMALL METADATA CHIP ─────────────────────────────────────────────────────
 function MetaChip({ icon, label, isDark }: { icon: string; label: string; isDark: boolean }) {
   return (
     <View className="flex-row items-center bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 rounded-full border border-black/[0.04] dark:border-white/[0.06] mr-2 mb-2">
@@ -132,7 +115,7 @@ function MetaChip({ icon, label, isDark }: { icon: string; label: string; isDark
   );
 }
 
-// ΓöÇΓöÇΓöÇ PASTEL TAG CHIP ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── PASTEL TAG CHIP ─────────────────────────────────────────────────────────
 function TagChip({ label }: { label: string }) {
   const palettes = [
     { bg: 'bg-sageTint dark:bg-darksageTint', text: 'text-[#3D6250] dark:text-[#85B674]' },
@@ -149,7 +132,7 @@ function TagChip({ label }: { label: string }) {
   );
 }
 
-// ΓöÇΓöÇΓöÇ INSIGHT CARD ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── INSIGHT CARD ─────────────────────────────────────────────────────────────
 function InsightCard({ icon, label, sub, accent }: { icon: string; label: string; sub?: string; accent?: string }) {
   return (
     <View className="bg-sageTint/40 dark:bg-[#1C241E] border border-primary/20 dark:border-primary/10 rounded-2xl px-4 py-3.5 mr-3" style={{ minWidth: 160 }}>
@@ -164,7 +147,7 @@ function InsightCard({ icon, label, sub, accent }: { icon: string; label: string
   );
 }
 
-// ΓöÇΓöÇΓöÇ INGREDIENT ROW ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── INGREDIENT ROW ──────────────────────────────────────────────────────────
 function IngredientRow({
   amount, unit, name, status, checked, onToggle
 }: {
@@ -211,7 +194,7 @@ function IngredientRow({
   );
 }
 
-// ΓöÇΓöÇΓöÇ METHOD STEP CARD ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── METHOD STEP CARD ────────────────────────────────────────────────────────
 function MethodStepCard({ step }: { step: MethodStepType }) {
   return (
     <View className="flex-row mb-4">
@@ -233,7 +216,7 @@ function MethodStepCard({ step }: { step: MethodStepType }) {
   );
 }
 
-// ΓöÇΓöÇΓöÇ NUTRITION WIDGET ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── NUTRITION NUTRITION ROW ────────────────────────────────────────────────────────
 function NutritionRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <View className="flex-row justify-between items-center py-2.5 border-b border-black/[0.03] dark:border-darksoftBorder">
@@ -243,7 +226,7 @@ function NutritionRow({ label, value, color }: { label: string; value: string; c
   );
 }
 
-// ΓöÇΓöÇΓöÇ RELATED RECIPE CARD (mini) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── RELATED RECIPE CARD (mini) ──────────────────────────────────────────────
 function RelatedRecipeCard({ recipe, label, isDark, onPress }: {
   recipe: DisplayRecipe; label?: string; isDark: boolean; onPress: () => void;
 }) {
@@ -271,15 +254,13 @@ function RelatedRecipeCard({ recipe, label, isDark, onPress }: {
             <Image source={recipe.imageUrl} style={{ width: '100%', height: '100%', position: 'absolute' }}
               contentFit="cover" transition={{ duration: 400, effect: 'cross-dissolve' }}
               onError={() => setFailed(true)} />
-          ) : (
-            (() => {
-              const safeSrc = getSafeSource(recipe.imageUrl);
-              return safeSrc ? (
-                <RNImage source={safeSrc} style={{ width: '100%', height: '100%', position: 'absolute' }}
-                  resizeMode="cover" />
-              ) : null;
-            })()
-          )
+          ) : (() => {
+            const val = recipe.imageUrl;
+            const src = typeof val === 'string' && val.trim().startsWith('http') ? { uri: val } : typeof val === 'number' ? val : null;
+            return src ? (
+              <RNImage source={src} style={{ width: '100%', height: '100%', position: 'absolute' }} resizeMode="cover" onError={() => setFailed(true)} />
+            ) : null;
+          })()
         ) : null}
         
         {label ? (
@@ -301,7 +282,7 @@ function RelatedRecipeCard({ recipe, label, isDark, onPress }: {
   );
 }
 
-// ΓöÇΓöÇΓöÇ NOT FOUND STATE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── NOT FOUND STATE ─────────────────────────────────────────────────────────
 function NotFound({ onBack }: { onBack: () => void }) {
   return (
     <View className="flex-1 bg-appBg dark:bg-darkappBg items-center justify-center px-8">
@@ -321,7 +302,7 @@ function NotFound({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ΓöÇΓöÇΓöÇ SECTION HEADER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── SECTION HEADER ──────────────────────────────────────────────────────────
 function SectionHeader({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   return (
     <View className="flex-row justify-between items-center mb-4">
@@ -335,7 +316,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
   );
 }
 
-// ΓöÇΓöÇΓöÇ SUPPORT WIDGET CARD WRAPPER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── SUPPORT WIDGET CARD WRAPPER ─────────────────────────────────────────────
 function WidgetCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <View className={`bg-surface dark:bg-darksurface rounded-3xl p-5 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_2px_12px_rgba(0,0,0,0.02)] dark:shadow-none mb-4 ${className}`}>
@@ -344,7 +325,7 @@ function WidgetCard({ children, className = '' }: { children: React.ReactNode; c
   );
 }
 
-// ΓöÇΓöÇΓöÇ PLANNING FLAG ROW ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── PLANNING FLAG ROW ────────────────────────────────────────────────────────
 function PlanningFlag({ icon, label, value }: { icon: string; label: string; value: React.ReactNode }) {
   return (
     <View className="flex-row items-center justify-between py-2.5 border-b border-black/[0.03] dark:border-darksoftBorder">
@@ -357,7 +338,7 @@ function PlanningFlag({ icon, label, value }: { icon: string; label: string; val
   );
 }
 
-// ΓöÇΓöÇΓöÇ MAIN PAGE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 export default function RecipeDetailPage() {
   const { id } = useLocalSearchParams<{ id: string; day?: string; slot?: string }>();
   const { day, slot } = useLocalSearchParams<{ day?: string; slot?: string }>();
@@ -366,10 +347,10 @@ export default function RecipeDetailPage() {
   const { isDarkMode } = useTheme();
   const isDesktop = Platform.OS === 'web' && width >= 768;
 
-  // ΓöÇΓöÇ Find recipe ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Find recipe ──────────────────────────────────────────────────────────────
   const recipe = FULL_RECIPE_CATALOG[id] || MOCK_RECIPES.find(r => r.id === id);
 
-  // ΓöÇΓöÇ Back navigation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Back navigation ──────────────────────────────────────────────────────────
   const handleBack = useCallback(() => {
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)' as any);
@@ -377,7 +358,7 @@ export default function RecipeDetailPage() {
 
   if (!recipe) return <NotFound onBack={handleBack} />;
 
-  // ΓöÇΓöÇ Ingredient state ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Ingredient state ─────────────────────────────────────────────────────────
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const [addedToFuelList, setAddedToFuelList] = useState(false);
 
@@ -390,7 +371,7 @@ export default function RecipeDetailPage() {
     });
   };
 
-  // ΓöÇΓöÇ Derive related recipes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Derive related recipes ───────────────────────────────────────────────────
   const getRelatedRecipes = (): { recipe: Recipe; label: string }[] => {
     const ids = recipe.relatedRecipeIds ?? [];
     const related: { recipe: Recipe; label: string }[] = [];
@@ -413,8 +394,8 @@ export default function RecipeDetailPage() {
 
   const relatedRecipes = getRelatedRecipes();
 
-  // ΓöÇΓöÇ Ingredient breakdown ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-  const ingredientRows = (recipe.ingredients as any[]).map(ing => {
+  // ── Ingredient breakdown ─────────────────────────────────────────────────────
+  const ingredientRows = ((recipe.ingredients ?? []) as any[]).map(ing => {
     const ingId = ing.ingredientId || ing.canonicalIngredientId || '';
     const info = MOCK_INGREDIENTS.find(i => i.id === ingId);
     const status = getIngredientStatus(ingId);
@@ -433,20 +414,20 @@ export default function RecipeDetailPage() {
     setAddedToFuelList(true);
   };
 
-  // ΓöÇΓöÇ Timing display ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-  const totalTime = recipe.totalTimeMinutes ?? (recipe.prepTimeMinutes + (recipe.cookTimeMinutes ?? 0));
+  // ── Timing display ───────────────────────────────────────────────────────────
+  const totalTime = recipe.totalTimeMinutes ?? ((recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0));
   const contextLabel = day && slot ? `${day} ${slot}` : 'Planned Meal';
 
-  // ΓöÇΓöÇ Difficulty colour ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ── Difficulty colour ────────────────────────────────────────────────────────
   const difficultyColor = (({
     Easy: 'text-[#3D6250] dark:text-[#85B674]',
     Medium: 'text-[#7A4A20] dark:text-[#C48F5D]',
     Hard: 'text-[#7A3020] dark:text-danger',
   }) as Record<string, string>)[(recipe as any).difficulty ?? 'Easy'] ?? 'text-textSec dark:text-darktextSec';
 
-  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ────────────────────────────────────────────────────────────────────────────
   // RENDER
-  // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  // ────────────────────────────────────────────────────────────────────────────
   return (
     <View
       className="flex-1 bg-appBg dark:bg-darkappBg"
@@ -454,7 +435,7 @@ export default function RecipeDetailPage() {
         ? { display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' } as any
         : { flex: 1 }}
     >
-      {/* ΓöÇΓöÇ TOP CONTEXT BAR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+      {/* ── TOP CONTEXT BAR ─────────────────────────────────────────────────── */}
       <View
         className="flex-row items-center justify-between px-5 py-3.5 bg-appBg dark:bg-darkappBg align-middle border-b border-transparent dark:border-white/[0.02]"
         style={Platform.OS === 'web' ? { flexShrink: 0 } as any : undefined}
@@ -484,7 +465,7 @@ export default function RecipeDetailPage() {
         </View>
       </View>
 
-      {/* ΓöÇΓöÇ SCROLLABLE BODY ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+      {/* ── SCROLLABLE BODY ──────────────────────────────────────────────────── */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
@@ -497,10 +478,10 @@ export default function RecipeDetailPage() {
             : undefined}
         >
 
-          {/* ΓòÉΓòÉ LEFT / MAIN COLUMN ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+          {/* ══ LEFT / MAIN COLUMN ════════════════════════════════════════════ */}
           <View style={isDesktop ? { flex: 1, minWidth: 0 } as any : undefined}>
 
-            {/* ΓöÇΓöÇ HERO ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── HERO ──────────────────────────────────────────────────────── */}
             <View className="mb-5">
               {/* Hero image */}
               <View className="w-full h-[280px] md:h-[340px] rounded-4xl overflow-hidden mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.07)] dark:shadow-none">
@@ -515,7 +496,7 @@ export default function RecipeDetailPage() {
                   {/* Slot badge */}
                   {day && slot ? (
                     <View className="bg-black/40 backdrop-blur-md self-start px-3.5 py-1.5 rounded-full border border-white/10 mb-2.5">
-                      <Text className="text-white text-[10px] font-bold uppercase tracking-[0.2em]">{day} ΓÇó {slot}</Text>
+                      <Text className="text-white text-[10px] font-bold uppercase tracking-[0.2em]">{day} • {slot}</Text>
                     </View>
                   ) : null}
                   <Text className="text-white text-[32px] md:text-[38px] font-medium tracking-tight leading-[1.1]">
@@ -539,7 +520,7 @@ export default function RecipeDetailPage() {
                 <MetaChip icon="seedling" label={`${(recipe as any).macros?.protein ?? (recipe as any).macrosPerServing?.protein ?? 0}g protein`} isDark={isDarkMode} />
                 {recipe.servings ? <MetaChip icon="users" label={`${recipe.servings} serving${recipe.servings > 1 ? 's' : ''}`} isDark={isDarkMode} /> : null}
                 {((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP) ? (
-                  <MetaChip icon="pound-sign" label={`┬ú${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)}/srv`} isDark={isDarkMode} />
+                  <MetaChip icon="pound-sign" label={`£${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)}/srv`} isDark={isDarkMode} />
                 ) : null}
                 {recipe.difficulty ? (
                   <View className="flex-row items-center bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 rounded-full border border-black/[0.04] dark:border-white/[0.06] mr-2 mb-2">
@@ -550,7 +531,7 @@ export default function RecipeDetailPage() {
 
               {/* Tag chips */}
               <View className="flex-row flex-wrap gap-x-0 gap-y-0 mb-4">
-                {recipe.tags.map(tag => <TagChip key={tag} label={tag} />)}
+                {(recipe.tags ?? []).map(tag => <TagChip key={tag} label={tag} />)}
               </View>
 
               {/* Hero primary actions */}
@@ -567,7 +548,7 @@ export default function RecipeDetailPage() {
               </View>
             </View>
 
-            {/* ΓöÇΓöÇ PROVISION INSIGHT STRIP ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── PROVISION INSIGHT STRIP ─────────────────────────────────── */}
             <View className="mb-6">
               <View className="flex-row items-center gap-2 mb-3 ml-1">
                 <FontAwesome5 name="sparkles" size={10} color="#9DCD8B" />
@@ -575,7 +556,7 @@ export default function RecipeDetailPage() {
               </View>
               <View className="bg-surface dark:bg-[#161A18] rounded-[24px] py-4 shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:shadow-none border border-black/[0.02] dark:border-white/[0.02]">
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-                  <InsightCard icon="bullseye" label="Fits your High-Protein goal" sub="163g ΓåÆ target 160g" />
+                  <InsightCard icon="bullseye" label="Fits your High-Protein goal" sub="163g → target 160g" />
                   {pantryCount > 0 ? (
                     <InsightCard icon="box-open" label={`${pantryCount} pantry items match`} sub="Already in stock" />
                   ) : null}
@@ -583,7 +564,7 @@ export default function RecipeDetailPage() {
                     <InsightCard icon="shopping-basket" label={`${missingCount} items to buy`} sub="Not yet on Fuel List" />
                   ) : null}
                   {((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP) ? (
-                    <InsightCard icon="pound-sign" label={`┬ú${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)} per serving`} sub="Within weekly budget" />
+                    <InsightCard icon="pound-sign" label={`£${((recipe as any).costPerServingGBP || (recipe as any).estimatedCostPerServingGBP).toFixed(2)} per serving`} sub="Within weekly budget" />
                   ) : null}
                   <InsightCard icon="star" label="Taste profile match" sub="You prefer quick savory meals" />
                   {recipe.reheatsWell ? (
@@ -594,11 +575,11 @@ export default function RecipeDetailPage() {
             </View>
 
             {/* major spacing updates from here on */}
-            {/* ΓöÇΓöÇ INGREDIENTS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── INGREDIENTS ─────────────────────────────────────────────── */}
             <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
               <SectionHeader
                 title="Ingredients"
-                action={missingCount > 0 && !addedToFuelList ? `Add ${missingCount} to Fuel List` : addedToFuelList ? 'Γ£ô Added' : undefined}
+                action={missingCount > 0 && !addedToFuelList ? `Add ${missingCount} to Fuel List` : addedToFuelList ? '✓ Added' : undefined}
                 onAction={handleAddMissing}
               />
 
@@ -617,9 +598,9 @@ export default function RecipeDetailPage() {
                 ))}
               </View>
 
-              {ingredientRows.map(ing => (
+              {ingredientRows.map((ing, idx) => (
                 <IngredientRow
-                  key={ing.ingredientId}
+                  key={ing.ingredientId || `ing-${idx}`}
                   amount={ing.amount}
                   unit={ing.unit}
                   name={ing.name}
@@ -647,7 +628,7 @@ export default function RecipeDetailPage() {
               ) : null}
             </View>
 
-            {/* ΓöÇΓöÇ METHOD ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── METHOD ──────────────────────────────────────────────────── */}
             <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
               <SectionHeader title="Method" />
               {recipe.method && recipe.method.length > 0 ? (
@@ -662,7 +643,7 @@ export default function RecipeDetailPage() {
               )}
             </View>
 
-            {/* ΓöÇΓöÇ SUBSTITUTIONS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── SUBSTITUTIONS ────────────────────────────────────────────── */}
             {recipe.substitutions && recipe.substitutions.length > 0 ? (
               <View className="bg-surface dark:bg-darksurface rounded-3xl p-6 border border-black/[0.03] dark:border-darksoftBorder shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-none mb-6">
                 <SectionHeader title="Substitutions" />
@@ -688,7 +669,7 @@ export default function RecipeDetailPage() {
               </View>
             ) : null}
 
-            {/* ΓöÇΓöÇ NOTES ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── NOTES ────────────────────────────────────────────────────── */}
             {recipe.notes ? (
               <View className="bg-sageTint/60 dark:bg-darksageTint rounded-3xl p-6 border border-primary/10 dark:border-primary/5 mb-8">
                 <View className="flex-row items-center mb-3">
@@ -699,7 +680,7 @@ export default function RecipeDetailPage() {
               </View>
             ) : null}
 
-            {/* ΓöÇΓöÇ RELATED RECIPES ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── RELATED RECIPES ──────────────────────────────────────────── */}
             {relatedRecipes.length > 0 ? (
               <View className="mb-8 pt-4">
                 <View className="mb-4 ml-1">
@@ -720,7 +701,7 @@ export default function RecipeDetailPage() {
               </View>
             ) : null}
 
-            {/* ΓöÇΓöÇ MARK COOKED (bottom action on mobile) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+            {/* ── MARK COOKED (bottom action on mobile) ─────────────────────── */}
             {!isDesktop ? (
               <TouchableOpacity className="py-3.5 rounded-full border border-softBorder dark:border-darksoftBorder flex-row items-center justify-center gap-2.5 bg-surface dark:bg-darksurface mb-6">
                 <FontAwesome5 name="check-circle" size={13} color="#9DCD8B" />
@@ -729,9 +710,9 @@ export default function RecipeDetailPage() {
             ) : null}
 
           </View>
-          {/* ΓòÉΓòÉ END LEFT COLUMN ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+          {/* ══ END LEFT COLUMN ══════════════════════════════════════════════ */}
 
-          {/* ΓòÉΓòÉ RIGHT / SUPPORT COLUMN (desktop only) ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
+          {/* ══ RIGHT / SUPPORT COLUMN (desktop only) ════════════════════════ */}
           {isDesktop ? (
             <View style={{ width: 300, flexShrink: 0, position: 'sticky', top: 24, alignSelf: 'flex-start' } as any}>
 
@@ -744,7 +725,7 @@ export default function RecipeDetailPage() {
                 <NutritionRow label="Fats" value={`${(recipe as any).macros?.fats ?? (recipe as any).macrosPerServing?.fats ?? 0}g`} color="text-[#C48F5D] dark:text-[#C48F5D]" />
                 {recipe.servings ? (
                   <Text className="text-textSec dark:text-darktextSec text-[11px] mt-3 opacity-60">
-                    Per serving ┬╖ {recipe.servings} serving{recipe.servings > 1 ? 's' : ''}
+                    Per serving · {recipe.servings} serving{recipe.servings > 1 ? 's' : ''}
                   </Text>
                 ) : null}
               </WidgetCard>
@@ -763,7 +744,7 @@ export default function RecipeDetailPage() {
                   <PlanningFlag icon="signal" label="Difficulty" value={<Text className={`text-[13px] font-semibold ${difficultyColor}`}>{(recipe as any).difficulty}</Text>} />
                 ) : null}
                 {((recipe as any).estimatedCostGBP || (recipe as any).estimatedCostTotalGBP) ? (
-                  <PlanningFlag icon="pound-sign" label="Est. cost" value={<Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold">┬ú{((recipe as any).estimatedCostGBP || (recipe as any).estimatedCostTotalGBP).toFixed(2)}</Text>} />
+                  <PlanningFlag icon="pound-sign" label="Est. cost" value={<Text className="text-textMain dark:text-darktextMain text-[13px] font-semibold">£{((recipe as any).estimatedCostGBP || (recipe as any).estimatedCostTotalGBP).toFixed(2)}</Text>} />
                 ) : null}
                 {recipe.reheatsWell !== undefined ? (
                   <PlanningFlag icon="redo" label="Reheats well" value={
@@ -798,7 +779,7 @@ export default function RecipeDetailPage() {
                 >
                   <FontAwesome5 name="shopping-basket" size={13} color={isDarkMode ? '#8C9A90' : '#6E7C74'} />
                   <Text className="text-textMain dark:text-darktextMain font-medium text-[13px] ml-3">
-                    {addedToFuelList ? 'Γ£ô Added to Fuel List' : `Add ${missingCount} Missing to Fuel List`}
+                    {addedToFuelList ? '✓ Added to Fuel List' : `Add ${missingCount} Missing to Fuel List`}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity className="py-3 rounded-2xl border border-softBorder dark:border-darksoftBorder flex-row items-center px-4 active:opacity-75 bg-surface dark:bg-darksurface">
@@ -829,8 +810,7 @@ export default function RecipeDetailPage() {
 
             </View>
           ) : null}
-          {/* ΓòÉΓòÉ END RIGHT COLUMN ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
-
+          {/* ══ END RIGHT COLUMN ════════════════════════════════════════════ */}
         </View>
       </ScrollView>
     </View>
