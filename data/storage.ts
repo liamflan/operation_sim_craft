@@ -65,5 +65,14 @@ export const StorageService = {
     } catch (e) {
       console.warn(`[StorageService] Failed to clear storage:`, e);
     }
+  },
+
+  /**
+   * TEMP_HARD_RESET_ON_LAUNCH
+   * Wipes all Provision app state from local storage.
+   */
+  async clearAllAppState(): Promise<void> {
+    console.log('[StorageService] Performing hard reset on launch...');
+    await this.clear();
   }
 };

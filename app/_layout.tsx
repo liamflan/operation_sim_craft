@@ -6,7 +6,7 @@ import '../global.css';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { View, Platform, useWindowDimensions } from 'react-native';
+import { View, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
 
 import { useColorScheme as useNavColorScheme } from '@/hooks/use-color-scheme';
 import { ThemeProvider, useTheme } from '../components/ThemeContext';
@@ -18,6 +18,9 @@ import { ToastProvider } from '../components/ToastContext';
 import DebugOverlay from '../components/DebugOverlay';
 import UnsupportedMobileWeb from '../components/UnsupportedMobileWeb';
 import { RecipeProvider } from '../data/RecipeContext';
+import { StorageService } from '../data/storage';
+
+const TEMP_HARD_RESET_ON_LAUNCH = true;
 
 SplashScreen.preventAutoHideAsync();
 
@@ -56,13 +59,21 @@ export default function RootLayout() {
     GoogleSansFlex: require('../assets/fonts/Google_Sans_Flex/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf'),
   });
 
+  const [wiped, setWiped] = useState(!TEMP_HARD_RESET_ON_LAUNCH);
+
   useEffect(() => {
-    if (loaded || error) {
+    if (TEMP_HARD_RESET_ON_LAUNCH) {
+      StorageService.clearAllAppState().then(() => setWiped(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (wiped && (loaded || error)) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, wiped]);
 
-  if (!loaded && !error) {
+  if (!wiped || (!loaded && !error)) {
     return null;
   }
 
